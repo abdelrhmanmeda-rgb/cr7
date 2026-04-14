@@ -1,28 +1,36 @@
-const app = express();
-
-// 👇 هذا هو الكود السحري الذي سيسمح للوحة التحكم والموقع بالاتصال بالسيرفر
-app.use(cors({
-  origin: true, // يسمح باستقبال الطلبات من أي رابط (لوحة التحكم والموقع)
-  credentials: true, // ضروري جداً إذا كنت تستخدم نظام تسجيل دخول (Tokens/Cookies)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
-
-app.use(express.json()); // تأكد أن هذا السطر موجود أيضاً
-
-// مساراتك هنا
-// app.use('/api/posts', postRoutes);
 const express = require('express');
 const router = express.Router();
-const verifyAdmin = require('../middlewares/verifyAdmin');
-const { trackAction, getStatistics, resetStatistics } = require('../controllers/statisticsController');
 
-// مسار عام لتسجيل النقرات والزيارات (بدون حماية ليتمكن زوار الموقع من الضغط)
+// استدعاء الحماية
+const verifyAdmin = require('../middlewares/verifyAdmin');
+
+// استدعاء الدوال من الكنترولر
+const { 
+    trackAction, 
+    getStatistics, 
+    resetStatistics 
+} = require('../controllers/statisticsController');
+
+// ==========================================
+// 📊 مسارات الإحصائيات (تتبع الزيارات والنقرات)
+// ==========================================
+
+/**
+ * 1. مسار تسجيل الأفعال (POST)
+ * (مفتوح للجميع ليتمكن المتصفح من تسجيل الزيارات والنقرات تلقائياً)
+ */
 router.post('/track', trackAction);
 
-// مسار محمي لجلب الإحصائيات (للأدمن فقط)
+/**
+ * 2. مسار جلب الإحصائيات (GET)
+ * (محمي للأدمن فقط ليراها في لوحة التحكم)
+ */
 router.get('/', verifyAdmin, getStatistics);
 
-// مسار محمي لتصفير الإحصائيات (للأدمن فقط) - ✨ المسار الجديد ✨
+/**
+ * 3. مسار تصفير الإحصائيات (POST)
+ * (محمي للأدمن فقط)
+ */
 router.post('/reset', verifyAdmin, resetStatistics);
 
 module.exports = router;

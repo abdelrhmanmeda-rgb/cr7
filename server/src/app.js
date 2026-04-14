@@ -8,6 +8,11 @@ require('./config/cloudinary');
 
 const app = express();
 
+// مسار الاختبار (لكي نتأكد أن السيرفر حي يرزق!)
+app.get('/', (req, res) => {
+  res.status(200).send('🔥 CR7 Backend Server is working 100% on Vercel!');
+});
+
 // إعدادات الـ Middlewares
 app.use(cors());
 app.use(express.json());

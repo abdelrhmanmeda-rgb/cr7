@@ -229,7 +229,7 @@ export default function App() {
   // ====================================================
   const trackUserAction = async (actionType: string, itemName?: string, price?: string | number) => {
     try {
-      await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/statistics/track', {
+      await fetch('https://cr7-kappa.vercel.app/api/statistics/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actionType, itemName, price: price ? String(price).replace(/[^0-9.]/g, '') : 0 })
@@ -319,7 +319,7 @@ export default function App() {
 
   const fetchBots = useCallback(async (retries = 3, delay = 1000) => {
     try {
-      const response = await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/bots');
+      const response = await fetch('https://cr7-kappa.vercel.app/api/bots');
       const data = await response.json();
       if (data.success && data.data && data.data.length > 0) setBots(data.data);
     } catch (err) {
@@ -329,7 +329,7 @@ export default function App() {
 
   const fetchPlans = useCallback(async (retries = 3, delay = 1000) => {
     try {
-      const response = await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/subscriptions');
+      const response = await fetch('https://cr7-kappa.vercel.app/api/subscriptions');
       const data = await response.json();
       if (data.success && data.data && data.data.length > 0) setPlans(data.data);
     } catch (err) {
@@ -339,7 +339,7 @@ export default function App() {
 
   const fetchSettings = useCallback(async (retries = 3, delay = 1000) => {
     try {
-      const response = await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/settings');
+      const response = await fetch('https://cr7-kappa.vercel.app/api/settings');
       const data = await response.json();
       if (data.success && data.data) setSettings(data.data);
     } catch (err) {
@@ -350,7 +350,7 @@ export default function App() {
   // ✨ دالة جلب بوستات المدونة
   const fetchPosts = useCallback(async (retries = 3, delay = 1000) => {
     try {
-      const response = await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/blog');
+      const response = await fetch('https://cr7-kappa.vercel.app/api/blog');
       const data = await response.json();
       if (data.success && data.data) setPosts(data.data);
     } catch (err) {
@@ -390,7 +390,7 @@ export default function App() {
     }));
 
     try {
-      const res = await fetch(`https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/blog/${postId}/like`, {
+      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/like`, {
         method: 'POST',
         headers: { 
           'Accept': 'application/json',
@@ -448,7 +448,7 @@ export default function App() {
     setCommentText('');
 
     try {
-      const res = await fetch(`https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/blog/${postId}/comment`, {
+      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/comment`, {
         method: 'POST',
         headers: { 
           'Accept': 'application/json',

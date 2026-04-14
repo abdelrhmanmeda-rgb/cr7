@@ -39,10 +39,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// تحديد البورت وتشغيل السيرفر
+// آخر أسطر في ملف app.js لديك ستكون هكذا:
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`=================================`);
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`=================================`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// 👉 أضف هذا السطر السحري هنا لكي يقرأه Vercel:
+module.exports = app;

@@ -302,7 +302,7 @@ export default function App() {
 
   const fetchResults = useCallback(async (retries = 5, delay = 1000) => {
     try {
-      const response = await fetch('https://cr7-git-main-abdelrhmanmeda-rgbs-projects.vercel.app/api/results');
+      const response = await fetch('https://cr7-kappa.vercel.app/api/results');
       if (!response.ok) throw new Error('فشل الاتصال بالسيرفر');
       const data = await response.json();
       if (data.success) {

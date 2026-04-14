@@ -1,20 +1,14 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// إنشاء مجلد مؤقت باسم uploads إذا لم يكن موجوداً
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// إعداد مكان حفظ الملفات مؤقتاً
+// إعداد مكان حفظ الملفات مؤقتاً في مجلد /tmp المسموح به في Vercel
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    cb(null, '/tmp'); // التعديل الأهم: التوجيه لمجلد tmp
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
+    // إزالة المسافات من اسم الملف لتفادي أي مشاكل
+    const safeName = file.originalname.replace(/\s+/g, '-');
+    cb(null, Date.now() + '-' + safeName);
   }
 });
 

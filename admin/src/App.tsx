@@ -203,7 +203,7 @@ const StatisticsManager = () => {
     const fetchRealStats = async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        const res = await fetch('http://localhost:5000/api/statistics', {
+        const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/statistics', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -227,7 +227,7 @@ const StatisticsManager = () => {
     setLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:5000/api/statistics/reset', {
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/statistics/reset', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -433,7 +433,7 @@ const ResultsManager = () => {
 
   const fetchResults = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/results');
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/results');
       const data = await res.json();
       if (data.success) setResults(data.data);
     } catch (err) { console.error("Error fetching results"); }
@@ -452,7 +452,7 @@ const ResultsManager = () => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:5000/api/results/upload', { 
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/results/upload', { 
         method: 'POST', 
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData 
@@ -472,7 +472,7 @@ const ResultsManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذه النتيجة نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:5000/api/results/${id}`, { 
+      const res = await fetch(`https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/results/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -554,7 +554,7 @@ const BotsManager = () => {
 
   const fetchBots = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/bots');
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/bots');
       const data = await res.json();
       if (data.success) setBots(data.data);
     } catch (err) { console.error("Bots fetch error"); }
@@ -574,8 +574,8 @@ const BotsManager = () => {
     form.append('features', JSON.stringify(features.filter(f => f.trim() !== '')));
 
     const url = editingId 
-      ? `http://localhost:5000/api/bots/${editingId}` 
-      : 'http://localhost:5000/api/bots/add';
+      ? `https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/bots/${editingId}` 
+      : 'https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/bots/add';
     const method = editingId ? 'PUT' : 'POST';
 
     try {
@@ -623,7 +623,7 @@ const BotsManager = () => {
     if (!confirm('هل أنت متأكد من الحذف النهائي لهذا البوت؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:5000/api/bots/${id}`, { 
+      const res = await fetch(`https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/bots/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -733,7 +733,7 @@ const SubscriptionsManager = () => {
 
   const fetchPlans = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/subscriptions');
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/subscriptions');
       const data = await res.json();
       if (data.success) setPlans(data.data);
     } catch (err) { console.error("Plans fetch error"); }
@@ -746,7 +746,7 @@ const SubscriptionsManager = () => {
     setLoading(true);
     
     const payload = { ...formData, features: features.filter(f => f.trim() !== '') };
-    const url = editingId ? `http://localhost:5000/api/subscriptions/${editingId}` : 'http://localhost:5000/api/subscriptions/add';
+    const url = editingId ? `https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/subscriptions/${editingId}` : 'https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/subscriptions/add';
     const method = editingId ? 'PUT' : 'POST';
 
     try {
@@ -795,7 +795,7 @@ const SubscriptionsManager = () => {
     if (!confirm('هل أنت متأكد من الحذف النهائي لهذه الباقة؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:5000/api/subscriptions/${id}`, { 
+      const res = await fetch(`https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/subscriptions/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -898,7 +898,7 @@ const BlogManager = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/blog');
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/blog');
       const data = await res.json();
       if (data.success) setPosts(data.data);
     } catch (err) { console.error("Blog fetch error"); }
@@ -918,7 +918,7 @@ const BlogManager = () => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:5000/api/blog/add', { 
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/blog/add', { 
         method: 'POST', 
         headers: { 'Authorization': `Bearer ${token}` },
         body: form 
@@ -950,7 +950,7 @@ const BlogManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذا البوست نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:5000/api/blog/${id}`, { 
+      const res = await fetch(`https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/blog/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -963,7 +963,7 @@ const BlogManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذا التعليق نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:5000/api/blog/${postId}/comment/${commentId}`, { 
+      const res = await fetch(`https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/blog/${postId}/comment/${commentId}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -1065,7 +1065,7 @@ const SettingsManager = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/settings');
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/settings');
       const data = await res.json();
       if (data.success && data.data) {
         setSettings({
@@ -1088,7 +1088,7 @@ const SettingsManager = () => {
     setLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:5000/api/settings', {
+      const res = await fetch('https://cr7-hnvjlq6lb-abdelrhmanmeda-rgbs-projects.vercel.app//api/settings', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

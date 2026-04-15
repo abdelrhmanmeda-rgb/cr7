@@ -1,21 +1,21 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
-// إعدادات Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyA0wuxv9RL14sC1Jal8wWOxLSFC7A29uuc",
-  authDomain: "cr7-bot.firebaseapp.com",
-  projectId: "cr7-bot",
-  storageBucket: "cr7-bot.firebasestorage.app",
-  messagingSenderId: "201142155421",
-  appId: "1:201142155421:web:b7dd8765afd27e62ac3c74"
+  apiKey: "AIzaSyC2oPdDjR-0sOrMVcveOXnmQJ4b1QFvJho",
+  authDomain: "cr7bot-85133.firebaseapp.com",
+  projectId: "cr7bot-85133",
+  storageBucket: "cr7bot-85133.appspot.com",
+  messagingSenderId: "532213195017",
+  appId: "1:532213195017:web:035e6ce336c9aebce3f3d8"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // ==========================================
 // تعريف Interfaces لحل مشاكل TypeScript

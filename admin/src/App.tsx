@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
 // ==========================================
 // تعريف الأنواع (Interfaces) لـ TypeScript
@@ -110,18 +109,27 @@ const Icons = {
   CheckCircle: ({ size = 24, className = "", fill = "none" }: IconProps) => <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
 };
 
-// إعدادات Firebase
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+// إعدادات Firebase الجديدة
 const firebaseConfig = {
-  apiKey: "AIzaSyA0wuxv9RL14sC1Jal8wWOxLSFC7A29uuc",
-  authDomain: "cr7-bot.firebaseapp.com",
-  projectId: "cr7-bot",
-  storageBucket: "cr7-bot.firebasestorage.app",
-  messagingSenderId: "201142155421",
-  appId: "1:201142155421:web:b7dd8765afd27e62ac3c74"
+  apiKey: "AIzaSyC2oPdDjR-0sOrMVcveOXnmQJ4b1QFvJho",
+  authDomain: "cr7bot-85133.firebaseapp.com",
+  projectId: "cr7bot-85133",
+  storageBucket: "cr7bot-85133.appspot.com",
+  messagingSenderId: "532213195017",
+  appId: "1:532213195017:web:035e6ce336c9aebce3f3d8"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+
+// الخدمات
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // ---------------------------------------------------------
 // 1. شاشة تسجيل الدخول للوحة التحكم

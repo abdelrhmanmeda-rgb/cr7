@@ -494,7 +494,7 @@ export default function App() {
     if (type === 'الإدارة') trackUserAction('management', title);
     else trackUserAction('subscribe', title, fee);
 
-    const text = `مرحباً، أود الانضمام لقسم (${type}):%0A%0A📌 التفاصيل: ${title}%0A💰 رأس المال: ${capital}%0A💳 الرسوم/النسبة: ${fee}%0A%0Aأرجو تزويدي بخطوات البدء فوراً.`;
+    const text = `مرحباً، أود الانضمام لقسم (${type}):%0A%0A📌 التفاصيل: ${title}%0A💰 رأس المال: ${capital}%0A💳 الرسوم: ${fee}%0A%0Aأرجو تزويدي بخطوات البدء فوراً.`;
     window.open(`https://t.me/CR7BOT01?text=${text}`, '_blank');
   };
 
@@ -679,7 +679,9 @@ export default function App() {
                         </div>
                         <div className="p-8 flex flex-col flex-grow relative z-20 -mt-10">
                           <h3 className="text-xl font-black mb-2 bg-gradient-to-l from-white to-gray-400 bg-clip-text text-transparent">{bot.name}</h3>
-                          <div className="flex items-baseline gap-2 mb-6"><span className="text-3xl font-black text-white">${bot.price}</span><span className="text-gray-500 font-bold text-sm">/ شهرياً</span></div>
+                          <div className="flex items-baseline gap-2 mb-6">
+                            <span className="text-3xl font-black text-white">${bot.price}</span>
+                          </div>
                           <button onClick={() => handleBotPurchaseClick(bot)} className="w-full bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-600 text-white px-6 py-4 rounded-2xl font-black transition-all active:scale-95 flex items-center justify-center gap-2 mt-auto">
                             شراء الآن <Icons.ChevronRight size={20} />
                           </button>
@@ -830,7 +832,6 @@ export default function App() {
                     
                     <div className="flex items-baseline gap-2 mb-6">
                       <span className="text-4xl font-black text-white">${bot.price}</span>
-                      <span className="text-gray-500 font-bold text-sm">/ شهرياً</span>
                     </div>
 
                     <div className="mb-6">
@@ -979,7 +980,7 @@ export default function App() {
                             </li>
                             <li className="flex items-center gap-3 text-sm font-bold text-green-400">
                               <div className="p-1 rounded-full bg-green-500/20 text-green-400"><Icons.TrendingUp size={14} /></div>
-                              الرسوم والتارجت: {plan.fee}
+                              الرسوم: {plan.fee}
                             </li>
                             {plan.features && plan.features.map((feat: string, i: number) => (
                               <li key={i} className="flex items-center gap-3 text-sm font-bold text-gray-400">
@@ -1029,7 +1030,7 @@ export default function App() {
                           </li>
                           <li className="flex items-center gap-4 text-base font-bold text-gray-300">
                             <div className="p-2 rounded-xl bg-white/5 text-indigo-400 border border-white/5"><Icons.Check size={18} /></div>
-                            النسبة: <span className="text-white">{plan.fee}</span>
+                            الرسوم: <span className="text-white">{plan.fee}</span>
                           </li>
                           {plan.features && plan.features.map((feat: string, i: number) => (
                             <li key={i} className="flex items-center gap-4 text-base font-bold text-gray-300">

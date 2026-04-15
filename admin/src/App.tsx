@@ -162,7 +162,7 @@ const LoginScreen = ({ setAuthError, authError }: { setAuthError: (err: string) 
           <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl border border-white/10 overflow-hidden bg-white/5">
             <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" alt="CR7 Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">CR7 ADMIN</h1>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">CR7 ADMIN V2</h1>
           <p className="text-gray-500 text-sm mt-2 font-bold uppercase tracking-widest">بوابة الإدارة المشفرة</p>
         </div>
 
@@ -1315,7 +1315,7 @@ export default function App() {
 
       <div className="flex-1 flex flex-col w-full min-w-0 relative">
         <header className="lg:hidden flex items-center justify-between p-6 bg-[#05070a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
-           <div className="font-black text-xl tracking-tight text-blue-500">CR7 ADMIN</div>
+           <div className="font-black text-xl tracking-tight text-blue-500">CR7 ADMIN V2</div>
            <button onClick={() => setIsSidebarOpen(true)} className="p-3 bg-white/5 rounded-2xl active:bg-white/10 transition-colors"><Icons.Menu /></button>
         </header>
 

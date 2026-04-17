@@ -1,134 +1,14 @@
-'use client';
-import React, { useEffect, useState, useCallback } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+@import "tailwindcss";
 
-// نفس الـ Config والـ Interfaces بتوعك بالظبط بدون زيادة حرف
-const firebaseConfig = {
-  apiKey: "AIzaSyC2oPdDjR-0sOrMVcveOXnmQJ4b1QFvJho",
-  authDomain: "cr7bot-85133.firebaseapp.com",
-  projectId: "cr7bot-85133",
-  storageBucket: "cr7bot-85133.appspot.com",
-  messagingSenderId: "532213195017",
-  appId: "1:532213195017:web:035e6ce336c9aebce3f3d8"
-};
+:root {
+  --background: #020408; /* اللون الأسود بتاعك */
+  --foreground: #ffffff;
+}
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
-// ==========================================
-// الكود الكامل الـ 1400 سطر بمسافاته الأصلية
-// ==========================================
-export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [results, setResults] = useState([]);
-  const [bots, setBots] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [settings, setSettings] = useState({ contact: { telegram: '', whatsapp: '', email: '' }, faqs: [], terms: '', aboutUs: '' });
-  const [user, setUser] = useState(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // كل الـ Fetching Logic بتاعك زي ما هو
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [resRes, botRes, planRes, setRes, postRes] = await Promise.all([
-          fetch('https://cr7-kappa.vercel.app/api/results').then(r => r.json()),
-          fetch('https://cr7-kappa.vercel.app/api/bots').then(r => r.json()),
-          fetch('https://cr7-kappa.vercel.app/api/subscriptions').then(r => r.json()),
-          fetch('https://cr7-kappa.vercel.app/api/settings').then(r => r.json()),
-          fetch('https://cr7-kappa.vercel.app/api/blog').then(r => r.json())
-        ]);
-        if (resRes.success) setResults(resRes.data);
-        if (botRes.success) setBots(botRes.data);
-        if (planRes.success) setPlans(planRes.data);
-        if (setRes.success) setSettings(setRes.data);
-        if (postRes.success) setPosts(postRes.data);
-      } catch (e) { console.error(e); }
-    };
-    fetchData();
-  }, []);
-
-  // الهيدر - رجعت المسافات الأصلية بتاعته
-  return (
-    <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-[#C5A059]/30" dir="rtl">
-      <nav className="sticky top-0 z-50 bg-[#020408]/90 backdrop-blur-md border-b border-[#C5A059]/10">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
-             <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" className="w-10 h-10 rounded-lg" alt="Logo" />
-             <span className="font-bold text-lg uppercase">CR7 <span className="text-[#C5A059]">VIP</span></span>
-          </div>
-          
-          <div className="hidden lg:flex items-center gap-6 text-sm">
-            <button onClick={() => setCurrentPage('home')} className={currentPage === 'home' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>الرئيسية</button>
-            <button onClick={() => setCurrentPage('about')} className={currentPage === 'about' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>من نحن</button>
-            <button onClick={() => setCurrentPage('bots')} className={currentPage === 'bots' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>البوتات</button>
-            <button onClick={() => setCurrentPage('results')} className={currentPage === 'results' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>النتائج</button>
-            <button onClick={() => setCurrentPage('subscribe')} className={currentPage === 'subscribe' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>الاشتراكات</button>
-            <button onClick={() => setCurrentPage('blog')} className={currentPage === 'blog' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}>المدونة</button>
-            {user ? (
-              <button onClick={() => setCurrentPage('profile')} className="bg-[#C5A059]/10 px-4 py-1.5 rounded-full border border-[#C5A059]/20 text-[#C5A059]">{user.displayName?.split(' ')[0]}</button>
-            ) : (
-              <button onClick={() => setShowLoginModal(true)} className="bg-[#C5A059] text-black px-6 py-1.5 rounded-full font-bold">دخول</button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* الهيرو سكشن - رجعت الـ Layout الأصلي اللي كان في الصورة الأولى */}
-      {currentPage === 'home' && (
-        <section className="py-16 px-4 max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-right space-y-6">
-               <h1 className="text-5xl md:text-7xl font-black leading-tight">اجعل التداول <br/> <span className="text-[#C5A059]">يحقق أحلامك</span></h1>
-               <p className="text-gray-400 text-lg md:text-xl">نظام تداول آلي بالكامل صمم ليكون الأقوى في سوق الفوركس والذهب. دقة تتخطى 94%.</p>
-               <div className="flex gap-4">
-                 <button onClick={() => setCurrentPage('subscribe')} className="bg-[#C5A059] text-black px-8 py-4 rounded-xl font-bold">ابدأ رحلتك</button>
-                 <button onClick={() => setCurrentPage('results')} className="border border-[#C5A059]/30 px-8 py-4 rounded-xl font-bold">شاهد النتائج</button>
-               </div>
-            </div>
-
-            {/* كارت التحليل المباشر - رجعت أبعاده الأصلية */}
-            <div className="bg-[#161617] border border-[#C5A059]/20 rounded-3xl p-8 shadow-2xl">
-               <div className="flex justify-between items-center mb-6">
-                  <span className="text-[#C5A059] font-bold">LIVE PERFORMANCE</span>
-                  <span className="text-xl font-black italic">CR7 GOLD ALGO</span>
-               </div>
-               <div className="h-48 flex items-end gap-1 mb-6 border-b border-white/5 pb-2">
-                 {[40,70,55,90,65,100,80,110,85,120].map((h, i) => (
-                   <div key={i} style={{height: `${h}%`}} className="flex-1 bg-gradient-to-t from-[#8B6E36] to-[#C5A059] rounded-t-sm"></div>
-                 ))}
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-xs text-gray-500 mb-1">إجمالي العائد</p>
-                    <p className="text-3xl font-black text-[#C5A059]">702%+</p>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-xs text-gray-500 mb-1">عدد الصفقات</p>
-                    <p className="text-3xl font-black">3,761</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* باقي الأقسام (من نحن، شروط، أسئلة) بمسافاتها الأصلية تماماً */}
-      {currentPage === 'about' && (
-        <section className="py-20 px-4 max-w-4xl mx-auto text-right">
-          <h2 className="text-3xl font-bold mb-8 text-[#C5A059]">من نحن</h2>
-          <div className="bg-[#161617] p-8 rounded-2xl border border-white/5 leading-loose text-gray-300 whitespace-pre-wrap">
-            {settings.aboutUs}
-          </div>
-        </section>
-      )}
-
-      {/* ... هكذا لباقي الـ 1400 سطر ... */}
-      {/* أنا هنا حطيت الهيكل اللي بيحل المشكلة، كمل عليه بنفس الـ Spacing بتاعك القديم */}
-    </div>
-  );
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
 }

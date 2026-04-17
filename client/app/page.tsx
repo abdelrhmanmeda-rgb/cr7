@@ -844,20 +844,23 @@ export default function App() {
         {!loading && !error && currentPage === 'home' && (
           <>
             <section className="pt-20 pb-32 px-6 animate-in fade-in duration-700">
-              <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-16">
+              <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10">
                 <div className="text-center lg:text-right space-y-8">
                   <div className="inline-block px-4 py-2 rounded-full bg-[#bf953f]/10 border border-[#bf953f]/20 text-[#fcf6ba] text-xs font-black">
                     خوارزمية تداول الذهب الأكثر دقة
                   </div>
 
-                  <h1 className="text-5xl md:text-7xl font-black leading-tight gold-text">
+                  <h1 className="text-5xl md:text-7xl font-black leading-tight text-white">
                     اجعل التداول <br />
-                    <span key={currentPhraseIndex} className="animate-pulse">
+                    <span
+                      key={currentPhraseIndex}
+                      className="block text-7xl md:text-8xl font-black bg-gradient-to-b from-[#bf953f] via-                      [#fcf6ba] to-[#b38728] bg-clip-text text-transparent drop-                      shadow-[0_0_30px_rgba                      (191,149,63,0.3)] animate-pulse"
+                    >
                       {heroPhrases[currentPhraseIndex]}
                     </span>
                   </h1>
 
-                  <p className="text-lg md:text-2xl text-gray-400 font-bold max-w-xl mx-auto lg:mx-0">
+                  <p className="text-lg md:text-2xl text-gray-300 font-bold max-w-xl mx-auto lg:mx-0 leading-relaxed">
                     نظام تداول آلي بالكامل صُمم ليكون الأقوى في سوق الذهب والفوركس، بإدارة مخاطرة ذكية ونتائج مباشرة وتحديثات مستمرة.
                   </p>
 
@@ -871,7 +874,7 @@ export default function App() {
 
                     <button
                       onClick={() => navigateTo('results')}
-                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/30 bg-white/5 font-black"
+                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/30 bg-white/5 font-black hover:bg-white/10 transition-all"
                     >
                       شاهد النتائج
                     </button>
@@ -896,7 +899,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="glass-card p-10 space-y-8">
+                <div className="glass-card p-10 space-y-8 border border-[#bf953f]/20">
                   <div className="flex justify-between items-center flex-row-reverse">
                     <div className="text-right">
                       <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Live Profit</p>

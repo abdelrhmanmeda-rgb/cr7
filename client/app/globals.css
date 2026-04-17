@@ -1,26 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  /* ألوان الموقع في الوضع العادي - خلينها ذهبي غامق وفاتح */
-  --background: #0f0c0b; /* خلفية سوداء بلمسة بني غامق جداً */
-  --foreground: #d4af37; /* اللون الذهبي الأساسي */
-  --gold-gradient: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-gold: #d4af37;
-  --color-dark-gold: #b38728;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* تعديل الـ Dark Mode عشان نضمن إن الألوان ثابتة وفخمة */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #050505;
-    --foreground: #f2d06b;
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
 }
 
@@ -28,32 +23,4 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  /* إضافة ملمس خفيف للخلفية عشان تبان احترافية */
-  background-image: radial-gradient(circle at center, #1a150a 0%, #050505 100%);
-  min-height: 100vh;
-}
-
-/* كلاسات إضافية تقدر تستخدمها في الـ page.tsx عشان تدي لمعة الجولد */
-.gold-text {
-  background: var(--gold-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: bold;
-}
-
-.gold-border {
-  border: 1px solid #bf953f;
-  box-shadow: 0 0 15px rgba(191, 149, 63, 0.3);
-}
-
-.gold-button {
-  background: var(--gold-gradient);
-  color: #000;
-  font-weight: bold;
-  transition: transform 0.2s;
-}
-
-.gold-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(251, 245, 183, 0.5);
 }

@@ -592,7 +592,7 @@ export default function App() {
                   خوارزمية تداول الجيل القادم
                 </div>
                 <h1 className="text-6xl sm:text-7xl md:text-8xl font-black leading-[1.1] tracking-tight w-full">
-                  اجعل المال <br className="hidden md:block"/>
+                  تداول بأمان  <br className="hidden md:block"/>
                   <span key={currentPhraseIndex} className="block lg:inline-block mt-3 lg:mt-0 text-transparent bg-clip-text bg-gradient-to-l from-blue-400 via-indigo-500 to-blue-600 transition-opacity duration-500 animate-pulse">
                     {heroPhrases[currentPhraseIndex]}
                   </span>

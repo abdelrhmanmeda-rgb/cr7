@@ -382,9 +382,6 @@ export default function App() {
   const dynamicReturn = 284 + Math.floor(daysPassed * 0.5);
   const dynamicTrades = 1250 + Math.floor(daysPassed * 3);
 
-  // ==========================================
-  // Auth
-  // ==========================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
       setUser(currentUser);
@@ -421,9 +418,6 @@ export default function App() {
     }
   };
 
-  // ==========================================
-  // Tracking + Activity
-  // ==========================================
   const trackUserAction = async (actionType: string, itemName?: string, price?: string | number) => {
     try {
       await fetch('https://cr7-kappa.vercel.app/api/statistics/track', {
@@ -446,6 +440,7 @@ export default function App() {
 
   const trackActivity = useCallback((pageName: string) => {
     if (!user) return;
+
     const pageLabels: Record<string, string> = {
       home: 'الرئيسية',
       about: 'من نحن',
@@ -480,11 +475,9 @@ export default function App() {
     trackActivity(page);
   };
 
-  // ==========================================
-  // SEO / Favicon / Styles
-  // ==========================================
   useEffect(() => {
     document.title = "CR7 BOT";
+
     const existingIcons = document.querySelectorAll("link[rel*='icon']");
     existingIcons.forEach((icon) => {
       if (icon.parentNode) icon.parentNode.removeChild(icon);
@@ -517,9 +510,6 @@ export default function App() {
     };
   }, []);
 
-  // ==========================================
-  // Fetch Data
-  // ==========================================
   const fetchResults = useCallback(async (retries = 5, delay = 1000) => {
     try {
       const response = await fetch('https://cr7-kappa.vercel.app/api/results');
@@ -585,9 +575,6 @@ export default function App() {
     fetchPosts();
   }, [fetchResults, fetchBots, fetchPlans, fetchSettings, fetchPosts]);
 
-  // ==========================================
-  // Blog
-  // ==========================================
   const handleLike = async (postId: string) => {
     if (!user) {
       setShowLoginModal(true);
@@ -688,9 +675,6 @@ export default function App() {
     }
   };
 
-  // ==========================================
-  // Helpers
-  // ==========================================
   const handleBotPurchaseClick = (bot: Bot) => {
     trackUserAction('buy_bot', bot.name, bot.price);
     const text = `مرحباً، أود شراء بوت التداول بالكامل:%0A%0A🤖 البوت: ${bot.name}%0A💰 السعر: $${bot.price}%0A🎯 الدقة: ${bot.accuracy}%0A%0Aأرجو تزويدي بتفاصيل ووسائل الدفع لاستلام البوت.`;
@@ -734,8 +718,7 @@ export default function App() {
     <div className="min-h-screen text-white selection:bg-[#bf953f]/30 font-sans overflow-x-hidden flex flex-col relative bg-[#030303]" dir="rtl">
       <BackgroundAnimation />
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-3xl border-b border-[#bf953f]/20 bg-black/50">
+      <nav className="sticky top-0 z-50 nav-blur">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
             <div className="w-12 h-12 bg-[#bf953f]/10 rounded-2xl flex items-center justify-center border border-[#bf953f]/30 overflow-hidden">
@@ -820,7 +803,13 @@ export default function App() {
                 الملف الشخصي
               </button>
             ) : (
-              <button onClick={() => { setIsMenuOpen(false); setShowLoginModal(true); }} className={`mt-2 px-6 py-3 rounded-2xl ${goldBtnClass}`}>
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowLoginModal(true);
+                }}
+                className={`mt-2 px-6 py-3 rounded-2xl ${goldBtnClass}`}
+              >
                 دخول
               </button>
             )}
@@ -829,7 +818,6 @@ export default function App() {
       </nav>
 
       <main className="flex-grow relative z-10">
-        {/* Loading / Error */}
         {loading && (
           <section className="py-24 px-4">
             <div className={`${goldCardClass} max-w-2xl mx-auto p-10 text-center`}>
@@ -846,23 +834,25 @@ export default function App() {
               <Icons.AlertCircle className="mx-auto mb-5 text-red-400" size={34} />
               <h3 className="text-2xl font-black mb-2">في مشكلة في الاتصال</h3>
               <p className="text-gray-400 mb-6">{error}</p>
-              <button onClick={() => fetchResults()} className={`px-8 py-3 rounded-2xl ${goldBtnClass}`}>إعادة المحاولة</button>
+              <button onClick={() => fetchResults()} className={`px-8 py-3 rounded-2xl ${goldBtnClass}`}>
+                إعادة المحاولة
+              </button>
             </div>
           </section>
         )}
 
         {!loading && !error && currentPage === 'home' && (
           <>
-            <section className="pt-12 md:pt-24 pb-28 px-4 md:px-8 animate-in fade-in duration-700">
+            <section className="pt-20 pb-32 px-6 animate-in fade-in duration-700">
               <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-16">
                 <div className="text-center lg:text-right space-y-8">
                   <div className="inline-block px-4 py-2 rounded-full bg-[#bf953f]/10 border border-[#bf953f]/20 text-[#fcf6ba] text-xs font-black">
                     خوارزمية تداول الذهب الأكثر دقة
                   </div>
 
-                  <h1 className="text-6xl md:text-8xl font-black leading-tight">
+                  <h1 className="text-5xl md:text-7xl font-black leading-tight gold-text">
                     اجعل التداول <br />
-                    <span key={currentPhraseIndex} className={`animate-pulse ${goldTextClass}`}>
+                    <span key={currentPhraseIndex} className="animate-pulse">
                       {heroPhrases[currentPhraseIndex]}
                     </span>
                   </h1>
@@ -872,10 +862,17 @@ export default function App() {
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <button onClick={() => navigateTo('subscribe')} className={`px-10 py-5 rounded-2xl text-xl ${goldBtnClass}`}>
+                    <button
+                      onClick={() => navigateTo('subscribe')}
+                      className="gold-btn px-10 py-4 rounded-xl text-lg"
+                    >
                       ابدأ الآن
                     </button>
-                    <button onClick={() => navigateTo('results')} className="px-10 py-5 rounded-2xl border border-[#bf953f]/30 bg-white/5 font-black">
+
+                    <button
+                      onClick={() => navigateTo('results')}
+                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/30 bg-white/5 font-black"
+                    >
                       شاهد النتائج
                     </button>
                   </div>
@@ -899,7 +896,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className={`${goldCardClass} p-8 md:p-12 space-y-8`}>
+                <div className="glass-card p-10 space-y-8">
                   <div className="flex justify-between items-center flex-row-reverse">
                     <div className="text-right">
                       <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Live Profit</p>
@@ -1299,7 +1296,9 @@ export default function App() {
                     </div>
                   ))
                 ) : (
-                  <div className={`${goldCardClass} p-8 text-center text-gray-400`}>لا يوجد أسئلة شائعة مضافة حالياً.</div>
+                  <div className={`${goldCardClass} p-8 text-center text-gray-400`}>
+                    لا يوجد أسئلة شائعة مضافة حالياً.
+                  </div>
                 )}
               </div>
             </div>

@@ -93,7 +93,7 @@ interface PostData {
 }
 
 // ==========================================
-// أيقونات SVG (نفس الأيقونات الأصلية)
+// أيقونات SVG مدمجة بالكامل
 // ==========================================
 const Icons = {
   Menu: ({ size = 24, className = "", fill = "none" }: IconProps) => <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
@@ -129,20 +129,21 @@ const Icons = {
 };
 
 // ==========================================
-// مكون الخلفية الجديد (Luxury Dark & Gold)
+// مكون الخلفية المتحركة الملكي
 // ==========================================
 const BackgroundAnimation = () => {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0A0A0B]">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-      <div className="absolute top-[10%] left-[20%] w-[40vw] h-[40vw] bg-[#C5A059]/5 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite]"></div>
-      <div className="absolute bottom-[10%] right-[10%] w-[35vw] h-[35vw] bg-[#8B6E36]/10 rounded-full blur-[150px] animate-[pulse_10s_ease-in-out_infinite_alternate]"></div>
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020408]">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+      <div className="absolute top-[10%] left-[20%] w-[30vw] h-[30vw] bg-[#C5A059]/10 rounded-full blur-[120px] animate-[pulse_6s_ease-in-out_infinite]"></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[40vw] h-[40vw] bg-[#8B6E36]/10 rounded-full blur-[150px] animate-[pulse_8s_ease-in-out_infinite_alternate]"></div>
+      <div className="absolute top-[40%] right-[30%] w-[20vw] h-[20vw] bg-[#C5A059]/5 rounded-full blur-[100px] animate-[ping_12s_ease-in-out_infinite]"></div>
       <div className="absolute inset-0 opacity-20 flex items-center justify-center mix-blend-screen">
         <style>{`@keyframes drawLine { 0% { stroke-dashoffset: 2000; } 100% { stroke-dashoffset: 0; } }`}</style>
         <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="none">
-          <path d="M-100,600 C100,500 200,700 350,450 C500,200 650,550 800,300 C950,50 1100,350 1300,150" fill="none" stroke="url(#goldGradient)" strokeWidth="1.5" strokeDasharray="2000" style={{ animation: 'drawLine 20s linear infinite' }} />
+          <path d="M-100,600 C100,500 200,700 350,450 C500,200 650,550 800,300 C950,50 1100,350 1300,150" fill="none" stroke="url(#chartGradient)" strokeWidth="3" strokeDasharray="2000" style={{ animation: 'drawLine 15s linear infinite' }} />
           <defs>
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#8B6E36" stopOpacity="0" />
               <stop offset="50%" stopColor="#C5A059" stopOpacity="1" />
               <stop offset="100%" stopColor="#8B6E36" stopOpacity="0" />
@@ -155,7 +156,7 @@ const BackgroundAnimation = () => {
 };
 
 // ==========================================
-// التطبيق الرئيسي للموقع (نفس الـ Logic بالكامل)
+// التطبيق الرئيسي للموقع
 // ==========================================
 export default function App() {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -169,12 +170,13 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [userActivity, setUserActivity] = useState<Activity[]>([]);
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
 
-  const heroPhrases = settings.heroPhrases || ['يعمل لأجلك', 'بفخامة الذهب', 'يصنع ثروتك', 'يؤمن مستقبلك'];
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
+  const heroPhrases = settings.heroPhrases || ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك', 'يؤمن مستقبلك'];
 
   const launchDate = new Date('2024-01-01').getTime();
   const now = new Date().getTime();
@@ -261,20 +263,20 @@ export default function App() {
     favicon.href = "https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg";
     document.head.appendChild(favicon);
 
-    const style = document.createElement('style');
-    style.innerHTML = `
+    const hideNextStyle = document.createElement('style');
+    hideNextStyle.innerHTML = `
       nextjs-portal, #nextjs-build-indicator, [data-nextjs-toast] { display: none !important; }
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #C5A05950; border-radius: 10px; }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #C5A059; }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(hideNextStyle);
   }, []);
 
-  // --- دالات الـ API (كما هي بدون تغيير) ---
   const fetchResults = useCallback(async (retries = 5, delay = 1000) => {
     try {
       const response = await fetch('https://cr7-kappa.vercel.app/api/results');
+      if (!response.ok) throw new Error('فشل الاتصال');
       const data = await response.json();
       if (data.success) { setResults(data.data); setError(null); }
     } catch (err: any) {
@@ -283,53 +285,51 @@ export default function App() {
     } finally { if (retries === 5) setLoading(false); }
   }, []);
 
-  const fetchBots = useCallback(async (retries = 3, delay = 1000) => {
+  const fetchBots = useCallback(async () => {
     try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/bots');
-      const data = await response.json();
-      if (data.success && data.data) setBots(data.data);
-    } catch (err) { if (retries > 0) setTimeout(() => fetchBots(retries - 1, delay * 2), delay); }
+      const res = await fetch('https://cr7-kappa.vercel.app/api/bots');
+      const d = await res.json();
+      if (d.success) setBots(d.data);
+    } catch (e) {}
   }, []);
 
-  const fetchPlans = useCallback(async (retries = 3, delay = 1000) => {
+  const fetchPlans = useCallback(async () => {
     try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/subscriptions');
-      const data = await response.json();
-      if (data.success && data.data) setPlans(data.data);
-    } catch (err) { if (retries > 0) setTimeout(() => fetchPlans(retries - 1, delay * 2), delay); }
+      const res = await fetch('https://cr7-kappa.vercel.app/api/subscriptions');
+      const d = await res.json();
+      if (d.success) setPlans(d.data);
+    } catch (e) {}
   }, []);
 
-  const fetchSettings = useCallback(async (retries = 3, delay = 1000) => {
+  const fetchSettings = useCallback(async () => {
     try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/settings');
-      const data = await response.json();
-      if (data.success && data.data) setSettings(data.data);
-    } catch (err) { if (retries > 0) setTimeout(() => fetchSettings(retries - 1, delay * 2), delay); }
+      const res = await fetch('https://cr7-kappa.vercel.app/api/settings');
+      const d = await res.json();
+      if (d.success) setSettings(d.data);
+    } catch (e) {}
   }, []);
 
-  const fetchPosts = useCallback(async (retries = 3, delay = 1000) => {
+  const fetchPosts = useCallback(async () => {
     try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/blog');
-      const data = await response.json();
-      if (data.success && data.data) setPosts(data.data);
-    } catch (err) { if (retries > 0) setTimeout(() => fetchPosts(retries - 1, delay * 2), delay); }
+      const res = await fetch('https://cr7-kappa.vercel.app/api/blog');
+      const d = await res.json();
+      if (d.success) setPosts(d.data);
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
     fetchResults(); fetchBots(); fetchPlans(); fetchSettings(); fetchPosts();
   }, [fetchResults, fetchBots, fetchPlans, fetchSettings, fetchPosts]);
 
-  // --- دوال التفاعل مع البوستات ---
   const handleLike = async (postId: string) => {
     if (!user) { setShowLoginModal(true); return; }
-    setPosts(prev => prev.map(post => {
-      const id = post.id || post._id;
-      if (id === postId) {
-        const likes = post.likes || [];
+    setPosts(prev => prev.map(p => {
+      if ((p.id || p._id) === postId) {
+        const likes = p.likes || [];
         const hasLiked = likes.includes(user.uid);
-        return { ...post, likes: hasLiked ? likes.filter(uid => uid !== user.uid) : [...likes, user.uid] };
+        return { ...p, likes: hasLiked ? likes.filter(u => u !== user.uid) : [...likes, user.uid] };
       }
-      return post;
+      return p;
     }));
     try {
       await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/like`, {
@@ -347,9 +347,9 @@ export default function App() {
       userName: user.displayName || 'مستخدم',
       userImage: user.photoURL || '', text: commentText, date: new Date().toISOString()
     };
-    setPosts(prev => prev.map(post => {
-      if ((post.id || post._id) === postId) return { ...post, comments: [...(post.comments || []), newComment] };
-      return post;
+    setPosts(prev => prev.map(p => {
+      if ((p.id || p._id) === postId) return { ...p, comments: [...(p.comments || []), newComment] };
+      return p;
     }));
     setCommentText('');
     try {
@@ -385,12 +385,11 @@ export default function App() {
   const managementPlans = plans.filter(p => p.type === 'الإدارة');
 
   return (
-    <div className="min-h-screen text-white selection:bg-[#C5A059]/30 font-sans overflow-x-hidden flex flex-col relative bg-[#0A0A0B]" dir="rtl">
+    <div className="min-h-screen text-white selection:bg-[#C5A059]/30 font-sans overflow-x-hidden flex flex-col relative" dir="rtl">
       
       <BackgroundAnimation />
 
-      {/* --- الهيدر الفخم --- */}
-      <nav className="sticky top-0 z-50 backdrop-blur-2xl border-b border-[#C5A059]/10 bg-[#0A0A0B]/80">
+      <nav className="sticky top-0 z-50 backdrop-blur-2xl border-b border-[#C5A059]/10 bg-[#020408]/60">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">
           
           <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigateTo('home')}>
@@ -398,17 +397,17 @@ export default function App() {
                <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black uppercase tracking-tighter leading-none text-white">CR7 <span className="text-[#C5A059]">VIP</span></span>
+              <span className="text-xl font-black uppercase tracking-tighter leading-none">CR7 <span className="text-[#C5A059]">VIP</span></span>
               <span className="text-[10px] text-[#C5A059] font-bold uppercase tracking-widest mt-1">Smart Gold Trading</span>
             </div>
           </div>
           
-          <div className="hidden lg:flex items-center gap-8 xl:gap-10 text-sm font-bold uppercase tracking-wide">
+          <div className="hidden lg:flex items-center gap-8 xl:gap-10 text-sm font-bold">
             <button onClick={() => navigateTo('home')} className={`transition-colors ${currentPage === 'home' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>الرئيسية</button>
             <button onClick={() => navigateTo('about')} className={`transition-colors ${currentPage === 'about' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>من نحن</button>
             <button onClick={() => navigateTo('bots')} className={`transition-colors ${currentPage === 'bots' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>البوتات</button>
             <button onClick={() => navigateTo('results')} className={`transition-colors ${currentPage === 'results' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>النتائج</button>
-            <button onClick={() => navigateTo('subscribe')} className={`transition-colors ${currentPage === 'subscribe' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>الاشتراكات</button>
+            <button onClick={() => navigateTo('subscribe')} className={`transition-colors ${currentPage === 'subscribe' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>الاشتراكات والإدارة</button>
             <button onClick={() => navigateTo('blog')} className={`transition-colors ${currentPage === 'blog' ? 'text-[#C5A059]' : 'text-gray-400 hover:text-white'}`}>المدونة</button>
             
             <div className="h-6 w-[1px] bg-white/10"></div>
@@ -418,72 +417,71 @@ export default function App() {
             </a>
 
             {user ? (
-              <button onClick={() => navigateTo('profile')} className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full font-bold transition-all">
-                <img src={user.photoURL || ""} alt="User" className="w-7 h-7 rounded-full" />
+              <button onClick={() => navigateTo('profile')} className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full font-bold transition-all shadow-xl">
+                <img src={user.photoURL || ""} alt={user.displayName || "User"} className="w-7 h-7 rounded-full" />
                 <span className="truncate max-w-[100px]">{user.displayName?.split(' ')[0]}</span>
               </button>
             ) : (
-              <button onClick={() => setShowLoginModal(true)} className="bg-white text-black hover:bg-[#C5A059] px-8 py-2.5 rounded-full font-black transition-all">
+              <button onClick={() => setShowLoginModal(true)} className="bg-white text-black hover:bg-[#C5A059] px-6 xl:px-8 py-2.5 rounded-full font-black transition-all active:scale-95">
                 دخول
               </button>
             )}
           </div>
 
-          <button className="lg:hidden p-3 text-[#C5A059]" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button className="lg:hidden p-3 bg-white/5 rounded-xl border border-white/10" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <Icons.X /> : <Icons.Menu />}
           </button>
         </div>
+
+        {isMenuOpen && (
+          <div className="lg:hidden absolute top-full left-0 w-full bg-[#05070a]/95 backdrop-blur-3xl border-b border-[#C5A059]/20 p-8 flex flex-col gap-6">
+            <button onClick={() => navigateTo('home')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.Zap size={20}/> الرئيسية</button>
+            <button onClick={() => navigateTo('about')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.Info size={20}/> من نحن</button>
+            <button onClick={() => navigateTo('bots')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.Cpu size={20}/> البوتات</button>
+            <button onClick={() => navigateTo('results')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.BarChart3 size={20}/> النتائج</button>
+            <button onClick={() => navigateTo('subscribe')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.ShieldCheck size={20}/> الاشتراكات والإدارة</button>
+            <button onClick={() => navigateTo('blog')} className="text-xl font-bold flex items-center gap-4 text-gray-400 hover:text-[#C5A059]"><Icons.BookOpen size={20}/> المدونة</button>
+          </div>
+        )}
       </nav>
 
       <main className="flex-grow relative z-10">
 
-        {/* --- 1. الرئيسية (بتعديل الألوان والـ Layout الفخم) --- */}
+        {/* 1. الرئيسية */}
         {currentPage === 'home' && (
           <section className="relative pt-12 md:pt-24 pb-32 px-4 md:px-8">
             <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 lg:gap-16">
               
               <div className="text-center lg:text-right space-y-8 flex flex-col items-center lg:items-start w-full">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C5A059]/10 border border-[#C5A059]/20 text-[#C5A059] text-xs font-black uppercase tracking-widest">
-                  نظام تداول الذهب الأكثر دقة
+                  نظام تداول الذهب الأكثر ذكاءً
                 </div>
-                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black leading-[1.1] tracking-tight w-full text-white">
-                  اجعل التداول <br />
-                  <span key={currentPhraseIndex} className="block text-transparent bg-clip-text bg-gradient-to-l from-[#8B6E36] via-[#C5A059] to-[#F3D193] transition-opacity duration-500">
+                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black leading-[1.1] tracking-tight w-full">
+                  اجعل التداول <br className="hidden md:block"/>
+                  <span key={currentPhraseIndex} className="block text-transparent bg-clip-text bg-gradient-to-l from-[#8B6E36] via-[#C5A059] to-[#F3D193] transition-opacity duration-500 animate-pulse">
                     {heroPhrases[currentPhraseIndex]}
                   </span>
                 </h1>
                 <p className="text-lg md:text-2xl text-gray-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  خوارزمية CR7 المصممة لأسواق الذهب (XAUUSD) بمستوى دقة يتخطى 94% وإدارة مخاطر صارمة.
+                  نظام تداول آلي بالكامل صُمم ليكون الأقوى في سوق الفوركس والذهب. دقة تتخطى 94%، إدارة مخاطر ذكية.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-4 w-full sm:w-auto">
-                  <button onClick={() => navigateTo('subscribe')} className="w-full sm:w-auto bg-[#C5A059] text-black px-10 py-5 rounded-2xl font-black text-lg md:text-xl hover:bg-white transition-all shadow-xl shadow-[#C5A059]/10">
-                    ابدأ الآن
+                  <button onClick={() => navigateTo('subscribe')} className="w-full sm:w-auto bg-[#C5A059] text-black px-10 py-5 rounded-2xl font-black text-lg md:text-xl hover:bg-white transition-all shadow-xl shadow-[#C5A059]/20">
+                    ابدأ الآن <Icons.ChevronRight size={24} className="inline-block mr-2" />
                   </button>
-                  <button onClick={() => navigateTo('results')} className="w-full sm:w-auto border border-[#C5A059]/30 bg-white/5 text-white px-10 py-5 rounded-2xl font-black text-lg md:text-xl transition-all">
+                  <button onClick={() => navigateTo('results')} className="w-full sm:w-auto border border-white/10 bg-white/5 text-white px-10 py-5 rounded-2xl font-black text-lg md:text-xl">
                     شاهد النتائج
                   </button>
                 </div>
-
-                <div className="pt-2 flex justify-center lg:justify-start w-full">
-                  <a href="https://t.me/CR7_B3" target="_blank" rel="noreferrer" className="group relative flex items-center gap-5 bg-gradient-to-r from-[#C5A059]/20 to-black/40 border border-[#C5A059]/30 p-2 pr-2 pl-6 rounded-full transition-all">
-                     <div className="w-12 h-12 bg-[#C5A059] rounded-full flex items-center justify-center text-black">
-                        <Icons.Telegram size={24} />
-                     </div>
-                     <div className="flex flex-col text-right py-1">
-                        <span className="text-white font-black text-sm uppercase">انضم لقناتنا المفتوحة</span>
-                        <span className="text-[#C5A059]/80 text-xs font-bold mt-1.5">توصيات ذهبية يومية مجانية</span>
-                     </div>
-                  </a>
-                </div>
               </div>
 
-              {/* الكارد اللي في اليمين (نفس الشكل اللي في الصورة) */}
+              {/* الكارد الجانبي الفخم */}
               <div className="relative group mt-12 lg:mt-0 w-full max-w-lg mx-auto lg:max-w-none">
                 <div className="absolute -inset-1 bg-[#C5A059]/20 rounded-[45px] blur-2xl opacity-40"></div>
-                <div className="relative border border-[#C5A059]/30 bg-[#161617]/90 backdrop-blur-3xl rounded-[40px] p-8 md:p-12 shadow-3xl">
+                <div className="relative border border-[#C5A059]/30 bg-[#080a0f]/90 backdrop-blur-3xl rounded-[40px] p-8 md:p-12 shadow-3xl">
                    <div className="flex justify-between items-center mb-8 md:mb-10">
                       <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Live Profit Tracking</span>
+                        <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Live Profit Tracking</span>
                         <span className="text-xl md:text-2xl font-black italic text-[#C5A059]">CR7 GOLD ALGO</span>
                       </div>
                       <Icons.TrendingUp size={24} className="text-[#C5A059]" />
@@ -491,7 +489,7 @@ export default function App() {
                    <div className="space-y-8">
                       <div className="h-32 md:h-40 border-b border-[#C5A059]/10 relative rounded-2xl overflow-hidden flex items-end gap-1.5 px-4">
                         {[30,50,45,85,60,95,70,100,80,105,90,110].map((h, i) => (
-                          <div key={i} style={{height: `${h}%`}} className="flex-1 bg-gradient-to-t from-[#8B6E36] to-[#C5A059]/40 rounded-t-lg transition-all"></div>
+                          <div key={i} style={{height: `${h}%`}} className="flex-1 bg-gradient-to-t from-[#8B6E36] to-[#C5A059]/60 rounded-t-lg transition-all"></div>
                         ))}
                       </div>
                       <div className="grid grid-cols-2 gap-4 md:gap-6">
@@ -509,62 +507,60 @@ export default function App() {
               </div>
             </div>
 
-            {/* الأقسام الأخرى (تعديل طفيف في الـ Styling) */}
-            <div className="max-w-7xl mx-auto mt-32 md:mt-40 space-y-32">
+            <div className="max-w-7xl mx-auto mt-40 space-y-32">
+              {/* عرض سريع للبوتات */}
               {bots.filter(b => b.isBestSeller === 'true' || b.isBestSeller === true).length > 0 && (
                 <div>
-                  <h2 className="text-3xl md:text-5xl font-black text-white mb-10">البوتات الأكثر مبيعاً <span className="text-[#C5A059]">🔥</span></h2>
+                  <h2 className="text-3xl md:text-5xl font-black mb-10">الأكثر مبيعاً <span className="text-[#C5A059]">🔥</span></h2>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {bots.filter(b => b.isBestSeller === 'true' || b.isBestSeller === true).slice(0, 3).map((bot) => (
-                      <div key={bot.id || bot._id} className="group relative bg-[#161617] border border-[#C5A059]/20 rounded-[40px] overflow-hidden hover:border-[#C5A059] transition-all duration-500">
-                        <div className="absolute top-6 left-6 z-30 bg-[#C5A059] text-black px-4 py-1 rounded-full text-[10px] font-black uppercase">BEST SELLER</div>
+                      <div key={bot.id || bot._id} className="group bg-[#161617] border border-[#C5A059]/20 rounded-[40px] overflow-hidden hover:border-[#C5A059] transition-all">
                         <div className="relative h-56">
-                          <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover opacity-80" />
+                          <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#161617] to-transparent"></div>
                         </div>
                         <div className="p-8">
-                          <h3 className="text-xl font-black mb-2 text-white">{bot.name}</h3>
-                          <span className="text-3xl font-black text-[#C5A059]">${bot.price}</span>
-                          <button onClick={() => handleBotPurchaseClick(bot)} className="w-full mt-6 bg-white/5 hover:bg-[#C5A059] hover:text-black border border-white/10 text-white py-4 rounded-2xl font-black transition-all">شراء الآن</button>
+                          <h3 className="text-xl font-black text-white mb-2">{bot.name}</h3>
+                          <p className="text-2xl font-black text-[#C5A059] mb-6">${bot.price}</p>
+                          <button onClick={() => handleBotPurchaseClick(bot)} className="w-full bg-[#C5A059] text-black py-4 rounded-2xl font-black hover:bg-white transition-all">شراء الآن</button>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* ... باقي الأقسام تتبع نفس تعديل الألوان ... */}
-              {/* (قمت هنا بدمج كل الأقسام الأصلية بتاعتك بس بلون ذهبي في الـ CSS والزراير) */}
-
             </div>
           </section>
         )}
 
-        {/* --- 2. البوتات (كاملة) --- */}
+        {/* 2. البوتات */}
         {currentPage === 'bots' && (
-          <section className="py-20 px-4 md:px-8 bg-[#0A0A0B]">
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
             <div className="max-w-7xl mx-auto text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 uppercase">البوتات <span className="text-[#C5A059]">والخوارزميات</span></h2>
-              <p className="text-gray-500 text-lg">الذكاء الاصطناعي الأقوى لتداول الذهب والعملات.</p>
+              <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4 uppercase">البوتات <span className="text-[#C5A059]">والخوارزميات</span></h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">تعرف على منظومة الذكاء الاصطناعي التي تدير رأس مالك بأمان.</p>
             </div>
             <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {bots.map((bot) => (
-                <div key={bot.id || bot._id} className="bg-[#161617] border border-white/5 rounded-[40px] p-8 hover:border-[#C5A059]/50 transition-all">
-                  <div className="h-48 mb-6 overflow-hidden rounded-3xl border border-white/5">
-                    <img src={bot.imageUrl} className="w-full h-full object-cover" alt={bot.name} />
+                <div key={bot.id || bot._id} className="group flex flex-col bg-[#080a0f]/80 backdrop-blur-xl border border-white/5 rounded-[40px] overflow-hidden hover:border-[#C5A059]/50 transition-all">
+                  <div className="relative h-60 overflow-hidden">
+                    <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+                    <div className="absolute top-6 right-6 bg-black/60 px-3 py-1 rounded-full text-xs font-bold text-[#C5A059]">دقة {bot.accuracy}</div>
                   </div>
-                  <h3 className="text-2xl font-black text-[#C5A059] mb-4">{bot.name}</h3>
-                  <p className="text-gray-400 text-sm mb-6 line-clamp-3">{bot.description}</p>
-                  <ul className="space-y-3 mb-8">
-                    {bot.features?.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2 text-xs font-bold text-gray-300">
-                        <Icons.CheckCircle size={14} className="text-[#C5A059]" /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex justify-between items-center mt-auto">
-                    <span className="text-2xl font-black text-white">${bot.price}</span>
-                    <button onClick={() => handleBotPurchaseClick(bot)} className="bg-[#C5A059] text-black px-6 py-3 rounded-xl font-black text-xs">شراء</button>
+                  <div className="p-8 flex flex-col flex-grow">
+                    <h3 className="text-2xl font-black text-white mb-3">{bot.name}</h3>
+                    <p className="text-gray-500 text-sm mb-6 line-clamp-3">{bot.description}</p>
+                    <ul className="space-y-3 mb-8 flex-grow">
+                      {bot.features?.map((feat, idx) => (
+                        <li key={idx} className="flex items-center gap-3 text-sm font-bold text-gray-300">
+                          <Icons.CheckCircle className="text-[#C5A059]" size={16} /> {feat}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex justify-between items-center mt-auto">
+                      <span className="text-3xl font-black text-[#C5A059]">${bot.price}</span>
+                      <button onClick={() => handleBotPurchaseClick(bot)} className="bg-white text-black px-6 py-3 rounded-xl font-black hover:bg-[#C5A059] transition-all">شراء</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -572,32 +568,30 @@ export default function App() {
           </section>
         )}
 
-        {/* --- 3. النتائج (كاملة) --- */}
+        {/* 3. النتائج */}
         {currentPage === 'results' && (
-          <section className="py-20 px-4 md:px-8">
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
             <div className="max-w-7xl mx-auto flex justify-between items-end mb-20">
-               <div className="text-right">
-                  <h2 className="text-4xl md:text-6xl font-black text-white uppercase">النتائج <span className="text-[#C5A059]">المباشرة</span></h2>
-                  <p className="text-gray-500 mt-4">كافة الصفقات موثقة بالوقت والتاريخ من حسابات حقيقية.</p>
-               </div>
-               <button onClick={() => fetchResults()} className="p-4 bg-white/5 rounded-2xl border border-white/10 text-[#C5A059]">
+              <div className="text-right">
+                <h2 className="text-4xl md:text-6xl font-black text-white uppercase">النتائج <span className="text-[#C5A059]">اليومية</span></h2>
+                <p className="text-gray-500 mt-2">بكل شفافية.. شاهد أحدث الصفقات والأرباح الموثقة.</p>
+              </div>
+              <button onClick={() => fetchResults()} className="p-4 bg-white/5 rounded-2xl border border-white/10 text-[#C5A059]">
                  <Icons.RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
-               </button>
+              </button>
             </div>
             <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-10">
               {results.map((res) => (
-                <div key={res.id || res._id} className="bg-[#161617] border border-white/5 rounded-[45px] overflow-hidden shadow-2xl">
-                   <div className="h-72 bg-black">
+                <div key={res.id || res._id} className="bg-[#161617] border border-white/5 rounded-[50px] overflow-hidden hover:border-[#C5A059]/40 transition-all shadow-2xl">
+                   <div className="h-80 overflow-hidden bg-black">
                      {res.mediaType === 'video' ? <video src={res.mediaUrl} className="w-full h-full object-cover" controls /> : <img src={res.mediaUrl} className="w-full h-full object-cover" alt="Result" />}
                    </div>
                    <div className="p-10 flex justify-between items-center">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-500 font-black">Profit Today</p>
+                      <div className="space-y-1 text-right">
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">ربح اليوم</p>
                         <p className="text-4xl font-black text-green-400">+${res.profitAmount}</p>
                       </div>
-                      <div className="bg-[#C5A059]/10 p-3 rounded-2xl border border-[#C5A059]/20 text-[#C5A059]">
-                        <Icons.ArrowUpRight size={32} />
-                      </div>
+                      <div className="bg-[#C5A059]/10 p-3 rounded-2xl border border-[#C5A059]/20 text-[#C5A059]"><Icons.ArrowUpRight size={32}/></div>
                    </div>
                 </div>
               ))}
@@ -605,49 +599,54 @@ export default function App() {
           </section>
         )}
 
-        {/* --- 4. الاشتراكات (كاملة) --- */}
+        {/* 4. الاشتراك والإدارة (كاملة) */}
         {currentPage === 'subscribe' && (
-          <section className="py-20 px-4 md:px-8">
-            <div className="max-w-7xl mx-auto grid gap-24">
-              {/* باقات الاشتراك */}
-              <div>
-                <h3 className="text-3xl font-black mb-12 flex items-center gap-4 text-[#C5A059]"><Icons.CreditCard size={36}/> باقات الاشتراك الشهري</h3>
+          <section className="py-20 px-4 md:px-8 min-h-[80vh]">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-20">
+                <h2 className="text-4xl md:text-6xl font-black uppercase text-white mb-4">الاشتراكات <span className="text-[#C5A059]">والإدارة</span></h2>
+                <p className="text-gray-500 max-w-2xl mx-auto">اختر بين باقات الاشتراك الشهري أو نظام إدارة المحافظ بالكامل حسب رأس مالك.</p>
+              </div>
+              
+              {/* قسم الاشتراكات */}
+              <div className="mb-24">
+                <h3 className="text-3xl font-black text-white mb-10 flex items-center gap-4"><Icons.CreditCard size={36} className="text-[#C5A059]"/> باقات الاشتراك</h3>
                 <div className="grid md:grid-cols-2 gap-8">
                   {subscriptionPlans.map((plan) => (
-                    <div key={plan.id || plan._id} className="bg-[#161617] border border-[#C5A059]/30 p-10 rounded-[40px] relative shadow-2xl">
-                      {(plan.isBestSeller === 'true' || plan.isBestSeller === true) && <div className="absolute -top-4 left-10 bg-[#C5A059] text-black px-6 py-1 rounded-full text-xs font-black">الأكثر طلباً</div>}
-                      <h4 className="text-3xl font-black mb-6 text-white">{plan.title}</h4>
+                    <div key={plan.id || plan._id} className="bg-[#161617] border border-[#C5A059]/30 rounded-[40px] p-10 shadow-2xl relative">
+                      {(plan.isBestSeller === 'true' || plan.isBestSeller === true) && <div className="absolute -top-4 left-10 bg-[#C5A059] text-black px-6 py-1 rounded-full text-xs font-black uppercase">BEST SELLER</div>}
+                      <h4 className="text-3xl font-black text-white mb-6">{plan.title}</h4>
                       <p className="text-5xl font-black text-[#C5A059] mb-10">{plan.fee}</p>
                       <ul className="space-y-4 mb-10">
                         <li className="flex items-center gap-3 text-gray-300 font-bold"><Icons.Check size={20} className="text-[#C5A059]"/> رأس المال: {plan.capital}</li>
                         {plan.features?.map((f, i) => <li key={i} className="flex items-center gap-3 text-gray-400 font-bold"><Icons.Check size={20} className="text-white/20"/> {f}</li>)}
                       </ul>
-                      <button onClick={() => handlePlanClick('الاشتراكات', plan.title, plan.capital, plan.fee)} className="w-full bg-[#C5A059] text-black py-5 rounded-2xl font-black text-xl shadow-lg shadow-[#C5A059]/20">اشترك الآن</button>
+                      <button onClick={() => handlePlanClick('الاشتراكات', plan.title, plan.capital, plan.fee)} className="w-full bg-[#C5A059] text-black py-5 rounded-2xl font-black text-xl shadow-lg shadow-[#C5A059]/20 hover:bg-white transition-all">اشترك الآن</button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* إدارة المحافظ */}
+              {/* قسم الإدارة */}
               <div>
-                <h3 className="text-3xl font-black mb-12 flex items-center gap-4 text-[#C5A059]"><Icons.BarChart3 size={36}/> نظام إدارة المحافظ</h3>
+                <h3 className="text-3xl font-black text-white mb-10 flex items-center gap-4"><Icons.BarChart3 size={36} className="text-[#C5A059]"/> إدارة المحافظ</h3>
                 {managementPlans.map((plan) => (
-                  <div key={plan.id || plan._id} className="bg-[#161617] border border-white/10 p-12 rounded-[50px] flex flex-col md:flex-row items-center gap-12">
+                  <div key={plan.id || plan._id} className="bg-[#161617] border border-white/5 p-12 rounded-[50px] flex flex-col md:flex-row items-center gap-12 hover:border-[#C5A059]/30 transition-all shadow-2xl">
                      <div className="flex-1 space-y-6">
                         <h4 className="text-4xl font-black text-white">{plan.title}</h4>
                         <p className="text-gray-400 text-lg leading-relaxed">{plan.features?.join('. ')}</p>
                         <div className="flex gap-6">
                            <div className="bg-white/5 px-6 py-4 rounded-2xl border border-white/5">
-                             <p className="text-xs text-gray-500 font-bold mb-1">الحد الأدنى</p>
+                             <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-widest">Min Capital</p>
                              <p className="text-xl font-black text-[#C5A059]">{plan.capital}</p>
                            </div>
                            <div className="bg-white/5 px-6 py-4 rounded-2xl border border-white/5">
-                             <p className="text-xs text-gray-500 font-bold mb-1">الرسوم</p>
+                             <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-widest">Fees</p>
                              <p className="text-xl font-black text-[#C5A059]">{plan.fee}</p>
                            </div>
                         </div>
                      </div>
-                     <button onClick={() => handlePlanClick('الإدارة', plan.title, plan.capital, plan.fee)} className="bg-white text-black px-12 py-6 rounded-[25px] font-black text-2xl hover:bg-[#C5A059] transition-all">ابدأ الإدارة 🚀</button>
+                     <button onClick={() => handlePlanClick('الإدارة', plan.title, plan.capital, plan.fee)} className="bg-white text-black px-12 py-6 rounded-[25px] font-black text-2xl hover:bg-[#C5A059] transition-all shadow-2xl">ابدأ الإدارة الآن 🚀</button>
                   </div>
                 ))}
               </div>
@@ -655,62 +654,224 @@ export default function App() {
           </section>
         )}
 
-        {/* --- 5. المدونة (كاملة) --- */}
-        {currentPage === 'blog' && (
-          <section className="py-20 px-4 md:px-8 max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-black text-white uppercase">مدونة <span className="text-[#C5A059]">النخبة</span></h2>
-            </div>
-            <div className="space-y-12">
-              {posts.map((post) => {
-                const isExpanded = expandedPostId === (post.id || post._id);
-                return (
-                  <div key={post.id || post._id} className="bg-[#161617] border border-white/10 rounded-[40px] overflow-hidden shadow-2xl">
-                    <div className="p-8 flex items-center gap-4 border-b border-white/5">
-                       <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" className="w-12 h-12 rounded-full border border-[#C5A059]" alt="Admin" />
-                       <div><h4 className="font-black text-white">CR7 ADMIN VIP</h4><p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p></div>
-                    </div>
-                    <div className="p-10">
-                      <h3 className="text-3xl font-black text-[#C5A059] mb-6">{post.title}</h3>
-                      <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                    </div>
-                    {post.imageUrl && <img src={post.imageUrl} className="w-full border-y border-white/5" alt="Blog" />}
-                    <div className="p-6 flex gap-6 text-gray-500 font-bold text-sm">
-                       <button onClick={() => handleLike(post.id || post._id || '')} className="flex items-center gap-2 hover:text-red-500"><Icons.Heart size={20}/> {post.likes?.length || 0}</button>
-                       <button onClick={() => setExpandedPostId(isExpanded ? null : (post.id || post._id || null))} className="flex items-center gap-2 hover:text-[#C5A059]"><Icons.MessageCircle size={20}/> {post.comments?.length || 0}</button>
-                    </div>
-                  </div>
-                )
-              })}
+        {/* 5. من نحن (رجعت كاملة) */}
+        {currentPage === 'about' && (
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
+            <div className="max-w-4xl mx-auto text-center">
+              <Icons.Info size={64} className="mx-auto text-[#C5A059] mb-8" />
+              <h2 className="text-4xl md:text-6xl font-black mb-10 tracking-tight text-white uppercase">من <span className="text-[#C5A059]">نحن</span></h2>
+              <div className="bg-[#161617] p-10 md:p-14 rounded-[50px] border border-[#C5A059]/20 shadow-2xl leading-relaxed text-gray-300 text-lg md:text-xl whitespace-pre-wrap text-right">
+                {settings.aboutUs || 'جاري تحميل معلومات المنصة...'}
+              </div>
             </div>
           </section>
         )}
 
-        {/* باقي الصفحات (من نحن، تواصل، فكس، شروط) كما هي في منطق الكود الأصلي */}
+        {/* 6. تواصل معنا (رجعت كاملة) */}
+        {currentPage === 'contact' && (
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
+            <div className="max-w-4xl mx-auto text-center">
+              <Icons.Phone size={64} className="mx-auto text-[#C5A059] mb-8" />
+              <h2 className="text-4xl md:text-6xl font-black mb-14 tracking-tight text-white uppercase">تواصل <span className="text-[#C5A059]">معنا</span></h2>
+              <div className="grid md:grid-cols-3 gap-8">
+                <a href={settings.contact.telegram || 'https://t.me/CR7_B3'} target="_blank" rel="noreferrer" className="bg-[#161617] p-10 rounded-[40px] border border-white/5 hover:border-[#C5A059] transition-all flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-[#C5A059]/10 rounded-full flex items-center justify-center text-[#C5A059]"><Icons.Telegram size={32}/></div>
+                  <h3 className="font-bold text-xl text-white">تليجرام</h3>
+                  <p className="text-sm text-gray-500 font-bold">الدعم الفني المباشر</p>
+                </a>
+                <a href={`https://wa.me/${settings.contact.whatsapp?.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="bg-[#161617] p-10 rounded-[40px] border border-white/5 hover:border-green-500 transition-all flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center text-green-400"><Icons.Phone size={32}/></div>
+                  <h3 className="font-bold text-xl text-white">واتساب</h3>
+                  <p className="text-sm text-gray-500 font-bold">استفسارات العملاء</p>
+                </a>
+                <a href={`mailto:${settings.contact.email}`} className="bg-[#161617] p-10 rounded-[40px] border border-white/5 hover:border-[#C5A059] transition-all flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-white"><Icons.FileText size={32}/></div>
+                  <h3 className="font-bold text-xl text-white">البريد الإلكتروني</h3>
+                  <p className="text-sm text-gray-500 font-bold">للشراكات الرسمية</p>
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 7. الأسئلة الشائعة (رجعت كاملة) */}
+        {currentPage === 'faqs' && (
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-16">
+                <Icons.HelpCircle size={64} className="mx-auto text-[#C5A059] mb-8" />
+                <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight text-white uppercase">الأسئلة <span className="text-[#C5A059]">الشائعة</span></h2>
+              </div>
+              <div className="space-y-6">
+                {settings.faqs?.map((faq, idx) => (
+                  <div key={idx} className="bg-[#161617] p-8 rounded-[35px] border border-white/5 hover:border-[#C5A059]/20 transition-all shadow-xl">
+                    <h3 className="text-xl font-black text-[#C5A059] mb-4 flex items-start gap-4 text-right">
+                      <Icons.HelpCircle size={24} className="shrink-0 mt-1" /> {faq.question}
+                    </h3>
+                    <p className="text-gray-400 leading-relaxed pr-10 text-right">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 8. الشروط والأحكام (رجعت كاملة) */}
+        {currentPage === 'terms' && (
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
+            <div className="max-w-4xl mx-auto text-center">
+              <Icons.FileText size={64} className="mx-auto text-[#C5A059] mb-8" />
+              <h2 className="text-4xl md:text-6xl font-black mb-10 tracking-tight text-white uppercase">الشروط <span className="text-[#C5A059]">والأحكام</span></h2>
+              <div className="bg-[#161617] p-10 md:p-14 rounded-[50px] border border-white/5 shadow-2xl leading-relaxed text-gray-300 text-lg whitespace-pre-wrap text-right">
+                {settings.terms || 'جاري تحميل شروط الخدمة...'}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 9. الملف الشخصي (رجعت كاملة) */}
+        {currentPage === 'profile' && user && (
+          <section className="py-20 px-4 md:px-8 min-h-[70vh]">
+            <div className="max-w-5xl mx-auto space-y-12">
+              <div className="bg-[#161617] border border-[#C5A059]/30 rounded-[45px] p-10 flex flex-col md:flex-row items-center gap-8 shadow-3xl text-right">
+                <img src={user.photoURL || ""} alt="User" className="w-32 h-32 rounded-full border-4 border-[#C5A059]/30 shadow-2xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-widest mb-2">VIP INVESTOR</div>
+                  <h2 className="text-4xl font-black text-white">{user.displayName}</h2>
+                  <p className="text-gray-500 font-bold">{user.email}</p>
+                </div>
+                <button onClick={handleLogout} className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-black transition-all border border-red-500/20">
+                  <Icons.LogOut size={20} /> تسجيل الخروج
+                </button>
+              </div>
+
+              <div className="bg-[#161617] border border-white/5 rounded-[45px] p-10 shadow-2xl">
+                <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+                  <Icons.BarChart3 size={32} className="text-[#C5A059]" />
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Activity Log</h3>
+                </div>
+                <div className="space-y-4">
+                  {userActivity.length > 0 ? userActivity.map((activity, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-[#C5A059]/20 transition-all">
+                      <p className="text-gray-200 font-bold">{activity.action}</p>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{new Date(activity.date).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                    </div>
+                  )) : <p className="text-center py-10 text-gray-600 font-black">No activity found.</p>}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 10. المدونة (رجعت كاملة بوضع التفاعل) */}
+        {currentPage === 'blog' && (
+          <section className="py-20 px-4 md:px-8 min-h-[80vh]">
+            <div className="max-w-3xl mx-auto space-y-12">
+              <div className="text-center mb-20">
+                <h2 className="text-4xl md:text-6xl font-black uppercase text-white mb-4">مدونة <span className="text-[#C5A059]">النخبة</span></h2>
+                <p className="text-gray-500">أحدث الأخبار والتوصيات من مجتمعنا.</p>
+              </div>
+              
+              <div className="space-y-16">
+                {posts.map((post) => {
+                  const pid = post.id || post._id || '';
+                  const isExp = expandedPostId === pid;
+                  return (
+                    <div key={pid} className="bg-[#161617] border border-[#C5A059]/20 rounded-[40px] overflow-hidden shadow-3xl">
+                      <div className="p-8 flex items-center gap-4 border-b border-white/5">
+                         <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" className="w-12 h-12 rounded-full border border-[#C5A059]/40" alt="Admin" />
+                         <div><h4 className="font-black text-white">CR7 ADMIN VIP <Icons.CheckCircle className="inline text-[#C5A059]" size={14}/></h4><p className="text-xs text-gray-500 uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString('ar-EG', { dateStyle: 'long' })}</p></div>
+                      </div>
+                      <div className="p-10 space-y-6">
+                        <h3 className="text-3xl font-black text-white">{post.title}</h3>
+                        <p className="text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                      </div>
+                      {post.imageUrl && <img src={post.imageUrl} className="w-full border-y border-white/5" alt="Blog" />}
+                      <div className="p-6 flex gap-10 text-gray-400 font-bold border-t border-white/5">
+                         <button onClick={() => handleLike(pid)} className={`flex items-center gap-2 hover:text-red-500 transition-all ${user && post.likes?.includes(user.uid) ? 'text-red-500' : ''}`}><Icons.Heart size={24} fill={user && post.likes?.includes(user.uid) ? "currentColor" : "none"}/> {post.likes?.length || 0}</button>
+                         <button onClick={() => setExpandedPostId(isExp ? null : pid)} className="flex items-center gap-2 hover:text-[#C5A059] transition-all"><Icons.MessageCircle size={24}/> {post.comments?.length || 0}</button>
+                      </div>
+
+                      {isExp && (
+                        <div className="p-8 bg-black/40 space-y-8 animate-in slide-in-from-top-4 duration-300">
+                           <div className="space-y-6 max-h-[400px] overflow-y-auto custom-scrollbar pl-4">
+                             {post.comments?.map((c, i) => (
+                               <div key={i} className="flex gap-4 text-right">
+                                 <img src={c.userImage || "https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg"} className="w-10 h-10 rounded-full" />
+                                 <div className="bg-white/5 p-4 rounded-2xl rounded-tr-none flex-1">
+                                   <p className="font-black text-[#C5A059] text-sm mb-1">{c.userName}</p>
+                                   <p className="text-gray-300 text-sm">{c.text}</p>
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                           {user ? (
+                             <div className="flex gap-4 pt-4 border-t border-white/5">
+                                <input type="text" value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="أضف تعليقاً..." className="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-3 outline-none focus:border-[#C5A059] transition-all" />
+                                <button onClick={() => handleAddComment(pid)} className="bg-[#C5A059] text-black px-8 rounded-xl font-black">إرسال</button>
+                             </div>
+                           ) : <p className="text-center text-gray-500 font-bold">سجل دخولك لتتمكن من التعليق.</p>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )}
 
       </main>
 
-      <footer className="py-24 px-4 border-t border-white/5 bg-[#0A0A0B] mt-auto relative z-10">
-        <div className="max-w-7xl mx-auto text-center space-y-8">
-           <h3 className="text-3xl font-black italic text-white">CR7 <span className="text-[#C5A059]">PLATINUM</span> GOLD</h3>
-           <div className="flex justify-center gap-6">
-             <a href="https://t.me/CR7_B3" className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-[#C5A059] hover:text-black transition-all"><Icons.Telegram size={20}/></a>
-             <a href="#" className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-[#C5A059] hover:text-black transition-all"><Icons.Facebook size={20}/></a>
-             <a href="#" className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-[#C5A059] hover:text-black transition-all"><Icons.Instagram size={20}/></a>
-           </div>
-           <p className="text-gray-600 text-[10px] uppercase tracking-[0.6em]">© 2026 CR7 VIP SYSTEMS - ALL RIGHTS RESERVED</p>
+      <footer className="py-24 px-4 border-t border-[#C5A059]/10 bg-[#020408] mt-auto relative z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-16">
+          <div className="md:col-span-5 space-y-8 text-right">
+            <h3 className="text-3xl font-black italic tracking-tighter text-white uppercase">CR7 <span className="text-[#C5A059]">PLATINUM</span> GOLD</h3>
+            <p className="text-gray-500 text-lg leading-relaxed max-w-sm">نحن لا نبيع مجرد أداة، نحن نقدم لك شريكاً ذكياً في رحلتك المالية وتداول الذهب بنجاح.</p>
+            <div className="flex gap-4 justify-start">
+               {[Icons.Telegram, Icons.Facebook, Icons.Instagram, Icons.TikTok].map((Icn, i) => (
+                 <a key={i} href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#C5A059] hover:text-black transition-all"><Icn size={20}/></a>
+               ))}
+            </div>
+          </div>
+          <div className="md:col-span-2 space-y-6 text-right">
+            <h4 className="font-black text-sm uppercase tracking-widest text-[#C5A059]">الروابط</h4>
+            <ul className="space-y-4 text-gray-500 font-bold text-sm">
+              {['about', 'bots', 'results', 'subscribe'].map(p => (
+                <li key={p}><button onClick={() => navigateTo(p)} className="hover:text-white transition uppercase">{p}</button></li>
+              ))}
+            </ul>
+          </div>
+          <div className="md:col-span-2 space-y-6 text-right">
+            <h4 className="font-black text-sm uppercase tracking-widest text-[#C5A059]">الدعم</h4>
+            <ul className="space-y-4 text-gray-500 font-bold text-sm">
+              {['contact', 'faqs', 'terms'].map(p => (
+                <li key={p}><button onClick={() => navigateTo(p)} className="hover:text-white transition uppercase">{p}</button></li>
+              ))}
+            </ul>
+          </div>
+          <div className="md:col-span-3 space-y-6 text-right">
+            <h4 className="font-black text-sm uppercase tracking-widest text-[#C5A059]">النشرة الإخبارية</h4>
+            <div className="flex gap-2">
+              <input type="text" placeholder="بريدك الإلكتروني" className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm flex-1 outline-none focus:border-[#C5A059] transition-all" />
+              <button className="bg-[#C5A059] text-black px-5 rounded-xl font-bold transition-all hover:bg-white">✓</button>
+            </div>
+          </div>
+        </div>
+        <div className="mt-24 pt-10 border-t border-white/5 text-center text-gray-700 text-[10px] font-black uppercase tracking-[0.5em]">
+          © 2026 CR7 TRADING SYSTEMS VIP - ALL RIGHTS RESERVED
         </div>
       </footer>
 
-      {/* نافذة تسجيل الدخول (نفس الـ Logic) */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowLoginModal(false)}></div>
-          <div className="bg-[#161617] border border-[#C5A059]/20 w-full max-w-md rounded-[45px] p-12 relative z-10 text-center shadow-3xl">
-            <h2 className="text-3xl font-black mb-8 text-white">دخول <span className="text-[#C5A059]">كبار المستثمرين</span></h2>
+          <div className="bg-[#080a0f] border border-[#C5A059]/20 w-full max-w-md rounded-[45px] p-12 relative z-10 text-center shadow-3xl">
+            <h2 className="text-3xl font-black mb-8 text-white uppercase">دخول <span className="text-[#C5A059]">كبار المستثمرين</span></h2>
             <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center gap-4 bg-white text-black py-5 rounded-2xl font-black text-xl transition-all hover:bg-[#C5A059]">
               <Icons.Google size={24} /> المتابعة بحساب Google
             </button>
+            <p className="text-[10px] text-gray-500 font-bold mt-10 uppercase tracking-widest">By logging in you agree to our <button onClick={() => navigateTo('terms')} className="text-[#C5A059] underline">Terms & Conditions</button></p>
           </div>
         </div>
       )}

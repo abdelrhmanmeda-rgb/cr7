@@ -94,6 +94,7 @@ interface TestimonialItem {
   date?: string;
   note?: string;
   active?: boolean;
+  isVisible?: boolean;
   featured?: boolean;
 }
 
@@ -414,6 +415,7 @@ export default function App() {
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialItem | null>(null);
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
@@ -549,6 +551,32 @@ export default function App() {
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #bf953f70; border-radius: 10px; }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #bf953f; }
+      @keyframes testimonialFloat0 {
+        0%, 100% { transform: translateY(0px) rotate(-0.35deg); }
+        50% { transform: translateY(-16px) rotate(0.35deg); }
+      }
+      @keyframes testimonialFloat1 {
+        0%, 100% { transform: translateY(-8px) rotate(0.45deg); }
+        50% { transform: translateY(12px) rotate(-0.45deg); }
+      }
+      @keyframes testimonialFloat2 {
+        0%, 100% { transform: translateY(6px) rotate(0.25deg); }
+        50% { transform: translateY(-14px) rotate(-0.25deg); }
+      }
+      .testimonial-float {
+        will-change: transform;
+        transform-style: preserve-3d;
+      }
+      .testimonial-float-0 { animation: testimonialFloat0 6.5s ease-in-out infinite; }
+      .testimonial-float-1 { animation: testimonialFloat1 7.4s ease-in-out infinite; }
+      .testimonial-float-2 { animation: testimonialFloat2 8.2s ease-in-out infinite; }
+      .testimonial-float:hover {
+        animation-play-state: paused;
+        transform: translateY(-14px) scale(1.015) !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .testimonial-float-0, .testimonial-float-1, .testimonial-float-2 { animation: none !important; }
+      }
     `;
     document.head.appendChild(styleTag);
 
@@ -614,13 +642,29 @@ export default function App() {
     }
   }, []);
 
+  const fetchTestimonials = useCallback(async (retries = 3, delay = 1000) => {
+    try {
+      const response = await fetch('https://cr7-kappa.vercel.app/api/testimonials');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setTestimonials(data.data);
+      }
+    } catch (err) {
+      if (retries > 0) {
+        setTimeout(() => fetchTestimonials(retries - 1, delay * 2), delay);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchResults();
     fetchBots();
     fetchPlans();
     fetchSettings();
     fetchPosts();
-  }, [fetchResults, fetchBots, fetchPlans, fetchSettings, fetchPosts]);
+    fetchTestimonials();
+  }, [fetchResults, fetchBots, fetchPlans, fetchSettings, fetchPosts, fetchTestimonials]);
 
   const handleLike = async (postId: string) => {
     if (!user) {
@@ -827,7 +871,7 @@ export default function App() {
 
   const testimonialsHeadline = settings.testimonials?.headline || 'آراء العملاء من تيليجرام';
   const testimonialsSubheadline = settings.testimonials?.subheadline || 'لقطات حقيقية من رسائل العملاء بعد الاشتراك واستخدام خدمات CR7 BOT.';
-  const testimonialItems = (settings.testimonials?.items || []).filter((item) => item.active !== false && item.imageUrl);
+  const testimonialItems = testimonials.filter((item) => item.active !== false && item.isVisible !== false && item.imageUrl);
   const featuredTestimonials = testimonialItems.filter((item) => item.featured).length > 0 ? testimonialItems.filter((item) => item.featured) : testimonialItems.slice(0, 6);
 
   useEffect(() => {
@@ -863,7 +907,7 @@ export default function App() {
         setSelectedTestimonial(item);
         trackUserAction('view_testimonial', item.title || item.customerName || 'testimonial');
       }}
-      className={`group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[34px] p-3 md:p-4 shadow-2xl hover:border-[#fcf6ba]/70 hover:-translate-y-2 transition-all duration-500 ${index % 3 === 1 ? 'md:mt-10' : index % 3 === 2 ? 'md:mt-4' : ''}`}
+      className={`testimonial-float testimonial-float-${index % 3} group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[34px] p-3 md:p-4 shadow-2xl hover:border-[#fcf6ba]/70 transition-all duration-500 ${index % 3 === 1 ? 'md:mt-10' : index % 3 === 2 ? 'md:mt-4' : ''}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(252,246,186,0.16),transparent_35%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       <div className="relative z-10 bg-black rounded-[28px] overflow-hidden border border-white/10">

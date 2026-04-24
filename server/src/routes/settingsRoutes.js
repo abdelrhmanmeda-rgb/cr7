@@ -16,8 +16,22 @@ const updateSettings = settingsController.updateSettings || ((req, res) =>
   res.status(500).json({ success: false, message: "Missing updateSettings" })
 );
 
+/**
+ * جلب إعدادات الموقع
+ * مفتوح للموقع الرئيسي عشان يعرض:
+ * - بيانات التواصل
+ * - من نحن
+ * - الشروط
+ * - الأسئلة الشائعة
+ * - بيانات حساب المشاهدة
+ * - الأعداد المباشرة liveStats
+ */
 router.get('/', getSettings);
 
+/**
+ * حفظ إعدادات الموقع
+ * محمي للأدمن فقط
+ */
 router.post('/', verifyAdmin, updateSettings);
 
 module.exports = router;

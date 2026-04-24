@@ -85,6 +85,18 @@ interface LiveStatItem {
   active?: boolean;
 }
 
+interface TestimonialItem {
+  id?: string;
+  imageUrl: string;
+  title?: string;
+  customerName?: string;
+  service?: string;
+  date?: string;
+  note?: string;
+  active?: boolean;
+  featured?: boolean;
+}
+
 interface Settings {
   contact: {
     telegram: string;
@@ -113,6 +125,11 @@ interface Settings {
     management?: LiveStatItem[];
     bots?: LiveStatItem[];
     updatedAt?: string;
+  };
+  testimonials?: {
+    headline?: string;
+    subheadline?: string;
+    items?: TestimonialItem[];
   };
 }
 
@@ -396,6 +413,7 @@ export default function App() {
   const [userActivity, setUserActivity] = useState<Activity[]>([]);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
+  const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialItem | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
@@ -475,6 +493,7 @@ export default function App() {
       bots: 'البوتات',
       results: 'النتائج',
       subscribe: 'خدماتنا',
+      testimonials: 'آراء العملاء',
       blog: 'المدونة',
       faqs: 'الأسئلة الشائعة',
       terms: 'الشروط والأحكام',
@@ -806,6 +825,11 @@ export default function App() {
 
   const hasLiveStats = liveSubscriptions.length > 0 || liveManagement.length > 0 || liveBots.length > 0;
 
+  const testimonialsHeadline = settings.testimonials?.headline || 'آراء العملاء من تيليجرام';
+  const testimonialsSubheadline = settings.testimonials?.subheadline || 'لقطات حقيقية من رسائل العملاء بعد الاشتراك واستخدام خدمات CR7 BOT.';
+  const testimonialItems = (settings.testimonials?.items || []).filter((item) => item.active !== false && item.imageUrl);
+  const featuredTestimonials = testimonialItems.filter((item) => item.featured).length > 0 ? testimonialItems.filter((item) => item.featured) : testimonialItems.slice(0, 6);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPhraseIndex((prev) => (prev + 1) % heroPhrases.length);
@@ -832,6 +856,103 @@ export default function App() {
       <p className="text-xs text-gray-500 font-bold">{text}</p>
     </div>
   );
+
+  const TestimonialScreenshotCard = ({ item, index }: { item: TestimonialItem; index: number }) => (
+    <button
+      onClick={() => {
+        setSelectedTestimonial(item);
+        trackUserAction('view_testimonial', item.title || item.customerName || 'testimonial');
+      }}
+      className={`group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[34px] p-3 md:p-4 shadow-2xl hover:border-[#fcf6ba]/70 hover:-translate-y-2 transition-all duration-500 ${index % 3 === 1 ? 'md:mt-10' : index % 3 === 2 ? 'md:mt-4' : ''}`}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(252,246,186,0.16),transparent_35%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <div className="relative z-10 bg-black rounded-[28px] overflow-hidden border border-white/10">
+        <div className="h-11 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 flex-row-reverse">
+          <div className="flex items-center gap-2 flex-row-reverse">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="text-[10px] text-[#fcf6ba] font-black uppercase tracking-widest">Telegram Feedback</span>
+          </div>
+          <div className="flex gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400/70"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400/70"></span>
+          </div>
+        </div>
+        <div className="relative bg-[#0b0f14]">
+          <img src={item.imageUrl} alt={item.title || 'رأي عميل'} className="w-full h-[360px] md:h-[430px] object-cover object-top group-hover:scale-[1.03] transition-transform duration-700" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-70"></div>
+          <div className="absolute bottom-4 right-4 left-4 flex items-end justify-between gap-3 flex-row-reverse">
+            <div className="text-right min-w-0">
+              <p className="text-white font-black line-clamp-1">{item.title || item.customerName || 'رسالة عميل'}</p>
+              <p className="text-[11px] text-gray-300 mt-1 line-clamp-1">{item.service || 'CR7 BOT'}{item.date ? ' • ' + item.date : ''}</p>
+            </div>
+            <span className="shrink-0 bg-[#bf953f] text-black px-3 py-1.5 rounded-full text-[10px] font-black">عرض</span>
+          </div>
+        </div>
+      </div>
+      <div className="relative z-10 mt-4 px-2 flex items-center justify-between gap-3 flex-row-reverse">
+        <div className="flex items-center gap-2 flex-row-reverse text-[#fcf6ba] text-[11px] font-black">
+          <Icons.ShieldCheck size={14} />
+          <span>لقطة عميل حقيقية</span>
+        </div>
+        {item.note ? <span className="text-[10px] text-gray-500 line-clamp-1 max-w-[140px]">{item.note}</span> : null}
+      </div>
+    </button>
+  );
+
+  const TestimonialsSection = ({ compact = false }: { compact?: boolean }) => {
+    const items = compact ? featuredTestimonials.slice(0, 6) : testimonialItems;
+
+    if (items.length === 0) {
+      return (
+        <section className={`${compact ? 'pb-28' : 'py-20'} px-4 md:px-8 animate-in slide-in-from-bottom-10`}>
+          <div className="max-w-7xl mx-auto">
+            <SectionTitle title={testimonialsHeadline} desc={testimonialsSubheadline} />
+            <div className={`${goldCardClass} p-10 text-center`}>
+              <Icons.MessageCircle size={34} className="mx-auto text-[#bf953f] mb-4" />
+              <h3 className="text-2xl font-black mb-3">سيتم عرض اسكرينات العملاء هنا</h3>
+              <p className="text-gray-400 max-w-2xl mx-auto leading-7">بعد رفع لقطات تيليجرام من لوحة التحكم، هتظهر هنا بشكل معرض احترافي ويمكن للزائر فتح كل صورة كاملة.</p>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section className={`${compact ? 'pb-28' : 'py-20'} px-4 md:px-8 animate-in slide-in-from-bottom-10`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 bg-[#bf953f]/10 border border-[#bf953f]/30 text-[#fcf6ba] px-5 py-2 rounded-full text-[10px] font-black mb-5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+              REAL TELEGRAM SCREENSHOTS
+            </div>
+            <h2 className={`text-4xl md:text-6xl mb-4 ${goldTextClass}`}>{testimonialsHeadline}</h2>
+            <p className="text-gray-400 max-w-3xl mx-auto leading-7">{testimonialsSubheadline}</p>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[70%] h-40 bg-[#bf953f]/10 blur-[90px] rounded-full pointer-events-none"></div>
+            <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {items.map((item, index) => (
+                <TestimonialScreenshotCard key={item.id || `${item.imageUrl}-${index}`} item={item} index={index} />
+              ))}
+            </div>
+          </div>
+
+          {compact && testimonialItems.length > 6 ? (
+            <div className="text-center mt-12">
+              <button onClick={() => navigateTo('testimonials')} className={`px-8 py-4 rounded-2xl ${goldBtnClass}`}>
+                شاهد كل آراء العملاء
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  };
 
   const StatCard = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
     <div className="bg-black/40 p-6 rounded-3xl border border-[#bf953f]/10 text-center">
@@ -891,6 +1012,7 @@ export default function App() {
               ['bots', 'البوتات'],
               ['results', 'النتائج'],
               ['subscribe', 'الاشتراكات والإدارة'],
+              ['testimonials', 'آراء العملاء'],
               ['blog', 'المدونة'],
               ['contact', 'تواصل معنا']
             ].map(([page, label]) => (
@@ -938,6 +1060,7 @@ export default function App() {
               ['bots', 'البوتات'],
               ['results', 'النتائج'],
               ['subscribe', 'الاشتراكات والإدارة'],
+              ['testimonials', 'آراء العملاء'],
               ['blog', 'المدونة'],
               ['contact', 'تواصل معنا'],
               ['faqs', 'الأسئلة الشائعة'],
@@ -1158,6 +1281,8 @@ export default function App() {
               </div>
             </section>
 
+            <TestimonialsSection compact />
+
             {bots.length > 0 && (
               <section className="pb-28 px-4 md:px-8">
                 <div className="max-w-7xl mx-auto">
@@ -1359,6 +1484,10 @@ export default function App() {
               </div>
             </div>
           </section>
+        )}
+
+        {!loading && !error && currentPage === 'testimonials' && (
+          <TestimonialsSection />
         )}
 
         {!loading && !error && currentPage === 'subscribe' && (
@@ -1685,7 +1814,52 @@ export default function App() {
         )}
       </main>
 
+      {selectedTestimonial && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedTestimonial(null)}></div>
+          <div className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
+              <div className="text-right">
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Telegram Feedback</p>
+                <p className={`text-2xl ${goldTextClass}`}>{selectedTestimonial.title || selectedTestimonial.customerName || 'رأي عميل'}</p>
+                <p className="text-xs text-gray-500 mt-1">{selectedTestimonial.service || 'CR7 BOT'}{selectedTestimonial.date ? ' • ' + selectedTestimonial.date : ''}</p>
+              </div>
+              <button
+                onClick={() => setSelectedTestimonial(null)}
+                className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#bf953f] hover:text-black transition-all"
+              >
+                <Icons.X size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-black flex items-center justify-center">
+              <img
+                src={selectedTestimonial.imageUrl}
+                alt={selectedTestimonial.title || 'testimonial full'}
+                className="w-auto h-auto max-w-full max-h-[78vh] object-contain"
+              />
+            </div>
+
+            <div className="p-4 md:p-5 border-t border-[#bf953f]/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-right">
+              <div>
+                {selectedTestimonial.note ? <p className="text-gray-300 font-bold mb-1">{selectedTestimonial.note}</p> : null}
+                <p className="text-xs text-gray-500">لقطة شاشة من محادثات العملاء على تيليجرام</p>
+              </div>
+              <a
+                href={selectedTestimonial.imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`px-6 py-3 rounded-2xl text-center ${goldBtnClass}`}
+              >
+                فتح الصورة الأصلية
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedResult && (
+
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedResult(null)}></div>
           <div className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">

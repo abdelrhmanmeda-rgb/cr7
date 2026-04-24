@@ -47,6 +47,7 @@ interface Bot {
   imageUrl: string;
   features: string[];
   isBestSeller?: boolean | string;
+  salesCount?: number | string;
 }
 
 interface Plan {
@@ -58,6 +59,7 @@ interface Plan {
   fee: string;
   features: string[];
   isBestSeller?: boolean | string;
+  subscribersCount?: number | string;
 }
 
 interface Result {
@@ -75,6 +77,21 @@ interface Activity {
   date: string;
 }
 
+
+interface LiveStatItem {
+  title: string;
+  count: number | string;
+  note?: string;
+  isVisible?: boolean | string;
+}
+
+interface LiveStatsData {
+  headline?: string;
+  subscriptions?: LiveStatItem[];
+  management?: LiveStatItem[];
+  bots?: LiveStatItem[];
+}
+
 interface Settings {
   contact: {
     telegram: string;
@@ -88,6 +105,7 @@ interface Settings {
   terms: string;
   aboutUs: string;
   heroPhrases?: string[];
+  liveStats?: LiveStatsData;
   viewerAccount?: {
     accountNumber?: string;
     broker?: string;
@@ -368,7 +386,13 @@ export default function App() {
     contact: { telegram: '', whatsapp: '', email: '' },
     faqs: [],
     terms: '',
-    aboutUs: ''
+    aboutUs: '',
+    liveStats: {
+      headline: 'الأعداد المباشرة الحالية ويتم تحديثها تلقائياً من الموقع بمجرد اشتراك جديد أو إدارة أو بيع بوت',
+      subscriptions: [],
+      management: [],
+      bots: []
+    }
   });
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -750,6 +774,22 @@ export default function App() {
 
   const subscriptionPlans = plans.filter((p) => p.type === 'الاشتراكات');
   const managementPlans = plans.filter((p) => p.type === 'الإدارة');
+  const liveStats: LiveStatsData = settings.liveStats || {};
+  const normalizeLiveStatItems = (items?: LiveStatItem[]) => (items || []).filter((item) => item && item.title && item.isVisible !== false && item.isVisible !== 'false');
+  const liveSubscriptionStats = normalizeLiveStatItems(liveStats.subscriptions);
+  const liveManagementStats = normalizeLiveStatItems(liveStats.management);
+  const liveBotStats = normalizeLiveStatItems(liveStats.bots);
+  const subscriptionStatsToShow = liveSubscriptionStats.length > 0
+    ? liveSubscriptionStats
+    : subscriptionPlans.map((plan) => ({ title: plan.title || plan.fee || 'باقة اشتراك', count: plan.subscribersCount || 0, note: plan.fee }));
+  const managementStatsToShow = liveManagementStats.length > 0
+    ? liveManagementStats
+    : managementPlans.map((plan) => ({ title: plan.title || plan.fee || 'نظام إدارة', count: plan.subscribersCount || 0, note: plan.fee }));
+  const botStatsToShow = liveBotStats.length > 0
+    ? liveBotStats
+    : bots.map((bot) => ({ title: bot.name || 'بوت تداول', count: bot.salesCount || 0, note: bot.price ? `$${bot.price}` : '' }));
+  const liveStatsHeadline = liveStats.headline || 'الأعداد المباشرة الحالية ويتم تحديثها تلقائياً من الموقع بمجرد اشتراك جديد أو إدارة أو بيع بوت';
+  const liveStatsTotal = [...subscriptionStatsToShow, ...managementStatsToShow, ...botStatsToShow].reduce((total, item) => total + (Number(item.count) || 0), 0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -763,6 +803,48 @@ export default function App() {
       <p className="text-[10px] text-gray-500 font-black mb-2 uppercase tracking-widest">{label}</p>
       <p className={`text-3xl ${goldTextClass}`}>{value}</p>
       {sub ? <p className="text-xs text-gray-500 mt-2">{sub}</p> : null}
+    </div>
+  );
+
+  const LiveStatMiniCard = ({ item, icon }: { item: LiveStatItem; icon: React.ReactNode }) => (
+    <div className="relative overflow-hidden bg-black/45 border border-[#bf953f]/10 rounded-3xl p-4 hover:border-[#bf953f]/40 transition-all group">
+      <div className="absolute -top-10 -left-10 w-24 h-24 bg-[#bf953f]/10 rounded-full blur-2xl group-hover:bg-[#bf953f]/20 transition-all"></div>
+      <div className="relative z-10 flex items-start justify-between gap-3 flex-row-reverse">
+        <div className="text-right min-w-0">
+          <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest truncate">{item.note || 'LIVE'}</p>
+          <h4 className="text-sm md:text-base text-white font-black truncate mt-1">{item.title}</h4>
+        </div>
+        <div className="w-9 h-9 rounded-2xl bg-[#bf953f]/10 border border-[#bf953f]/20 flex items-center justify-center text-[#bf953f] shrink-0">
+          {icon}
+        </div>
+      </div>
+      <div className="relative z-10 mt-4 flex items-end justify-between gap-3 flex-row-reverse">
+        <p className={`text-4xl md:text-5xl leading-none ${goldTextClass}`}>{Number(item.count || 0).toLocaleString()}</p>
+        <span className="text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full font-black">نشط الآن</span>
+      </div>
+    </div>
+  );
+
+  const LiveStatsGroup = ({ title, items, icon, emptyText }: { title: string; items: LiveStatItem[]; icon: React.ReactNode; emptyText: string }) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between flex-row-reverse">
+        <h4 className="text-[#fcf6ba] font-black text-sm flex items-center gap-2">
+          {icon}
+          {title}
+        </h4>
+        <span className="text-[10px] text-gray-500 font-black">{items.length} عنصر</span>
+      </div>
+      {items.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {items.slice(0, 6).map((item, index) => (
+            <LiveStatMiniCard key={`${title}-${index}-${item.title}`} item={item} icon={icon} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-5 text-center text-gray-500 font-bold text-sm">
+          {emptyText}
+        </div>
+      )}
     </div>
   );
 
@@ -974,24 +1056,70 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="glass-card p-10 space-y-8 border border-[#bf953f]/20">
-                  <div className="flex justify-between items-center flex-row-reverse">
+                <div className="relative overflow-hidden bg-[#0a0a0a]/85 backdrop-blur-2xl border border-[#bf953f]/20 rounded-[40px] p-6 md:p-8 space-y-6 shadow-2xl">
+                  <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#bf953f]/10 rounded-full blur-[90px]"></div>
+                  <div className="absolute bottom-0 right-0 w-44 h-44 bg-[#fcf6ba]/5 rounded-full blur-[80px]"></div>
+
+                  <div className="relative z-10 flex justify-between items-start gap-5 flex-row-reverse">
                     <div className="text-right">
-                      <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Live Profit</p>
-                      <h4 className={goldTextClass}>CR7 GOLD ALGO</h4>
+                      <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">LIVE COMMUNITY COUNTERS</p>
+                      <h3 className={`text-2xl md:text-3xl mt-2 ${goldTextClass}`}>الأعداد المباشرة الحالية</h3>
+                      <p className="text-gray-400 text-sm leading-7 mt-3 max-w-xl">{liveStatsHeadline}</p>
                     </div>
-                    <Icons.TrendingUp size={24} className="text-[#bf953f]" />
+                    <div className="w-14 h-14 rounded-3xl bg-[#bf953f]/10 border border-[#bf953f]/30 flex items-center justify-center text-[#bf953f] shrink-0 shadow-[0_0_30px_rgba(191,149,63,0.18)]">
+                      <Icons.Users size={28} />
+                    </div>
                   </div>
 
-                  <div className="h-40 flex items-end gap-1.5 px-4 border-b border-[#bf953f]/10">
-                    {[30, 50, 45, 85, 60, 95, 70, 100, 80, 105, 90, 110].map((h, i) => (
-                      <div key={i} style={{ height: `${h}%` }} className="flex-1 bg-gradient-to-t from-[#8B6E36] to-[#fcf6ba] rounded-t-lg opacity-80"></div>
-                    ))}
+                  <div className="relative z-10 grid grid-cols-3 gap-3">
+                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-4 text-center">
+                      <p className="text-[10px] text-gray-500 font-black mb-1">إجمالي النشاط</p>
+                      <p className={`text-3xl ${goldTextClass}`}>{liveStatsTotal.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-4 text-center">
+                      <p className="text-[10px] text-gray-500 font-black mb-1">باقات نشطة</p>
+                      <p className={`text-3xl ${goldTextClass}`}>{subscriptionStatsToShow.length + managementStatsToShow.length}</p>
+                    </div>
+                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-4 text-center">
+                      <p className="text-[10px] text-gray-500 font-black mb-1">بوتات معروضة</p>
+                      <p className={`text-3xl ${goldTextClass}`}>{botStatsToShow.length}</p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <StatCard label="إجمالي العائد" value={`+${dynamicReturn}%`} />
-                    <StatCard label="عدد الصفقات" value={dynamicTrades.toLocaleString()} />
+                  <div className="relative z-10 space-y-6 max-h-[520px] overflow-y-auto custom-scrollbar pr-1">
+                    <LiveStatsGroup
+                      title="مشتركو باقات الاشتراك"
+                      items={subscriptionStatsToShow}
+                      icon={<Icons.CreditCard size={17} />}
+                      emptyText="أضف باقات الاشتراك وعدد المشتركين من لوحة التحكم."
+                    />
+
+                    <LiveStatsGroup
+                      title="مشتركو أنظمة الإدارة"
+                      items={managementStatsToShow}
+                      icon={<Icons.ShieldCheck size={17} />}
+                      emptyText="أضف أنظمة الإدارة وعدد المشتركين من لوحة التحكم."
+                    />
+
+                    <LiveStatsGroup
+                      title="عدد شراء البوتات"
+                      items={botStatsToShow}
+                      icon={<Icons.Cpu size={17} />}
+                      emptyText="أضف البوتات وعدد المبيعات من لوحة التحكم."
+                    />
+                  </div>
+
+                  <div className="relative z-10 flex items-center justify-between gap-4 flex-row-reverse border-t border-[#bf953f]/10 pt-5">
+                    <div className="flex items-center gap-2 text-emerald-300 text-xs font-black">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                      تحديث تلقائي مباشر
+                    </div>
+                    <button onClick={() => navigateTo('subscribe')} className="text-xs font-black text-[#fcf6ba] hover:text-white transition-colors">
+                      شاهد الخدمات ←
+                    </button>
                   </div>
                 </div>
               </div>

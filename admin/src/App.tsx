@@ -68,6 +68,19 @@ interface FaqItem {
   answer: string;
 }
 
+interface TestimonialData {
+  id?: string;
+  _id?: string;
+  imageUrl: string;
+  title: string;
+  clientName?: string;
+  service?: string;
+  serviceType?: string;
+  order?: number | string;
+  isVisible?: boolean | string;
+  createdAt?: string;
+}
+
 interface ViewerAccountData {
   accountNumber: string;
   broker: string;
@@ -1690,12 +1703,13 @@ const TestimonialsManager = () => {
     form.append('title', formData.title);
     form.append('clientName', formData.clientName);
     form.append('serviceType', formData.serviceType);
+    form.append('service', formData.serviceType);
     form.append('order', String(formData.order || 1));
     form.append('isVisible', String(formData.isVisible));
 
     const url = editingId
       ? 'https://cr7-kappa.vercel.app/api/testimonials/' + editingId
-      : 'https://cr7-kappa.vercel.app/api/testimonials/add';
+      : 'https://cr7-kappa.vercel.app/api/testimonials/upload';
     const method = editingId ? 'PUT' : 'POST';
 
     try {

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
@@ -85,6 +85,17 @@ interface LiveStatItem {
   active?: boolean;
 }
 
+interface SmartNotificationItem {
+  id?: string;
+  title?: string;
+  text: string;
+  type?: 'sale' | 'subscribe' | 'management' | 'copy' | 'telegram' | 'custom';
+  icon?: string;
+  service?: string;
+  country?: string;
+  isVisible?: boolean;
+}
+
 interface TestimonialItem {
   id?: string;
   imageUrl: string;
@@ -131,6 +142,14 @@ interface Settings {
     headline?: string;
     subheadline?: string;
     items?: TestimonialItem[];
+  };
+  smartNotifications?: {
+    enabled?: boolean;
+    startDelayMs?: number;
+    minDelayMs?: number;
+    maxDelayMs?: number;
+    displayDurationMs?: number;
+    items?: SmartNotificationItem[];
   };
 }
 
@@ -416,6 +435,7 @@ export default function App() {
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialItem | null>(null);
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
+  const [activeSmartNotification, setActiveSmartNotification] = useState<SmartNotificationItem | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
@@ -575,8 +595,22 @@ export default function App() {
         animation-play-state: paused;
         transform: translateY(-14px) scale(1.015) !important;
       }
+      @keyframes smartToastIn {
+        0% { opacity: 0; transform: translateY(-18px) scale(0.96); filter: blur(6px); }
+        12% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        86% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        100% { opacity: 0; transform: translateY(-12px) scale(0.98); filter: blur(4px); }
+      }
+      @keyframes smartToastGlow {
+        0%, 100% { box-shadow: 0 0 22px rgba(191,149,63,0.14); }
+        50% { box-shadow: 0 0 34px rgba(252,246,186,0.24); }
+      }
+      .smart-toast {
+        animation: smartToastIn 5.2s ease-in-out both, smartToastGlow 2.2s ease-in-out infinite;
+      }
       @media (prefers-reduced-motion: reduce) {
         .testimonial-float-0, .testimonial-float-1, .testimonial-float-2 { animation: none !important; }
+        .smart-toast { animation: none !important; }
       }
     `;
     document.head.appendChild(styleTag);
@@ -875,12 +909,131 @@ export default function App() {
   const testimonialItems = testimonials.filter((item) => item.active !== false && item.isVisible !== false && item.imageUrl);
   const featuredTestimonials = testimonialItems.filter((item) => item.featured).length > 0 ? testimonialItems.filter((item) => item.featured) : testimonialItems.slice(0, 6);
 
+  const maskedNames = useMemo(() => ['A****', 'M****', 'K****', 'S****', 'Y****', 'R****', 'H****', 'T****'], []);
+  const countries = useMemo(() => ['السعودية', 'الإمارات', 'الكويت', 'قطر', 'مصر', 'الأردن', 'المغرب'], []);
+
+  const defaultSmartNotifications = useMemo<SmartNotificationItem[]>(() => {
+    const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || arr[0];
+    const botItems = bots.slice(0, 4).map((bot, index) => ({
+      id: `auto-bot-${bot.id || bot._id || index}`,
+      title: 'عملية شراء جديدة',
+      text: `${pick(maskedNames)} اشترى ${bot.name}`,
+      type: 'sale' as const,
+      icon: '🤖',
+      service: bot.name,
+      country: pick(countries),
+      isVisible: true
+    }));
+
+    const subItems = subscriptionPlans.slice(0, 4).map((plan, index) => ({
+      id: `auto-sub-${plan.id || plan._id || index}`,
+      title: 'اشتراك جديد',
+      text: `${pick(maskedNames)} اشترك في ${plan.title}`,
+      type: 'subscribe' as const,
+      icon: '💳',
+      service: plan.title,
+      country: pick(countries),
+      isVisible: true
+    }));
+
+    const mgmtItems = managementPlans.slice(0, 3).map((plan, index) => ({
+      id: `auto-mgmt-${plan.id || plan._id || index}`,
+      title: 'تفعيل إدارة حساب',
+      text: `${pick(maskedNames)} فعّل ${plan.title}`,
+      type: 'management' as const,
+      icon: '🛡️',
+      service: plan.title,
+      country: pick(countries),
+      isVisible: true
+    }));
+
+    return [
+      ...subItems,
+      ...mgmtItems,
+      ...botItems,
+      { id: 'auto-copy-viewer', title: 'نشاط مباشر', text: `${pick(maskedNames)} نسخ بيانات حساب المشاهدة`, type: 'copy', icon: '👁️', country: pick(countries), isVisible: true },
+      { id: 'auto-telegram', title: 'انضمام جديد', text: `${pick(maskedNames)} انضم لقناة CR7 BOT`, type: 'telegram', icon: '✈️', country: pick(countries), isVisible: true }
+    ];
+  }, [bots, subscriptionPlans, managementPlans, maskedNames, countries]);
+
+  const smartNotificationsConfig = settings.smartNotifications || {};
+  const smartNotificationsPool = useMemo(() => {
+    const dashboardItems = (smartNotificationsConfig.items || []).filter((item) => item.isVisible !== false && item.text?.trim());
+    return dashboardItems.length > 0 ? dashboardItems : defaultSmartNotifications;
+  }, [smartNotificationsConfig.items, defaultSmartNotifications]);
+
+  useEffect(() => {
+    const enabled = smartNotificationsConfig.enabled !== false;
+    if (!enabled || smartNotificationsPool.length === 0 || showLoginModal || selectedResult || selectedTestimonial) {
+      setActiveSmartNotification(null);
+      return;
+    }
+
+    let cancelled = false;
+    let showTimer: ReturnType<typeof setTimeout> | null = null;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const startDelay = Number(smartNotificationsConfig.startDelayMs || 1400);
+    const minDelay = Number(smartNotificationsConfig.minDelayMs || 6500);
+    const maxDelay = Number(smartNotificationsConfig.maxDelayMs || 15000);
+    const displayDuration = Number(smartNotificationsConfig.displayDurationMs || 5200);
+
+    const showNext = () => {
+      if (cancelled) return;
+      const item = smartNotificationsPool[Math.floor(Math.random() * smartNotificationsPool.length)];
+      setActiveSmartNotification({ ...item, id: `${item.id || 'notification'}-${Date.now()}` });
+
+      hideTimer = setTimeout(() => {
+        if (cancelled) return;
+        setActiveSmartNotification(null);
+        showTimer = setTimeout(showNext, randomBetween(minDelay, maxDelay));
+      }, displayDuration);
+    };
+
+    showTimer = setTimeout(showNext, startDelay);
+
+    return () => {
+      cancelled = true;
+      if (showTimer) clearTimeout(showTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, [smartNotificationsConfig.enabled, smartNotificationsConfig.startDelayMs, smartNotificationsConfig.minDelayMs, smartNotificationsConfig.maxDelayMs, smartNotificationsConfig.displayDurationMs, smartNotificationsPool, showLoginModal, selectedResult, selectedTestimonial]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPhraseIndex((prev) => (prev + 1) % heroPhrases.length);
     }, 2500);
     return () => clearInterval(interval);
   }, [heroPhrases.length]);
+
+  const SmartNotificationToast = ({ item }: { item: SmartNotificationItem }) => {
+    const icon = item.icon || (item.type === 'sale' ? '🤖' : item.type === 'subscribe' ? '💳' : item.type === 'management' ? '🛡️' : item.type === 'copy' ? '👁️' : item.type === 'telegram' ? '✈️' : '⚡');
+
+    return (
+      <div className="fixed top-[92px] right-3 left-3 md:left-auto md:right-8 z-[80] pointer-events-none flex justify-center md:justify-end">
+        <div className="smart-toast w-full max-w-[360px] md:max-w-[390px] overflow-hidden rounded-2xl border border-[#bf953f]/35 bg-[#080808]/92 backdrop-blur-2xl shadow-2xl">
+          <div className="relative p-3.5 flex items-center gap-3 flex-row-reverse">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(252,246,186,0.14),transparent_40%)]"></div>
+            <div className="relative shrink-0 w-10 h-10 rounded-xl bg-[#bf953f]/15 border border-[#bf953f]/30 flex items-center justify-center text-lg">
+              {icon}
+            </div>
+            <div className="relative min-w-0 flex-1 text-right">
+              <div className="flex items-center justify-between gap-2 flex-row-reverse mb-1">
+                <p className="text-[11px] text-[#fcf6ba] font-black line-clamp-1">{item.title || 'نشاط جديد داخل CR7 BOT'}</p>
+                <span className="shrink-0 flex items-center gap-1 text-[9px] text-emerald-300 font-black">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  LIVE
+                </span>
+              </div>
+              <p className="text-xs md:text-sm text-white font-bold line-clamp-1">{item.text}</p>
+              <p className="text-[10px] text-gray-500 mt-1 line-clamp-1">{item.country ? `${item.country} • ` : ''}منذ لحظات</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const LiveStatTile = ({ label, count, note, accent = 'gold' }: { label: string; count?: number | string; note?: string; accent?: 'gold' | 'blue' | 'green' }) => (
     <div className="group relative overflow-hidden bg-black/45 border border-[#bf953f]/10 hover:border-[#bf953f]/50 rounded-3xl p-4 transition-all duration-500">
@@ -1033,6 +1186,7 @@ export default function App() {
   return (
     <div className="min-h-screen text-white selection:bg-[#bf953f]/30 font-sans overflow-x-hidden flex flex-col relative bg-[#030303]" dir="rtl">
       <BackgroundAnimation />
+      {activeSmartNotification && <SmartNotificationToast item={activeSmartNotification} />}
 
       <nav className="sticky top-0 z-50 nav-blur">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">

@@ -17,6 +17,35 @@ const defaultLiveStats = {
   bots: []
 };
 
+const defaultSmartNotifications = {
+  enabled: true,
+  firstDelaySeconds: 3,
+  intervalMinSeconds: 10,
+  intervalMaxSeconds: 20,
+  displaySeconds: 5,
+  position: 'top',
+  items: [
+    {
+      id: 'default-1',
+      text: 'تم تفعيل اشتراك جديد في باقة CR7 BOT',
+      type: 'subscription',
+      isVisible: true
+    },
+    {
+      id: 'default-2',
+      text: 'عميل جديد اشترى بوت التداول بالكامل',
+      type: 'bot',
+      isVisible: true
+    },
+    {
+      id: 'default-3',
+      text: 'تم تفعيل إدارة حساب جديدة داخل CR7 BOT',
+      type: 'management',
+      isVisible: true
+    }
+  ]
+};
+
 const defaultSettings = {
   contact: { telegram: '', whatsapp: '', email: '' },
   faqs: [],
@@ -24,19 +53,49 @@ const defaultSettings = {
   aboutUs: '',
   heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
   viewerAccount: defaultViewerAccount,
-  liveStats: defaultLiveStats
+  liveStats: defaultLiveStats,
+  smartNotifications: defaultSmartNotifications
 };
 
 const normalizeLiveStatsItems = (items) => {
   if (!Array.isArray(items)) return [];
 
-  return items.map((item) => ({
-    id: item?.id || Date.now().toString(),
+  return items.map((item, index) => ({
+    id: item?.id || `${Date.now()}-${index}`,
     title: item?.title || '',
     count: Number(item?.count) || 0,
     note: item?.note || '',
-    isVisible: item?.isVisible === false ? false : true
+    isVisible: item?.isVisible === false ? false : true,
+    active: item?.active === false ? false : true
   }));
+};
+
+const normalizeSmartNotificationItems = (items) => {
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item, index) => ({
+    id: item?.id || `${Date.now()}-${index}`,
+    text: item?.text || '',
+    type: item?.type || 'general',
+    isVisible: item?.isVisible === false ? false : true,
+    active: item?.active === false ? false : true
+  })).filter((item) => item.text.trim() !== '');
+};
+
+const normalizeSmartNotifications = (smartNotifications) => {
+  return {
+    enabled: smartNotifications?.enabled === false ? false : true,
+    firstDelaySeconds: Number(smartNotifications?.firstDelaySeconds) || defaultSmartNotifications.firstDelaySeconds,
+    intervalMinSeconds: Number(smartNotifications?.intervalMinSeconds) || defaultSmartNotifications.intervalMinSeconds,
+    intervalMaxSeconds: Number(smartNotifications?.intervalMaxSeconds) || defaultSmartNotifications.intervalMaxSeconds,
+    displaySeconds: Number(smartNotifications?.displaySeconds) || defaultSmartNotifications.displaySeconds,
+    position: smartNotifications?.position || defaultSmartNotifications.position,
+    items: normalizeSmartNotificationItems(
+      Array.isArray(smartNotifications?.items) && smartNotifications.items.length
+        ? smartNotifications.items
+        : defaultSmartNotifications.items
+    )
+  };
 };
 
 // جلب الإعدادات الحالية
@@ -77,7 +136,8 @@ const getSettings = async (req, res) => {
           subscriptions: normalizeLiveStatsItems(data.liveStats?.subscriptions),
           management: normalizeLiveStatsItems(data.liveStats?.management),
           bots: normalizeLiveStatsItems(data.liveStats?.bots)
-        }
+        },
+        smartNotifications: normalizeSmartNotifications(data.smartNotifications)
       }
     });
   } catch (error) {
@@ -95,7 +155,8 @@ const updateSettings = async (req, res) => {
       aboutUs,
       heroPhrases,
       viewerAccount,
-      liveStats
+      liveStats,
+      smartNotifications
     } = req.body;
 
     const dataToSave = {
@@ -124,7 +185,8 @@ const updateSettings = async (req, res) => {
         subscriptions: normalizeLiveStatsItems(liveStats?.subscriptions),
         management: normalizeLiveStatsItems(liveStats?.management),
         bots: normalizeLiveStatsItems(liveStats?.bots)
-      }
+      },
+      smartNotifications: normalizeSmartNotifications(smartNotifications)
     };
 
     await db.collection('settings').doc('general').set(dataToSave, { merge: true });

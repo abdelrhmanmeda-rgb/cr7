@@ -105,6 +105,25 @@ interface LiveStatsData {
   bots: LiveStatsItem[];
 }
 
+interface SmartNotificationItem {
+  id: string;
+  title: string;
+  text: string;
+  type: 'sale' | 'subscribe' | 'management' | 'copy' | 'telegram' | 'custom';
+  icon: string;
+  country: string;
+  isVisible: boolean;
+}
+
+interface SmartNotificationsData {
+  enabled: boolean;
+  startDelayMs: number;
+  minDelayMs: number;
+  maxDelayMs: number;
+  displayDurationMs: number;
+  items: SmartNotificationItem[];
+}
+
 interface SettingsData {
   contact: { telegram: string; whatsapp: string; email: string };
   faqs: FaqItem[];
@@ -113,6 +132,7 @@ interface SettingsData {
   heroPhrases: string[];
   viewerAccount: ViewerAccountData;
   liveStats: LiveStatsData;
+  smartNotifications: SmartNotificationsData;
 }
 
 // ==========================================
@@ -1124,6 +1144,20 @@ const SettingsManager = () => {
     ]
   };
 
+  const defaultSmartNotifications: SmartNotificationsData = {
+    enabled: true,
+    startDelayMs: 1400,
+    minDelayMs: 6500,
+    maxDelayMs: 15000,
+    displayDurationMs: 5200,
+    items: [
+      { id: 'notify-1', title: 'اشتراك جديد', text: 'A**** اشترك في باقة 100$', type: 'subscribe', icon: '💳', country: 'السعودية', isVisible: true },
+      { id: 'notify-2', title: 'عملية شراء جديدة', text: 'M**** اشترى بوت CR7 BOT', type: 'sale', icon: '🤖', country: 'الإمارات', isVisible: true },
+      { id: 'notify-3', title: 'تفعيل إدارة حساب', text: 'K**** فعّل نظام إدارة 500$', type: 'management', icon: '🛡️', country: 'مصر', isVisible: true },
+      { id: 'notify-4', title: 'نشاط مباشر', text: 'S**** نسخ بيانات حساب المشاهدة', type: 'copy', icon: '👁️', country: 'الكويت', isVisible: true }
+    ]
+  };
+
   const [settings, setSettings] = useState<SettingsData>({
     contact: { telegram: '', whatsapp: '', email: '' },
     faqs: [],
@@ -1131,7 +1165,8 @@ const SettingsManager = () => {
     aboutUs: '',
     heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
     viewerAccount: defaultViewerAccount,
-    liveStats: defaultLiveStats
+    liveStats: defaultLiveStats,
+    smartNotifications: defaultSmartNotifications
   });
   const [loading, setLoading] = useState(false);
 
@@ -1159,6 +1194,14 @@ const SettingsManager = () => {
             subscriptions: Array.isArray(data.data.liveStats?.subscriptions) ? data.data.liveStats.subscriptions : defaultLiveStats.subscriptions,
             management: Array.isArray(data.data.liveStats?.management) ? data.data.liveStats.management : defaultLiveStats.management,
             bots: Array.isArray(data.data.liveStats?.bots) ? data.data.liveStats.bots : defaultLiveStats.bots
+          },
+          smartNotifications: {
+            enabled: data.data.smartNotifications?.enabled !== false,
+            startDelayMs: Number(data.data.smartNotifications?.startDelayMs || defaultSmartNotifications.startDelayMs),
+            minDelayMs: Number(data.data.smartNotifications?.minDelayMs || defaultSmartNotifications.minDelayMs),
+            maxDelayMs: Number(data.data.smartNotifications?.maxDelayMs || defaultSmartNotifications.maxDelayMs),
+            displayDurationMs: Number(data.data.smartNotifications?.displayDurationMs || defaultSmartNotifications.displayDurationMs),
+            items: Array.isArray(data.data.smartNotifications?.items) ? data.data.smartNotifications.items : defaultSmartNotifications.items
           }
         });
       }
@@ -1287,6 +1330,242 @@ const SettingsManager = () => {
         [section]: updatedSection
       }
     });
+  };
+
+  const handleSmartNotificationSettingChange = (field: keyof Omit<SmartNotificationsData, 'items'>, value: number | boolean) => {
+    setSettings({
+      ...settings,
+      smartNotifications: {
+        ...(settings.smartNotifications || defaultSmartNotifications),
+        [field]: value
+      }
+    });
+  };
+
+  const handleSmartNotificationItemChange = (
+    index: number,
+    field: keyof SmartNotificationItem,
+    value: string | boolean
+  ) => {
+    const current = settings.smartNotifications || defaultSmartNotifications;
+    const updatedItems = [...(current.items || [])];
+
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value
+    };
+
+    setSettings({
+      ...settings,
+      smartNotifications: {
+        ...current,
+        items: updatedItems
+      }
+    });
+  };
+
+  const addSmartNotificationItem = () => {
+    const current = settings.smartNotifications || defaultSmartNotifications;
+    const newItem: SmartNotificationItem = {
+      id: `notify-${Date.now()}`,
+      title: 'نشاط جديد',
+      text: 'A**** اشترك في CR7 BOT',
+      type: 'custom',
+      icon: '⚡',
+      country: 'السعودية',
+      isVisible: true
+    };
+
+    setSettings({
+      ...settings,
+      smartNotifications: {
+        ...current,
+        items: [...(current.items || []), newItem]
+      }
+    });
+  };
+
+  const removeSmartNotificationItem = (index: number) => {
+    const current = settings.smartNotifications || defaultSmartNotifications;
+    setSettings({
+      ...settings,
+      smartNotifications: {
+        ...current,
+        items: (current.items || []).filter((_, i) => i !== index)
+      }
+    });
+  };
+
+  const SmartNotificationsEditor = () => {
+    const current = settings.smartNotifications || defaultSmartNotifications;
+    const items = current.items || [];
+
+    return (
+      <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-[#bf953f]/20 space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-[#fcf6ba] flex items-center gap-2">
+              <Icons.MessageCircle /> الإشعارات الذكية داخل الموقع
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 leading-6 max-w-3xl">
+              إشعارات صغيرة تظهر أعلى الموقع بعد دخول الزائر ثم تتكرر بفواصل عشوائية. اكتب النصوص التي تريدها، واختر مدة الظهور والفاصل الزمني.
+            </p>
+          </div>
+
+          <label className={`flex items-center gap-3 px-5 py-3 rounded-2xl border cursor-pointer transition-all ${current.enabled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+            <input
+              type="checkbox"
+              checked={current.enabled !== false}
+              onChange={(e) => handleSmartNotificationSettingChange('enabled', e.target.checked)}
+              className="w-5 h-5 accent-emerald-500"
+            />
+            <span className="font-black text-sm">{current.enabled !== false ? 'الإشعارات مفعلة' : 'الإشعارات متوقفة'}</span>
+          </label>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">أول ظهور بعد كام ثانية</label>
+            <input
+              type="number"
+              min={0}
+              value={Math.round((current.startDelayMs || 1400) / 1000)}
+              onChange={(e) => handleSmartNotificationSettingChange('startDelayMs', Math.max(0, Number(e.target.value) * 1000))}
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#bf953f]"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">أقل فاصل بالثواني</label>
+            <input
+              type="number"
+              min={3}
+              value={Math.round((current.minDelayMs || 6500) / 1000)}
+              onChange={(e) => handleSmartNotificationSettingChange('minDelayMs', Math.max(3, Number(e.target.value)) * 1000)}
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#bf953f]"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">أكبر فاصل بالثواني</label>
+            <input
+              type="number"
+              min={5}
+              value={Math.round((current.maxDelayMs || 15000) / 1000)}
+              onChange={(e) => handleSmartNotificationSettingChange('maxDelayMs', Math.max(5, Number(e.target.value)) * 1000)}
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#bf953f]"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">مدة ظهور الإشعار بالثواني</label>
+            <input
+              type="number"
+              min={2}
+              value={Math.round((current.displayDurationMs || 5200) / 1000)}
+              onChange={(e) => handleSmartNotificationSettingChange('displayDurationMs', Math.max(2, Number(e.target.value)) * 1000)}
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#bf953f]"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <h4 className="text-white font-black">نصوص الإشعارات</h4>
+          <button
+            type="button"
+            onClick={addSmartNotificationItem}
+            className="bg-[#bf953f]/10 hover:bg-[#bf953f] hover:text-black border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-xl text-sm font-black transition-all flex items-center gap-2"
+          >
+            <Icons.Plus /> إضافة إشعار
+          </button>
+        </div>
+
+        <div className="grid xl:grid-cols-2 gap-4">
+          {items.map((item, idx) => (
+            <div key={item.id || idx} className="bg-[#05070a] border border-white/5 rounded-3xl p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <label className={`flex items-center gap-2 text-xs font-black px-3 py-2 rounded-xl cursor-pointer ${item.isVisible !== false ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300'}`}>
+                  <input
+                    type="checkbox"
+                    checked={item.isVisible !== false}
+                    onChange={(e) => handleSmartNotificationItemChange(idx, 'isVisible', e.target.checked)}
+                    className="accent-emerald-500"
+                  />
+                  ظاهر
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeSmartNotificationItem(idx)}
+                  className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                >
+                  <Icons.Trash /> حذف
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={item.title || ''}
+                  onChange={(e) => handleSmartNotificationItemChange(idx, 'title', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#bf953f]"
+                  placeholder="عنوان الإشعار"
+                />
+                <select
+                  value={item.type || 'custom'}
+                  onChange={(e) => handleSmartNotificationItemChange(idx, 'type', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#bf953f]"
+                >
+                  <option value="subscribe" className="bg-[#080a0f]">اشتراك</option>
+                  <option value="sale" className="bg-[#080a0f]">شراء بوت</option>
+                  <option value="management" className="bg-[#080a0f]">إدارة</option>
+                  <option value="copy" className="bg-[#080a0f]">نسخ حساب مشاهدة</option>
+                  <option value="telegram" className="bg-[#080a0f]">تليجرام</option>
+                  <option value="custom" className="bg-[#080a0f]">مخصص</option>
+                </select>
+              </div>
+
+              <textarea
+                value={item.text || ''}
+                onChange={(e) => handleSmartNotificationItemChange(idx, 'text', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#bf953f] min-h-[80px]"
+                placeholder="مثال: A**** اشترك في باقة 100$"
+              />
+
+              <div className="grid md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={item.icon || ''}
+                  onChange={(e) => handleSmartNotificationItemChange(idx, 'icon', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#bf953f]"
+                  placeholder="أيقونة مثل 💳"
+                />
+                <input
+                  type="text"
+                  value={item.country || ''}
+                  onChange={(e) => handleSmartNotificationItemChange(idx, 'country', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#bf953f]"
+                  placeholder="الدولة"
+                />
+              </div>
+
+              <div className="rounded-2xl border border-[#bf953f]/20 bg-black/40 p-4">
+                <p className="text-[10px] text-gray-500 font-black mb-2">معاينة سريعة</p>
+                <div className="rounded-2xl border border-[#bf953f]/30 bg-[#080808] p-3 flex items-center gap-3 flex-row-reverse">
+                  <div className="w-9 h-9 rounded-xl bg-[#bf953f]/15 flex items-center justify-center">{item.icon || '⚡'}</div>
+                  <div className="text-right min-w-0">
+                    <p className="text-[11px] text-[#fcf6ba] font-black">{item.title || 'نشاط جديد'}</p>
+                    <p className="text-xs text-white font-bold line-clamp-1">{item.text || 'A**** اشترك في CR7 BOT'}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">{item.country || 'السعودية'} • منذ لحظات</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {items.length === 0 && (
+            <div className="xl:col-span-2 border-2 border-dashed border-white/10 rounded-3xl p-10 text-center text-gray-500 font-bold">
+              لا توجد إشعارات. اضغط إضافة إشعار.
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const LiveStatsEditor = ({
@@ -1488,6 +1767,8 @@ const SettingsManager = () => {
             accentClass="text-blue-400"
           />
         </div>
+
+        <SmartNotificationsEditor />
 
         {/* قسم حساب المشاهدة */}
         <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-blue-500/20 space-y-6">

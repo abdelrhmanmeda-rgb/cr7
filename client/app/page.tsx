@@ -88,6 +88,14 @@ interface Settings {
   terms: string;
   aboutUs: string;
   heroPhrases?: string[];
+  viewerAccount?: {
+    accountNumber?: string;
+    broker?: string;
+    server?: string;
+    password?: string;
+    platform?: string;
+    note?: string;
+  };
 }
 
 interface CommentData {
@@ -369,6 +377,8 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [userActivity, setUserActivity] = useState<Activity[]>([]);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
+  const [selectedResult, setSelectedResult] = useState<Result | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
   const goldCardClass = "bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#bf953f]/20 rounded-[40px] hover:border-[#bf953f]/60 transition-all duration-500 shadow-2xl";
@@ -689,6 +699,55 @@ export default function App() {
     window.open(`https://t.me/CR7BOT01?text=${text}`, '_blank');
   };
 
+  const viewerAccount = settings.viewerAccount || {};
+  const hasViewerAccount = Boolean(
+    viewerAccount.accountNumber ||
+    viewerAccount.broker ||
+    viewerAccount.server ||
+    viewerAccount.password ||
+    viewerAccount.platform ||
+    viewerAccount.note
+  );
+
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 1800);
+    } catch (e) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedField(fieldName);
+        setTimeout(() => setCopiedField(null), 1800);
+      } catch (err) {
+        alert('لم يتم النسخ تلقائياً، انسخ البيانات يدوياً.');
+      }
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const copyViewerAccount = () => {
+    const details = [
+      viewerAccount.platform ? `المنصة: ${viewerAccount.platform}` : '',
+      viewerAccount.broker ? `البروكر: ${viewerAccount.broker}` : '',
+      viewerAccount.server ? `السيرفر: ${viewerAccount.server}` : '',
+      viewerAccount.accountNumber ? `رقم الحساب: ${viewerAccount.accountNumber}` : '',
+      viewerAccount.password ? `باسورد المشاهدة: ${viewerAccount.password}` : '',
+      viewerAccount.note ? `ملاحظة: ${viewerAccount.note}` : ''
+    ].filter(Boolean).join('\n');
+
+    copyToClipboard(details, 'all-viewer-account');
+    trackUserAction('copy_viewer_account');
+  };
+
   const subscriptionPlans = plans.filter((p) => p.type === 'الاشتراكات');
   const managementPlans = plans.filter((p) => p.type === 'الإدارة');
 
@@ -704,6 +763,22 @@ export default function App() {
       <p className="text-[10px] text-gray-500 font-black mb-2 uppercase tracking-widest">{label}</p>
       <p className={`text-3xl ${goldTextClass}`}>{value}</p>
       {sub ? <p className="text-xs text-gray-500 mt-2">{sub}</p> : null}
+    </div>
+  );
+
+  const ViewerAccountField = ({ label, value, fieldKey }: { label: string; value?: string; fieldKey: string }) => (
+    <div className="bg-black/40 border border-[#bf953f]/10 rounded-2xl p-4 flex items-center justify-between gap-3 flex-row-reverse">
+      <div className="text-right min-w-0">
+        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-white font-black break-all">{value || 'غير متوفر حالياً'}</p>
+      </div>
+      <button
+        onClick={() => copyToClipboard(value || '', fieldKey)}
+        disabled={!value}
+        className={`shrink-0 px-4 py-2 rounded-xl text-xs font-black border transition-all ${value ? 'border-[#bf953f]/40 text-[#fcf6ba] hover:bg-[#bf953f] hover:text-black' : 'border-white/10 text-gray-600 cursor-not-allowed'}`}
+      >
+        {copiedField === fieldKey ? 'تم النسخ' : 'نسخ'}
+      </button>
     </div>
   );
 
@@ -1053,21 +1128,72 @@ export default function App() {
         {!loading && !error && currentPage === 'results' && (
           <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
             <div className="max-w-7xl mx-auto">
-              <SectionTitle title="النتائج المباشرة" desc="أحدث النتائج والأرباح الموثقة من السيرفر." />
+              <SectionTitle title="النتائج المباشرة" desc="اضغط على أي صورة لعرضها كاملة، وبيانات حساب المشاهدة متاحة للنسخ مباشرة." />
+
+              <div className={`${goldCardClass} p-6 md:p-8 mb-14`}>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 border-b border-[#bf953f]/10 pb-6 mb-6">
+                  <div className="text-right">
+                    <div className="inline-flex items-center gap-2 bg-[#bf953f]/10 border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-full text-xs font-black mb-4">
+                      <Icons.ShieldCheck size={16} />
+                      حساب مشاهدة مباشر
+                    </div>
+                    <h3 className={`text-3xl md:text-4xl mb-3 ${goldTextClass}`}>بيانات حساب المشاهدة</h3>
+                    <p className="text-gray-400 max-w-2xl leading-7">
+                      استخدم البيانات التالية للدخول بحساب مشاهدة فقط ومتابعة الحساب والصفقات من منصة التداول.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={copyViewerAccount}
+                    disabled={!hasViewerAccount}
+                    className={`px-7 py-4 rounded-2xl ${hasViewerAccount ? goldBtnClass : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/10'}`}
+                  >
+                    {copiedField === 'all-viewer-account' ? 'تم نسخ بيانات الحساب' : 'نسخ بيانات الحساب'}
+                  </button>
+                </div>
+
+                {hasViewerAccount ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <ViewerAccountField label="المنصة" value={viewerAccount.platform} fieldKey="viewer-platform" />
+                    <ViewerAccountField label="البروكر" value={viewerAccount.broker} fieldKey="viewer-broker" />
+                    <ViewerAccountField label="السيرفر" value={viewerAccount.server} fieldKey="viewer-server" />
+                    <ViewerAccountField label="رقم الحساب" value={viewerAccount.accountNumber} fieldKey="viewer-account-number" />
+                    <ViewerAccountField label="باسورد المشاهدة" value={viewerAccount.password} fieldKey="viewer-password" />
+                    <ViewerAccountField label="ملاحظة" value={viewerAccount.note} fieldKey="viewer-note" />
+                  </div>
+                ) : (
+                  <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-6 text-center">
+                    <Icons.Info size={28} className="mx-auto text-[#bf953f] mb-3" />
+                    <p className="text-gray-400 font-bold">لم يتم إضافة بيانات حساب المشاهدة بعد. سيتم عرضها هنا تلقائياً بعد إضافتها من لوحة التحكم.</p>
+                  </div>
+                )}
+              </div>
+
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {results.map((res) => (
                   <div key={res.id || res._id} className={`${goldCardClass} overflow-hidden`}>
-                    <div className="relative h-64 overflow-hidden">
+                    <div
+                      className={`relative h-64 overflow-hidden ${res.mediaType === 'video' ? '' : 'cursor-zoom-in'}`}
+                      onClick={() => {
+                        if (res.mediaType !== 'video') setSelectedResult(res);
+                      }}
+                    >
                       {res.mediaType === 'video' ? (
                         <video
                           src={res.mediaUrl}
-                          className="w-full h-full object-cover"
-                          muted
+                          className="w-full h-full object-contain bg-black"
                           loop
                           controls
                         />
                       ) : (
-                        <img src={res.mediaUrl} alt="result" className="w-full h-full object-cover" />
+                        <>
+                          <img src={res.mediaUrl} alt="result" className="w-full h-full object-contain bg-white" />
+                          <div className="absolute inset-0 bg-black/0 hover:bg-black/25 transition-all flex items-center justify-center">
+                            <span className="opacity-0 hover:opacity-100 transition-all bg-black/80 border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-full text-xs font-black">
+                              اضغط لعرض الصورة كاملة
+                            </span>
+                          </div>
+                        </>
                       )}
                     </div>
                     <div className="p-6 text-right">
@@ -1076,7 +1202,13 @@ export default function App() {
                           <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">صافي الربح</p>
                           <p className={`text-3xl ${goldTextClass}`}>+${res.profitAmount}</p>
                         </div>
-                        <Icons.ArrowUpRight size={30} className="text-[#bf953f]" />
+                        <button
+                          onClick={() => setSelectedResult(res)}
+                          className="w-12 h-12 rounded-2xl bg-[#bf953f]/10 border border-[#bf953f]/30 flex items-center justify-center text-[#bf953f] hover:bg-[#bf953f] hover:text-black transition-all"
+                          title="عرض النتيجة كاملة"
+                        >
+                          <Icons.ArrowUpRight size={24} />
+                        </button>
                       </div>
                       {res.notes ? <p className="text-gray-400 mt-4">{res.notes}</p> : null}
                       <p className="text-xs text-gray-500 mt-4">{new Date(res.createdAt).toLocaleString()}</p>
@@ -1411,6 +1543,58 @@ export default function App() {
           </section>
         )}
       </main>
+
+      {selectedResult && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedResult(null)}></div>
+          <div className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
+              <div className="text-right">
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">عرض النتيجة كاملة</p>
+                <p className={`text-2xl ${goldTextClass}`}>+${selectedResult.profitAmount}</p>
+              </div>
+              <button
+                onClick={() => setSelectedResult(null)}
+                className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#bf953f] hover:text-black transition-all"
+              >
+                <Icons.X size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-black flex items-center justify-center">
+              {selectedResult.mediaType === 'video' ? (
+                <video
+                  src={selectedResult.mediaUrl}
+                  className="w-full h-auto max-h-[75vh] object-contain"
+                  controls
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={selectedResult.mediaUrl}
+                  alt="result full"
+                  className="w-auto h-auto max-w-full max-h-[75vh] object-contain"
+                />
+              )}
+            </div>
+
+            <div className="p-4 md:p-5 border-t border-[#bf953f]/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-right">
+              <div>
+                {selectedResult.notes ? <p className="text-gray-300 font-bold mb-1">{selectedResult.notes}</p> : null}
+                <p className="text-xs text-gray-500">{new Date(selectedResult.createdAt).toLocaleString()}</p>
+              </div>
+              <a
+                href={selectedResult.mediaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`px-6 py-3 rounded-2xl text-center ${goldBtnClass}`}
+              >
+                فتح الصورة الأصلية
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="py-20 border-t border-[#bf953f]/20 bg-black z-10 text-center">
         <div className="max-w-6xl mx-auto px-4">

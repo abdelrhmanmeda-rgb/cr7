@@ -37,6 +37,7 @@ const subscriptionsRoutes = require('./routes/subscriptionsRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const statisticsRoutes = require('./routes/statisticsRoutes'); 
 const blogRoutes = require('./routes/blogRoutes'); 
+const testimonialsRoutes = require('./routes/testimonialsRoutes');
 
 app.use('/api/results', resultsRoutes);
 app.use('/api/bots', botsRoutes); 
@@ -44,6 +45,7 @@ app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/blog', blogRoutes); 
+app.use('/api/testimonials', testimonialsRoutes);
 // ==========================================
 
 const PORT = process.env.PORT || 5000;

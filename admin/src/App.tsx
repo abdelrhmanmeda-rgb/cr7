@@ -1627,6 +1627,225 @@ const SettingsManager = () => {
 };
 
 // ---------------------------------------------------------
+// ---------------------------------------------------------
+// 5.75 إدارة آراء العملاء (Testimonials Manager)
+// ---------------------------------------------------------
+const TestimonialsManager = () => {
+  const [testimonials, setTestimonials] = useState<TestimonialData[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    clientName: '',
+    serviceType: 'اشتراك',
+    order: '1',
+    isVisible: true
+  });
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const fetchTestimonials = async () => {
+    try {
+      const res = await fetch('https://cr7-kappa.vercel.app/api/testimonials');
+      const data = await res.json();
+      if (data.success) setTestimonials(data.data || []);
+    } catch (err) {
+      console.error('Testimonials fetch error');
+    }
+  };
+
+  useEffect(() => { fetchTestimonials(); }, []);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setFile(null);
+    setFormData({
+      title: '',
+      clientName: '',
+      serviceType: 'اشتراك',
+      order: '1',
+      isVisible: true
+    });
+  };
+
+  const handleEditClick = (item: TestimonialData) => {
+    setEditingId(item.id || item._id || null);
+    setFormData({
+      title: item.title || '',
+      clientName: item.clientName || '',
+      serviceType: item.serviceType || 'اشتراك',
+      order: String(item.order || '1'),
+      isVisible: item.isVisible === false || item.isVisible === 'false' ? false : true
+    });
+    setFile(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId && !file) return alert('الرجاء اختيار اسكرين شات من محادثة العميل!');
+
+    setLoading(true);
+    const form = new FormData();
+    if (file) form.append('image', file);
+    form.append('title', formData.title);
+    form.append('clientName', formData.clientName);
+    form.append('serviceType', formData.serviceType);
+    form.append('order', String(formData.order || 1));
+    form.append('isVisible', String(formData.isVisible));
+
+    const url = editingId
+      ? 'https://cr7-kappa.vercel.app/api/testimonials/' + editingId
+      : 'https://cr7-kappa.vercel.app/api/testimonials/add';
+    const method = editingId ? 'PUT' : 'POST';
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(url, {
+        method,
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: form
+      });
+      const data = await res.json();
+      if (data.success || res.ok) {
+        alert(editingId ? 'تم تعديل رأي العميل بنجاح! ✏️' : 'تم إضافة رأي العميل بنجاح! ✅');
+        await fetchTestimonials();
+        resetForm();
+      } else {
+        alert('خطأ من السيرفر: ' + (data.message || 'غير معروف'));
+      }
+    } catch (err) {
+      alert('فشل الاتصال بالسيرفر. تأكد من إضافة مسارات api/testimonials في الباك إند.');
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    if (!confirm('هل أنت متأكد من حذف رأي العميل نهائياً؟')) return;
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('https://cr7-kappa.vercel.app/api/testimonials/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) fetchTestimonials();
+      else alert('حدث خطأ أثناء الحذف.');
+    } catch (err) {
+      alert('فشل الاتصال بالسيرفر أثناء الحذف.');
+    }
+  };
+
+  return (
+    <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 items-start w-full animate-in fade-in duration-500">
+      <div className="w-full xl:w-[380px] 2xl:w-[430px] bg-[#080a0f] border border-white/5 p-6 md:p-8 rounded-[40px] shadow-2xl shrink-0">
+        <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-3">
+          <Icons.MessageCircle /> {editingId ? 'تعديل رأي عميل' : 'إضافة رأي عميل'}
+        </h2>
+        <p className="text-gray-500 text-sm leading-7 mb-8">
+          ارفع اسكرين شات من محادثات تيليجرام، وسيظهر في قسم آراء العملاء بتصميم احترافي داخل الموقع.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="border-2 border-dashed border-white/10 p-8 rounded-3xl text-center relative hover:bg-white/5 transition-colors cursor-pointer group">
+            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} required={!editingId} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+            <div className="flex justify-center mb-3 text-gray-500 group-hover:text-blue-500 transition-colors"><Icons.Image /></div>
+            <p className="text-xs text-gray-400 truncate">{file ? file.name : (editingId ? 'اختر اسكرين جديد (اختياري)' : 'اختر اسكرين شات العميل')}</p>
+          </div>
+
+          <input type="text" placeholder="عنوان قصير للرأي (مثال: تجربة ممتازة مع البوت)" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input type="text" placeholder="اسم مختصر للعميل (مثال: Ahmed M.)" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500" />
+            <select value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500">
+              <option value="اشتراك" className="bg-[#080a0f]">اشتراك</option>
+              <option value="إدارة" className="bg-[#080a0f]">إدارة</option>
+              <option value="بوت" className="bg-[#080a0f]">بوت</option>
+              <option value="نتائج" className="bg-[#080a0f]">نتائج</option>
+              <option value="دعم" className="bg-[#080a0f]">دعم</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input type="number" placeholder="ترتيب الظهور" value={formData.order} onChange={e => setFormData({...formData, order: e.target.value})} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500" />
+            <label className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 p-4 rounded-2xl cursor-pointer hover:bg-green-500/20 transition-all">
+              <input type="checkbox" checked={formData.isVisible} onChange={e => setFormData({...formData, isVisible: e.target.checked})} className="w-5 h-5 accent-green-500 rounded" />
+              <span className="text-white font-bold flex items-center gap-2"><Icons.CheckCircle /> ظاهر في الموقع</span>
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-50">
+              {loading ? 'جاري الحفظ...' : (editingId ? 'حفظ التعديل' : 'نشر الرأي')}
+            </button>
+            {editingId && (
+              <button type="button" onClick={resetForm} className="px-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all">إلغاء</button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="flex-1 min-w-0 w-full bg-[#080a0f] border border-white/5 p-6 md:p-8 rounded-[40px] shadow-2xl overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-white flex items-center gap-3"><Icons.MessageCircle /> مكتبة آراء العملاء</h2>
+            <p className="text-gray-500 text-sm mt-2">كل الاسكرينات المضافة هنا تظهر في موقع العميل حسب حالة الظهور والترتيب.</p>
+          </div>
+          <button onClick={fetchTestimonials} className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-5 py-3 rounded-2xl font-bold transition-all">
+            تحديث القائمة
+          </button>
+        </div>
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
+          {testimonials.map((item) => {
+            const id = item.id || item._id;
+            const visible = item.isVisible === false || item.isVisible === 'false' ? false : true;
+            return (
+              <div key={id} className={'relative bg-black/30 border ' + (visible ? 'border-white/10' : 'border-red-500/30 opacity-60') + ' rounded-[32px] overflow-hidden shadow-xl group'}>
+                <div className="relative h-72 bg-black overflow-hidden">
+                  <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-md border border-white/10 text-white px-3 py-1.5 rounded-full text-[10px] font-black">
+                    #{item.order || 1}
+                  </div>
+                  <div className={(visible ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white') + ' absolute top-4 left-4 px-3 py-1.5 rounded-full text-[10px] font-black'}>
+                    {visible ? 'ظاهر' : 'مخفي'}
+                  </div>
+                </div>
+
+                <div className="p-5 text-right space-y-3">
+                  <div>
+                    <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-300 border border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black mb-3">
+                      <Icons.Telegram size={13} /> {item.serviceType || 'Telegram'}
+                    </span>
+                    <h3 className="font-black text-white line-clamp-2">{item.title || 'رأي عميل'}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{item.clientName || 'عميل CR7'}</p>
+                  </div>
+
+                  <div className="flex gap-2 pt-3 border-t border-white/5">
+                    <button onClick={() => handleEditClick(item)} className="flex-1 text-blue-400 bg-blue-500/5 hover:bg-blue-500 hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-blue-500/10">
+                      <Icons.Edit /> تعديل
+                    </button>
+                    <button onClick={() => handleDelete(id)} className="flex-1 text-red-400 bg-red-500/5 hover:bg-red-500 hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-red-500/10">
+                      <Icons.Trash /> حذف
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {testimonials.length === 0 && (
+            <div className="col-span-full py-24 border-2 border-dashed border-white/5 rounded-[40px] text-center">
+              <Icons.MessageCircle size={42} className="mx-auto text-gray-600 mb-4" />
+              <p className="text-gray-500 font-bold">لا توجد آراء عملاء مضافة حتى الآن.</p>
+              <p className="text-gray-600 text-sm mt-2">ابدأ برفع أول اسكرين شات من محادثات تيليجرام.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // التطبيق الرئيسي (Root Component)
 // ---------------------------------------------------------
 export default function App() {
@@ -1695,6 +1914,9 @@ export default function App() {
           <button onClick={() => { setActiveTab('blog'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'blog' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.BookOpen /> إدارة المدونة
           </button>
+          <button onClick={() => { setActiveTab('testimonials'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'testimonials' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+            <Icons.MessageCircle /> آراء العملاء
+          </button>
           <button onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'settings' ? 'bg-gray-700 text-white shadow-2xl border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Settings /> الإعدادات العامة
           </button>
@@ -1717,7 +1939,7 @@ export default function App() {
           <div className="w-full pb-20">
             <div className="mb-10 lg:mb-12 flex flex-col items-center justify-center text-center mx-auto">
               <h2 className="text-3xl lg:text-5xl font-black mb-3 tracking-tighter">
-                {activeTab === 'results' ? 'النتائج والأرباح 📈' : activeTab === 'subscriptions' ? 'الاشتراكات والإدارة 🤝' : activeTab === 'settings' ? 'الإعدادات العامة ⚙️' : activeTab === 'statistics' ? 'الإحصائيات والتحليلات 📊' : activeTab === 'blog' ? 'إدارة المدونة 📝' : 'منظومة البوتات 🤖'}
+                {activeTab === 'results' ? 'النتائج والأرباح 📈' : activeTab === 'subscriptions' ? 'الاشتراكات والإدارة 🤝' : activeTab === 'settings' ? 'الإعدادات العامة ⚙️' : activeTab === 'statistics' ? 'الإحصائيات والتحليلات 📊' : activeTab === 'testimonials' ? 'آراء العملاء 💬' : activeTab === 'blog' ? 'إدارة المدونة 📝' : 'منظومة البوتات 🤖'}
               </h2>
               <p className="text-gray-500 text-base lg:text-lg max-w-2xl leading-relaxed text-center mx-auto">
                 تحكم في محتوى الموقع المباشر وقم بتحديث البيانات فوراً.
@@ -1725,7 +1947,7 @@ export default function App() {
             </div>
             
             <div className="w-full">
-              {activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
+              {activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'testimonials' ? <TestimonialsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
             </div>
           </div>
         </main>

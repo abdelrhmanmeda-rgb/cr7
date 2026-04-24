@@ -1,50 +1,97 @@
 const { db } = require('../config/firebase');
 
+const defaultViewerAccount = {
+  accountNumber: '',
+  broker: '',
+  server: '',
+  password: '',
+  platform: '',
+  note: ''
+};
+
+const defaultSettings = {
+  contact: { telegram: '', whatsapp: '', email: '' },
+  faqs: [],
+  terms: '',
+  aboutUs: '',
+  heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
+  viewerAccount: defaultViewerAccount
+};
+
 // جلب الإعدادات الحالية
 const getSettings = async (req, res) => {
   try {
     const doc = await db.collection('settings').doc('general').get();
-    
-    // إذا لم تكن الإعدادات موجودة مسبقاً، نرسل بيانات فارغة مبدئية (بما فيها aboutUs و heroPhrases)
+
     if (!doc.exists) {
-      return res.status(200).json({ 
-        success: true, 
-        data: { 
-          contact: { telegram: '', whatsapp: '', email: '' }, 
-          faqs: [], 
-          terms: '', 
-          aboutUs: '',
-          heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'] 
-        } 
+      return res.status(200).json({
+        success: true,
+        data: defaultSettings
       });
     }
-    
-    res.status(200).json({ success: true, data: doc.data() });
+
+    const data = doc.data() || {};
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        contact: data.contact || defaultSettings.contact,
+        faqs: Array.isArray(data.faqs) ? data.faqs : [],
+        terms: data.terms || '',
+        aboutUs: data.aboutUs || '',
+        heroPhrases: Array.isArray(data.heroPhrases) && data.heroPhrases.length
+          ? data.heroPhrases
+          : defaultSettings.heroPhrases,
+        viewerAccount: {
+          accountNumber: data.viewerAccount?.accountNumber || '',
+          broker: data.viewerAccount?.broker || '',
+          server: data.viewerAccount?.server || '',
+          password: data.viewerAccount?.password || '',
+          platform: data.viewerAccount?.platform || '',
+          note: data.viewerAccount?.note || ''
+        }
+      }
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// حفظ وتحديث الإعدادات (نستخدم وثيقة واحدة دائمًا اسمها "general")
+// حفظ وتحديث الإعدادات
 const updateSettings = async (req, res) => {
   try {
-    // نستلم الحقول صراحة من الـ body لضمان حفظها بشكل سليم
-    const { contact, faqs, terms, aboutUs, heroPhrases } = req.body; 
-    
+    const { contact, faqs, terms, aboutUs, heroPhrases, viewerAccount } = req.body;
+
     const dataToSave = {
-        contact: contact || { telegram: '', whatsapp: '', email: '' },
-        faqs: faqs || [],
-        terms: terms || '',
-        aboutUs: aboutUs || '', // ✅ تم تفعيل حفظ قسم "من نحن"
-        heroPhrases: heroPhrases || ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'] // ✨ تفعيل حفظ الجمل المتحركة
+      contact: {
+        telegram: contact?.telegram || '',
+        whatsapp: contact?.whatsapp || '',
+        email: contact?.email || ''
+      },
+      faqs: Array.isArray(faqs) ? faqs : [],
+      terms: terms || '',
+      aboutUs: aboutUs || '',
+      heroPhrases: Array.isArray(heroPhrases) && heroPhrases.length
+        ? heroPhrases
+        : defaultSettings.heroPhrases,
+      viewerAccount: {
+        accountNumber: viewerAccount?.accountNumber || '',
+        broker: viewerAccount?.broker || '',
+        server: viewerAccount?.server || '',
+        password: viewerAccount?.password || '',
+        platform: viewerAccount?.platform || '',
+        note: viewerAccount?.note || ''
+      }
     };
-    
-    // استخدمنا set مع خيار merge لضمان دمج الإعدادات بدلاً من مسح شيء موجود
+
     await db.collection('settings').doc('general').set(dataToSave, { merge: true });
-    
-    res.status(200).json({ success: true, message: 'تم حفظ الإعدادات بنجاح' });
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم حفظ الإعدادات بنجاح'
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

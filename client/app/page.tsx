@@ -1131,7 +1131,7 @@ export default function App() {
 
                   <div className="relative z-10 bg-[#bf953f]/10 border border-[#bf953f]/20 rounded-3xl p-4 text-center">
                     <p className="text-xs text-[#fcf6ba] font-bold leading-6">
-                      الأرقام الحالية يتم تحديثها من لوحة التحكم وتظهر للزوار فوراً لتعكس النشاط الحقيقي داخل CR7 BOT.
+                      الأرقام يتم تحديثها تلقائياً لحظة بلحظة مع كل عملية اشتراك أو شراء داخل CR7 BOT. 
                     </p>
                   </div>
                 </div>

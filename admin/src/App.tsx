@@ -68,12 +68,22 @@ interface FaqItem {
   answer: string;
 }
 
+interface ViewerAccountData {
+  accountNumber: string;
+  broker: string;
+  server: string;
+  password: string;
+  platform: string;
+  note: string;
+}
+
 interface SettingsData {
   contact: { telegram: string; whatsapp: string; email: string };
   faqs: FaqItem[];
   terms: string;
   aboutUs: string;
   heroPhrases: string[];
+  viewerAccount: ViewerAccountData;
 }
 
 // ==========================================
@@ -1062,12 +1072,22 @@ const BlogManager = () => {
 // 6. قسم الإعدادات العامة (Settings Manager)
 // ---------------------------------------------------------
 const SettingsManager = () => {
+  const defaultViewerAccount: ViewerAccountData = {
+    accountNumber: '',
+    broker: '',
+    server: '',
+    password: '',
+    platform: '',
+    note: ''
+  };
+
   const [settings, setSettings] = useState<SettingsData>({
     contact: { telegram: '', whatsapp: '', email: '' },
     faqs: [],
     terms: '',
     aboutUs: '',
-    heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك']
+    heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
+    viewerAccount: defaultViewerAccount
   });
   const [loading, setLoading] = useState(false);
 
@@ -1081,7 +1101,15 @@ const SettingsManager = () => {
           faqs: data.data.faqs || [],
           terms: data.data.terms || '',
           aboutUs: data.data.aboutUs || '',
-          heroPhrases: data.data.heroPhrases || ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك']
+          heroPhrases: data.data.heroPhrases || ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
+          viewerAccount: {
+            accountNumber: data.data.viewerAccount?.accountNumber || '',
+            broker: data.data.viewerAccount?.broker || '',
+            server: data.data.viewerAccount?.server || '',
+            password: data.data.viewerAccount?.password || '',
+            platform: data.data.viewerAccount?.platform || '',
+            note: data.data.viewerAccount?.note || ''
+          }
         });
       }
     } catch (error) {
@@ -1136,6 +1164,16 @@ const SettingsManager = () => {
   const addPhrase = () => setSettings({ ...settings, heroPhrases: [...(settings.heroPhrases || []), ''] });
   const removePhrase = (index: number) => setSettings({ ...settings, heroPhrases: (settings.heroPhrases || []).filter((_, i) => i !== index) });
 
+  const handleViewerAccountChange = (field: keyof ViewerAccountData, value: string) => {
+    setSettings({
+      ...settings,
+      viewerAccount: {
+        ...(settings.viewerAccount || defaultViewerAccount),
+        [field]: value
+      }
+    });
+  };
+
   return (
     <div className="w-full bg-[#080a0f] border border-white/5 p-6 md:p-10 rounded-[40px] shadow-2xl animate-in fade-in duration-500">
       <div className="mb-10 flex items-center justify-between">
@@ -1168,6 +1206,95 @@ const SettingsManager = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* قسم حساب المشاهدة */}
+        <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-blue-500/20 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+            <div>
+              <h3 className="text-lg font-bold text-blue-400 flex items-center gap-2">
+                <Icons.ShieldCheck /> حساب المشاهدة المباشر
+              </h3>
+              <p className="text-xs text-gray-500 mt-2 leading-6">
+                البيانات التي تظهر للعميل في قسم النتائج. اكتب رقم الحساب والبروكر والسيرفر والباسورد والمنصة، وسيقدر العميل ينسخها من الموقع.
+              </p>
+            </div>
+            <span className="w-fit bg-blue-500/10 text-blue-300 border border-blue-500/20 px-4 py-2 rounded-full text-xs font-black">
+              View Only / Investor
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">رقم الحساب</label>
+              <input
+                type="text"
+                value={settings.viewerAccount?.accountNumber || ''}
+                onChange={(e) => handleViewerAccountChange('accountNumber', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+                placeholder="مثال: 12345678"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">البروكر</label>
+              <input
+                type="text"
+                value={settings.viewerAccount?.broker || ''}
+                onChange={(e) => handleViewerAccountChange('broker', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+                placeholder="مثال: Exness / IC Markets"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">السيرفر</label>
+              <input
+                type="text"
+                value={settings.viewerAccount?.server || ''}
+                onChange={(e) => handleViewerAccountChange('server', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+                placeholder="مثال: Exness-MT5Real"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">باسورد المشاهدة</label>
+              <input
+                type="text"
+                value={settings.viewerAccount?.password || ''}
+                onChange={(e) => handleViewerAccountChange('password', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+                placeholder="Investor / View Password"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">المنصة</label>
+              <select
+                value={settings.viewerAccount?.platform || ''}
+                onChange={(e) => handleViewerAccountChange('platform', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+              >
+                <option value="" className="bg-[#080a0f]">اختار المنصة</option>
+                <option value="MT4" className="bg-[#080a0f]">MT4</option>
+                <option value="MT5" className="bg-[#080a0f]">MT5</option>
+                <option value="cTrader" className="bg-[#080a0f]">cTrader</option>
+                <option value="Other" className="bg-[#080a0f]">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">ملاحظة قصيرة</label>
+              <input
+                type="text"
+                value={settings.viewerAccount?.note || ''}
+                onChange={(e) => handleViewerAccountChange('note', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-blue-500"
+                placeholder="مثال: حساب Real للمشاهدة فقط"
+              />
+            </div>
           </div>
         </div>
 

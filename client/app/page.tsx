@@ -494,7 +494,8 @@ export default function App() {
       about: 'من نحن',
       bots: 'البوتات',
       results: 'النتائج',
-      subscribe: 'خدماتنا',
+      services: 'خدماتنا',
+      subscribe: 'الاشتراكات والإدارة',
       testimonials: 'آراء العملاء',
       blog: 'المدونة',
       faqs: 'الأسئلة الشائعة',
@@ -907,34 +908,34 @@ export default function App() {
         setSelectedTestimonial(item);
         trackUserAction('view_testimonial', item.title || item.customerName || 'testimonial');
       }}
-      className={`testimonial-float testimonial-float-${index % 3} group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[34px] p-3 md:p-4 shadow-2xl hover:border-[#fcf6ba]/70 transition-all duration-500 ${index % 3 === 1 ? 'md:mt-10' : index % 3 === 2 ? 'md:mt-4' : ''}`}
+      className={`testimonial-float testimonial-float-${index % 3} group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[26px] p-2 shadow-2xl hover:border-[#fcf6ba]/70 transition-all duration-500 ${index % 5 === 1 ? 'xl:mt-8' : index % 5 === 3 ? 'xl:mt-5' : ''}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(252,246,186,0.16),transparent_35%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      <div className="relative z-10 bg-black rounded-[28px] overflow-hidden border border-white/10">
-        <div className="h-11 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 flex-row-reverse">
+      <div className="relative z-10 bg-black rounded-[22px] overflow-hidden border border-white/10">
+        <div className="h-9 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-3 flex-row-reverse">
           <div className="flex items-center gap-2 flex-row-reverse">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-[10px] text-[#fcf6ba] font-black uppercase tracking-widest">Telegram Feedback</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="text-[8px] sm:text-[9px] text-[#fcf6ba] font-black uppercase tracking-widest">Telegram Feedback</span>
           </div>
           <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-400/70"></span>
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70"></span>
-            <span className="w-2.5 h-2.5 rounded-full bg-green-400/70"></span>
+            <span className="w-2 h-2 rounded-full bg-red-400/70"></span>
+            <span className="w-2 h-2 rounded-full bg-yellow-400/70"></span>
+            <span className="w-2 h-2 rounded-full bg-green-400/70"></span>
           </div>
         </div>
         <div className="relative bg-[#0b0f14]">
-          <img src={item.imageUrl} alt={item.title || 'رأي عميل'} className="w-full h-[360px] md:h-[430px] object-cover object-top group-hover:scale-[1.03] transition-transform duration-700" />
+          <img src={item.imageUrl} alt={item.title || 'رأي عميل'} className="w-full h-[210px] sm:h-[250px] lg:h-[280px] xl:h-[260px] object-cover object-top group-hover:scale-[1.04] transition-transform duration-700" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-70"></div>
-          <div className="absolute bottom-4 right-4 left-4 flex items-end justify-between gap-3 flex-row-reverse">
+          <div className="absolute bottom-3 right-3 left-3 flex items-end justify-between gap-3 flex-row-reverse">
             <div className="text-right min-w-0">
-              <p className="text-white font-black line-clamp-1">{item.title || item.customerName || 'رسالة عميل'}</p>
+              <p className="text-white font-black line-clamp-1 text-sm">{item.title || item.customerName || 'رسالة عميل'}</p>
               <p className="text-[11px] text-gray-300 mt-1 line-clamp-1">{item.service || 'CR7 BOT'}{item.date ? ' • ' + item.date : ''}</p>
             </div>
-            <span className="shrink-0 bg-[#bf953f] text-black px-3 py-1.5 rounded-full text-[10px] font-black">عرض</span>
+            <span className="shrink-0 bg-[#bf953f] text-black px-2.5 py-1 rounded-full text-[9px] font-black">عرض</span>
           </div>
         </div>
       </div>
-      <div className="relative z-10 mt-4 px-2 flex items-center justify-between gap-3 flex-row-reverse">
+      <div className="relative z-10 mt-3 px-1 flex items-center justify-between gap-2 flex-row-reverse">
         <div className="flex items-center gap-2 flex-row-reverse text-[#fcf6ba] text-[11px] font-black">
           <Icons.ShieldCheck size={14} />
           <span>لقطة عميل حقيقية</span>
@@ -979,7 +980,7 @@ export default function App() {
 
           <div className="relative">
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[70%] h-40 bg-[#bf953f]/10 blur-[90px] rounded-full pointer-events-none"></div>
-            <div className="relative z-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
               {items.map((item, index) => (
                 <TestimonialScreenshotCard key={item.id || `${item.imageUrl}-${index}`} item={item} index={index} />
               ))}
@@ -1183,10 +1184,17 @@ export default function App() {
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                     <button
-                      onClick={() => navigateTo('subscribe')}
+                      onClick={() => navigateTo('services')}
                       className="gold-btn px-10 py-4 rounded-xl text-lg"
                     >
                       ابدأ الآن
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('testimonials')}
+                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/40 bg-[#bf953f]/10 text-[#fcf6ba] font-black hover:bg-[#bf953f] hover:text-black transition-all"
+                    >
+                      آراء العملاء
                     </button>
 
                     <button
@@ -1534,10 +1542,10 @@ export default function App() {
           <TestimonialsSection />
         )}
 
-        {!loading && !error && currentPage === 'subscribe' && (
+        {!loading && !error && currentPage === 'services' && (
           <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
             <div className="max-w-7xl mx-auto">
-              <SectionTitle title="خدماتنا" desc="بيع الروبوتات، الباقات الشهرية، وخدمات إدارة الحسابات في مكان واحد." />
+              <SectionTitle title="كل خدمات CR7 BOT" desc="بيع الروبوتات، باقات الاشتراك، وخدمات إدارة الحسابات في مكان واحد." />
 
               {bots.length > 0 && (
                 <div className="mb-16">
@@ -1576,6 +1584,72 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {subscriptionPlans.length > 0 && (
+                <div className="mb-16">
+                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">باقات الاشتراك</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {subscriptionPlans.map((plan) => (
+                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
+                        {(plan.isBestSeller === 'true' || plan.isBestSeller === true) && (
+                          <div className="mb-5 w-fit bg-[#bf953f] text-black px-4 py-1 rounded-full text-[10px] font-black uppercase">
+                            الأكثر طلباً
+                          </div>
+                        )}
+                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
+                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
+                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
+                        <ul className="space-y-3 mb-8 flex-grow">
+                          {(plan.features || []).map((f, i) => (
+                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
+                              <Icons.Check size={16} className="text-[#bf953f]" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <button onClick={() => handlePlanClick('الاشتراكات', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
+                          اشترك الآن
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {managementPlans.length > 0 && (
+                <div>
+                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">إدارة الحسابات</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {managementPlans.map((plan) => (
+                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
+                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
+                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
+                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
+                        <ul className="space-y-3 mb-8 flex-grow">
+                          {(plan.features || []).map((f, i) => (
+                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
+                              <Icons.Check size={16} className="text-[#bf953f]" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <button onClick={() => handlePlanClick('الإدارة', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
+                          ابدأ الإدارة
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+
+        {!loading && !error && currentPage === 'subscribe' && (
+          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
+            <div className="max-w-7xl mx-auto">
+              <SectionTitle title="الاشتراكات والإدارة" desc="باقات الاشتراك الشهرية وخدمات إدارة الحسابات فقط." />
 
               {subscriptionPlans.length > 0 && (
                 <div className="mb-16">
@@ -1861,7 +1935,7 @@ export default function App() {
       {selectedTestimonial && (
         <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedTestimonial(null)}></div>
-          <div className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">
+          <div className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[22px] overflow-hidden shadow-2xl flex flex-col">
             <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
               <div className="text-right">
                 <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Telegram Feedback</p>
@@ -1906,7 +1980,7 @@ export default function App() {
 
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedResult(null)}></div>
-          <div className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[28px] overflow-hidden shadow-2xl flex flex-col">
+          <div className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[22px] overflow-hidden shadow-2xl flex flex-col">
             <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
               <div className="text-right">
                 <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">عرض النتيجة كاملة</p>

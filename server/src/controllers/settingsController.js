@@ -9,13 +9,34 @@ const defaultViewerAccount = {
   note: ''
 };
 
+const defaultLiveStats = {
+  headline: 'الأعداد المباشرة الحالية',
+  description: 'يتم تحديث هذه الأرقام تلقائياً مع كل اشتراك أو إدارة أو شراء جديد من الموقع.',
+  subscriptions: [],
+  management: [],
+  bots: []
+};
+
 const defaultSettings = {
   contact: { telegram: '', whatsapp: '', email: '' },
   faqs: [],
   terms: '',
   aboutUs: '',
   heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
-  viewerAccount: defaultViewerAccount
+  viewerAccount: defaultViewerAccount,
+  liveStats: defaultLiveStats
+};
+
+const normalizeLiveStatsItems = (items) => {
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item) => ({
+    id: item?.id || Date.now().toString(),
+    title: item?.title || '',
+    count: Number(item?.count) || 0,
+    note: item?.note || '',
+    isVisible: item?.isVisible === false ? false : true
+  }));
 };
 
 // جلب الإعدادات الحالية
@@ -49,6 +70,13 @@ const getSettings = async (req, res) => {
           password: data.viewerAccount?.password || '',
           platform: data.viewerAccount?.platform || '',
           note: data.viewerAccount?.note || ''
+        },
+        liveStats: {
+          headline: data.liveStats?.headline || defaultLiveStats.headline,
+          description: data.liveStats?.description || defaultLiveStats.description,
+          subscriptions: normalizeLiveStatsItems(data.liveStats?.subscriptions),
+          management: normalizeLiveStatsItems(data.liveStats?.management),
+          bots: normalizeLiveStatsItems(data.liveStats?.bots)
         }
       }
     });
@@ -60,7 +88,15 @@ const getSettings = async (req, res) => {
 // حفظ وتحديث الإعدادات
 const updateSettings = async (req, res) => {
   try {
-    const { contact, faqs, terms, aboutUs, heroPhrases, viewerAccount } = req.body;
+    const {
+      contact,
+      faqs,
+      terms,
+      aboutUs,
+      heroPhrases,
+      viewerAccount,
+      liveStats
+    } = req.body;
 
     const dataToSave = {
       contact: {
@@ -81,6 +117,13 @@ const updateSettings = async (req, res) => {
         password: viewerAccount?.password || '',
         platform: viewerAccount?.platform || '',
         note: viewerAccount?.note || ''
+      },
+      liveStats: {
+        headline: liveStats?.headline || defaultLiveStats.headline,
+        description: liveStats?.description || defaultLiveStats.description,
+        subscriptions: normalizeLiveStatsItems(liveStats?.subscriptions),
+        management: normalizeLiveStatsItems(liveStats?.management),
+        bots: normalizeLiveStatsItems(liveStats?.bots)
       }
     };
 

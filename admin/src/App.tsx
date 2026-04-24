@@ -77,6 +77,21 @@ interface ViewerAccountData {
   note: string;
 }
 
+interface LiveStatsItem {
+  id: string;
+  title: string;
+  count: number;
+  note?: string;
+  isVisible?: boolean;
+}
+
+interface LiveStatsData {
+  headline: string;
+  subscriptions: LiveStatsItem[];
+  management: LiveStatsItem[];
+  bots: LiveStatsItem[];
+}
+
 interface SettingsData {
   contact: { telegram: string; whatsapp: string; email: string };
   faqs: FaqItem[];
@@ -84,6 +99,7 @@ interface SettingsData {
   aboutUs: string;
   heroPhrases: string[];
   viewerAccount: ViewerAccountData;
+  liveStats: LiveStatsData;
 }
 
 // ==========================================
@@ -1081,13 +1097,28 @@ const SettingsManager = () => {
     note: ''
   };
 
+  const defaultLiveStats: LiveStatsData = {
+    headline: 'الأعداد المباشرة الحالية يتم تحديثها تلقائياً مع كل اشتراك أو إدارة أو شراء جديد',
+    subscriptions: [
+      { id: 'sub-100', title: 'باقة اشتراك 100$', count: 0, note: 'مشترك حالي', isVisible: true },
+      { id: 'sub-200', title: 'باقة اشتراك 200$', count: 0, note: 'مشترك حالي', isVisible: true }
+    ],
+    management: [
+      { id: 'mgmt-500', title: 'نظام إدارة 500$', count: 0, note: 'عميل إدارة', isVisible: true }
+    ],
+    bots: [
+      { id: 'bot-main', title: 'مبيعات البوتات', count: 0, note: 'عملية شراء', isVisible: true }
+    ]
+  };
+
   const [settings, setSettings] = useState<SettingsData>({
     contact: { telegram: '', whatsapp: '', email: '' },
     faqs: [],
     terms: '',
     aboutUs: '',
     heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
-    viewerAccount: defaultViewerAccount
+    viewerAccount: defaultViewerAccount,
+    liveStats: defaultLiveStats
   });
   const [loading, setLoading] = useState(false);
 
@@ -1109,6 +1140,12 @@ const SettingsManager = () => {
             password: data.data.viewerAccount?.password || '',
             platform: data.data.viewerAccount?.platform || '',
             note: data.data.viewerAccount?.note || ''
+          },
+          liveStats: {
+            headline: data.data.liveStats?.headline || defaultLiveStats.headline,
+            subscriptions: Array.isArray(data.data.liveStats?.subscriptions) ? data.data.liveStats.subscriptions : defaultLiveStats.subscriptions,
+            management: Array.isArray(data.data.liveStats?.management) ? data.data.liveStats.management : defaultLiveStats.management,
+            bots: Array.isArray(data.data.liveStats?.bots) ? data.data.liveStats.bots : defaultLiveStats.bots
           }
         });
       }
@@ -1174,6 +1211,167 @@ const SettingsManager = () => {
     });
   };
 
+  const handleLiveStatsHeadlineChange = (value: string) => {
+    setSettings({
+      ...settings,
+      liveStats: {
+        ...(settings.liveStats || defaultLiveStats),
+        headline: value
+      }
+    });
+  };
+
+  const handleLiveStatsItemChange = (
+    section: keyof Omit<LiveStatsData, 'headline'>,
+    index: number,
+    field: keyof LiveStatsItem,
+    value: string | number | boolean
+  ) => {
+    const currentLiveStats = settings.liveStats || defaultLiveStats;
+    const updatedSection = [...(currentLiveStats[section] || [])];
+
+    updatedSection[index] = {
+      ...updatedSection[index],
+      [field]: field === 'count' ? Number(value) || 0 : value
+    };
+
+    setSettings({
+      ...settings,
+      liveStats: {
+        ...currentLiveStats,
+        [section]: updatedSection
+      }
+    });
+  };
+
+  const addLiveStatsItem = (section: keyof Omit<LiveStatsData, 'headline'>) => {
+    const currentLiveStats = settings.liveStats || defaultLiveStats;
+    const newItem: LiveStatsItem = {
+      id: `${section}-${Date.now()}`,
+      title: section === 'subscriptions' ? 'باقة جديدة' : section === 'management' ? 'نظام إدارة جديد' : 'بوت جديد',
+      count: 0,
+      note: section === 'subscriptions' ? 'مشترك حالي' : section === 'management' ? 'عميل إدارة' : 'عملية شراء',
+      isVisible: true
+    };
+
+    setSettings({
+      ...settings,
+      liveStats: {
+        ...currentLiveStats,
+        [section]: [...(currentLiveStats[section] || []), newItem]
+      }
+    });
+  };
+
+  const removeLiveStatsItem = (section: keyof Omit<LiveStatsData, 'headline'>, index: number) => {
+    const currentLiveStats = settings.liveStats || defaultLiveStats;
+    const updatedSection = (currentLiveStats[section] || []).filter((_, i) => i !== index);
+
+    setSettings({
+      ...settings,
+      liveStats: {
+        ...currentLiveStats,
+        [section]: updatedSection
+      }
+    });
+  };
+
+  const LiveStatsEditor = ({
+    section,
+    title,
+    description,
+    accentClass
+  }: {
+    section: keyof Omit<LiveStatsData, 'headline'>;
+    title: string;
+    description: string;
+    accentClass: string;
+  }) => {
+    const items = (settings.liveStats || defaultLiveStats)[section] || [];
+
+    return (
+      <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h4 className={`text-base font-black ${accentClass}`}>{title}</h4>
+            <p className="text-xs text-gray-500 mt-1 leading-6">{description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => addLiveStatsItem(section)}
+            className="w-fit bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+          >
+            <Icons.Plus /> إضافة عنصر
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {items.map((item, idx) => (
+            <div key={item.id || idx} className="grid grid-cols-1 lg:grid-cols-[1.4fr_120px_1fr_120px_44px] gap-3 bg-black/30 border border-white/5 p-4 rounded-2xl items-center">
+              <div>
+                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block">اسم العنصر</label>
+                <input
+                  type="text"
+                  value={item.title || ''}
+                  onChange={(e) => handleLiveStatsItemChange(section, idx, 'title', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500 text-sm"
+                  placeholder="مثال: باقة 100$"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block">العدد</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={item.count || 0}
+                  onChange={(e) => handleLiveStatsItemChange(section, idx, 'count', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block">وصف صغير</label>
+                <input
+                  type="text"
+                  value={item.note || ''}
+                  onChange={(e) => handleLiveStatsItemChange(section, idx, 'note', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-blue-500 text-sm"
+                  placeholder="مثال: مشترك حالي"
+                />
+              </div>
+
+              <label className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 p-3 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={item.isVisible !== false}
+                  onChange={(e) => handleLiveStatsItemChange(section, idx, 'isVisible', e.target.checked)}
+                  className="w-4 h-4 accent-blue-500"
+                />
+                <span className="text-xs text-gray-300 font-bold">ظاهر</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => removeLiveStatsItem(section, idx)}
+                className="bg-red-500/10 text-red-400 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                title="حذف العنصر"
+              >
+                <Icons.Trash />
+              </button>
+            </div>
+          ))}
+
+          {items.length === 0 && (
+            <div className="py-8 text-center text-gray-500 border border-dashed border-white/10 rounded-2xl">
+              لا توجد عناصر في هذا القسم. اضغط إضافة عنصر.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-[#080a0f] border border-white/5 p-6 md:p-10 rounded-[40px] shadow-2xl animate-in fade-in duration-500">
       <div className="mb-10 flex items-center justify-between">
@@ -1207,6 +1405,75 @@ const SettingsManager = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* قسم الأعداد المباشرة الحالية */}
+        <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-emerald-500/20 space-y-6">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+            <div>
+              <h3 className="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                <Icons.Users /> الأعداد المباشرة الحالية
+              </h3>
+              <p className="text-xs text-gray-500 mt-2 leading-6 max-w-3xl">
+                هذه البيانات تظهر في الصفحة الرئيسية مكان كارت الرسم البياني القديم. أضف أو عدل عدد المشتركين في كل باقة، عملاء الإدارة، وعدد شراء كل بوت.
+              </p>
+            </div>
+            <div className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-4 py-2 rounded-full text-xs font-black w-fit">
+              LIVE WEBSITE COUNTERS
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">الجملة التي تظهر فوق الأعداد في الموقع</label>
+            <textarea
+              value={settings.liveStats?.headline || ''}
+              onChange={(e) => handleLiveStatsHeadlineChange(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-emerald-500 min-h-[90px]"
+              placeholder="مثال: الأعداد المباشرة الحالية يتم تحديثها تلقائياً مع كل اشتراك أو إدارة أو شراء جديد"
+            />
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="bg-[#05070a] border border-emerald-500/10 rounded-3xl p-5 text-center">
+              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">إجمالي الاشتراكات</p>
+              <p className="text-4xl font-black text-emerald-400">
+                {(settings.liveStats?.subscriptions || []).filter((item) => item.isVisible !== false).reduce((sum, item) => sum + (Number(item.count) || 0), 0)}
+              </p>
+            </div>
+            <div className="bg-[#05070a] border border-indigo-500/10 rounded-3xl p-5 text-center">
+              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">إجمالي الإدارة</p>
+              <p className="text-4xl font-black text-indigo-400">
+                {(settings.liveStats?.management || []).filter((item) => item.isVisible !== false).reduce((sum, item) => sum + (Number(item.count) || 0), 0)}
+              </p>
+            </div>
+            <div className="bg-[#05070a] border border-blue-500/10 rounded-3xl p-5 text-center">
+              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">إجمالي شراء البوتات</p>
+              <p className="text-4xl font-black text-blue-400">
+                {(settings.liveStats?.bots || []).filter((item) => item.isVisible !== false).reduce((sum, item) => sum + (Number(item.count) || 0), 0)}
+              </p>
+            </div>
+          </div>
+
+          <LiveStatsEditor
+            section="subscriptions"
+            title="باقات الاشتراك"
+            description="مثال: باقة اشتراك 100$، باقة اشتراك 200$، وأي باقة جديدة تضيفها لاحقاً."
+            accentClass="text-emerald-400"
+          />
+
+          <LiveStatsEditor
+            section="management"
+            title="أنظمة الإدارة"
+            description="مثال: نظام إدارة 500$، ويمكن إضافة أي نظام إدارة جديد وعدد عملائه."
+            accentClass="text-indigo-400"
+          />
+
+          <LiveStatsEditor
+            section="bots"
+            title="مبيعات البوتات"
+            description="اكتب اسم كل بوت وعدد عمليات الشراء الحالية التي تريد عرضها للزوار."
+            accentClass="text-blue-400"
+          />
         </div>
 
         {/* قسم حساب المشاهدة */}

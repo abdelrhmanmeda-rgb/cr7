@@ -446,7 +446,7 @@ export default function App() {
       about: 'من نحن',
       bots: 'البوتات',
       results: 'النتائج',
-      subscribe: 'الاشتراكات والإدارة',
+      subscribe: 'خدماتنا',
       blog: 'المدونة',
       faqs: 'الأسئلة الشائعة',
       terms: 'الشروط والأحكام',
@@ -1091,7 +1091,45 @@ export default function App() {
         {!loading && !error && currentPage === 'subscribe' && (
           <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
             <div className="max-w-7xl mx-auto">
-              <SectionTitle title="الاشتراكات والإدارة" desc="الباقات الشهرية وخدمات إدارة الحسابات." />
+              <SectionTitle title="خدماتنا" desc="بيع الروبوتات، الباقات الشهرية، وخدمات إدارة الحسابات في مكان واحد." />
+
+              {bots.length > 0 && (
+                <div className="mb-16">
+                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">بيع الروبوتات</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {bots.map((bot) => (
+                      <div key={bot.id || bot._id} className={`${goldCardClass} overflow-hidden flex flex-col`}>
+                        <div className="h-60 relative">
+                          <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover" />
+                          {(bot.isBestSeller === 'true' || bot.isBestSeller === true) && (
+                            <div className="absolute top-4 left-4 bg-[#bf953f] text-black px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                              الأكثر مبيعاً
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-8 flex flex-col flex-grow text-right">
+                          <h4 className="text-2xl font-black mb-3">{bot.name}</h4>
+                          <p className="text-gray-400 mb-5">{bot.description}</p>
+                          <ul className="space-y-3 mb-8 flex-grow">
+                            {(bot.features || []).map((f, i) => (
+                              <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
+                                <Icons.CheckCircle size={16} className="text-[#bf953f]" />
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="flex justify-between items-center border-t border-[#bf953f]/10 pt-6">
+                            <span className={`text-3xl ${goldTextClass}`}>${bot.price}</span>
+                            <button onClick={() => handleBotPurchaseClick(bot)} className={`px-6 py-2 rounded-xl ${goldBtnClass}`}>
+                              شراء الآن
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {subscriptionPlans.length > 0 && (
                 <div className="mb-16">

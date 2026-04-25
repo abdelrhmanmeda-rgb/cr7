@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
@@ -908,6 +908,104 @@ export default function App() {
   const testimonialsSubheadline = settings.testimonials?.subheadline || 'لقطات حقيقية من رسائل العملاء بعد الاشتراك واستخدام خدمات CR7 BOT.';
   const testimonialItems = testimonials.filter((item) => item.active !== false && item.isVisible !== false && item.imageUrl);
   const featuredTestimonials = testimonialItems.filter((item) => item.featured).length > 0 ? testimonialItems.filter((item) => item.featured) : testimonialItems.slice(0, 6);
+
+  const welcomeAudioSettings = settings.welcomeAudio || {};
+  const welcomeAudioEnabled = welcomeAudioSettings.enabled === true && Boolean(welcomeAudioSettings.audioUrl);
+  const welcomeAudioVolume = Math.min(1, Math.max(0, Number(welcomeAudioSettings.volume ?? 0.45)));
+
+  useEffect(() => {
+    if (!welcomeAudioEnabled || !welcomeAudioSettings.audioUrl) {
+      if (welcomeAudioRef.current) {
+        welcomeAudioRef.current.pause();
+        welcomeAudioRef.current.currentTime = 0;
+        welcomeAudioRef.current = null;
+      }
+      setIsWelcomeAudioPlaying(false);
+      setWelcomeAudioUnlocked(false);
+      return;
+    }
+
+    const audio = new Audio(welcomeAudioSettings.audioUrl);
+    audio.loop = welcomeAudioSettings.loop !== false;
+    audio.volume = welcomeAudioVolume;
+    audio.preload = 'auto';
+    welcomeAudioRef.current = audio;
+    setIsWelcomeAudioPlaying(false);
+    setWelcomeAudioUnlocked(false);
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      if (welcomeAudioRef.current === audio) welcomeAudioRef.current = null;
+      setIsWelcomeAudioPlaying(false);
+    };
+  }, [welcomeAudioEnabled, welcomeAudioSettings.audioUrl, welcomeAudioSettings.loop, welcomeAudioVolume]);
+
+  useEffect(() => {
+    if (!welcomeAudioEnabled) return;
+
+    const startWelcomeAudio = () => {
+      const audio = welcomeAudioRef.current;
+      if (!audio) return;
+
+      audio.volume = welcomeAudioVolume;
+      audio.play()
+        .then(() => {
+          setWelcomeAudioUnlocked(true);
+          setIsWelcomeAudioPlaying(true);
+        })
+        .catch(() => {
+          setIsWelcomeAudioPlaying(false);
+        });
+    };
+
+    window.addEventListener('pointerdown', startWelcomeAudio, { once: true });
+    window.addEventListener('touchstart', startWelcomeAudio, { once: true });
+    window.addEventListener('keydown', startWelcomeAudio, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', startWelcomeAudio);
+      window.removeEventListener('touchstart', startWelcomeAudio);
+      window.removeEventListener('keydown', startWelcomeAudio);
+    };
+  }, [welcomeAudioEnabled, welcomeAudioVolume]);
+
+  useEffect(() => {
+    const stopAudioOnExit = () => {
+      if (welcomeAudioRef.current) {
+        welcomeAudioRef.current.pause();
+      }
+      setIsWelcomeAudioPlaying(false);
+    };
+
+    window.addEventListener('pagehide', stopAudioOnExit);
+    window.addEventListener('beforeunload', stopAudioOnExit);
+
+    return () => {
+      window.removeEventListener('pagehide', stopAudioOnExit);
+      window.removeEventListener('beforeunload', stopAudioOnExit);
+    };
+  }, []);
+
+  const toggleWelcomeAudio = async () => {
+    const audio = welcomeAudioRef.current;
+    if (!audio) return;
+
+    if (isWelcomeAudioPlaying) {
+      audio.pause();
+      setIsWelcomeAudioPlaying(false);
+      return;
+    }
+
+    try {
+      audio.volume = welcomeAudioVolume;
+      await audio.play();
+      setWelcomeAudioUnlocked(true);
+      setIsWelcomeAudioPlaying(true);
+    } catch (e) {
+      alert('اضغط مرة أخرى لتشغيل الصوت.');
+    }
+  };
 
   const maskedNames = useMemo(() => ['A****', 'M****', 'K****', 'S****', 'Y****', 'R****', 'H****', 'T****'], []);
   const countries = useMemo(() => ['السعودية', 'الإمارات', 'الكويت', 'قطر', 'مصر', 'الأردن', 'المغرب'], []);

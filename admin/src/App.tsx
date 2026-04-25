@@ -124,6 +124,13 @@ interface SmartNotificationsData {
   items: SmartNotificationItem[];
 }
 
+interface WelcomeAudioData {
+  enabled: boolean;
+  audioUrl: string;
+  volume: number;
+  loop: boolean;
+}
+
 interface SettingsData {
   contact: { telegram: string; whatsapp: string; email: string };
   faqs: FaqItem[];
@@ -133,6 +140,7 @@ interface SettingsData {
   viewerAccount: ViewerAccountData;
   liveStats: LiveStatsData;
   smartNotifications: SmartNotificationsData;
+  welcomeAudio: WelcomeAudioData;
 }
 
 // ==========================================
@@ -1158,6 +1166,13 @@ const SettingsManager = () => {
     ]
   };
 
+  const defaultWelcomeAudio: WelcomeAudioData = {
+    enabled: false,
+    audioUrl: '',
+    volume: 0.45,
+    loop: true
+  };
+
   const [settings, setSettings] = useState<SettingsData>({
     contact: { telegram: '', whatsapp: '', email: '' },
     faqs: [],
@@ -1166,9 +1181,12 @@ const SettingsManager = () => {
     heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
     viewerAccount: defaultViewerAccount,
     liveStats: defaultLiveStats,
-    smartNotifications: defaultSmartNotifications
+    smartNotifications: defaultSmartNotifications,
+    welcomeAudio: defaultWelcomeAudio
   });
   const [loading, setLoading] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioUploading, setAudioUploading] = useState(false);
 
   const fetchSettings = async () => {
     try {
@@ -1202,6 +1220,12 @@ const SettingsManager = () => {
             maxDelayMs: Number(data.data.smartNotifications?.maxDelayMs || defaultSmartNotifications.maxDelayMs),
             displayDurationMs: Number(data.data.smartNotifications?.displayDurationMs || defaultSmartNotifications.displayDurationMs),
             items: Array.isArray(data.data.smartNotifications?.items) ? data.data.smartNotifications.items : defaultSmartNotifications.items
+          },
+          welcomeAudio: {
+            enabled: data.data.welcomeAudio?.enabled === true,
+            audioUrl: data.data.welcomeAudio?.audioUrl || '',
+            volume: Number(data.data.welcomeAudio?.volume ?? defaultWelcomeAudio.volume),
+            loop: data.data.welcomeAudio?.loop !== false
           }
         });
       }
@@ -1394,6 +1418,162 @@ const SettingsManager = () => {
         items: (current.items || []).filter((_, i) => i !== index)
       }
     });
+  };
+
+  const handleWelcomeAudioChange = (field: keyof WelcomeAudioData, value: string | number | boolean) => {
+    const current = settings.welcomeAudio || defaultWelcomeAudio;
+    setSettings({
+      ...settings,
+      welcomeAudio: {
+        ...current,
+        [field]: field === 'volume' ? Math.min(1, Math.max(0, Number(value))) : value
+      }
+    });
+  };
+
+  const handleUploadWelcomeAudio = async () => {
+    if (!audioFile) return alert('اختار ملف صوتي الأول بصيغة MP3 أو WAV أو M4A');
+    setAudioUploading(true);
+
+    const form = new FormData();
+    form.append('audio', audioFile);
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('https://cr7-kappa.vercel.app/api/settings/welcome-audio/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.audioUrl) {
+        const current = settings.welcomeAudio || defaultWelcomeAudio;
+        setSettings({
+          ...settings,
+          welcomeAudio: {
+            ...current,
+            audioUrl: data.audioUrl,
+            enabled: true
+          }
+        });
+        setAudioFile(null);
+        alert('تم رفع صوت الترحيب بنجاح! احفظ الإعدادات لتثبيته ✅');
+      } else {
+        alert('خطأ أثناء رفع الصوت: ' + (data.message || 'غير معروف'));
+      }
+    } catch (err) {
+      alert('فشل الاتصال بالسيرفر أثناء رفع الصوت. تأكد أن مسار رفع الصوت موجود في settingsRoutes.');
+    }
+
+    setAudioUploading(false);
+  };
+
+  const WelcomeAudioEditor = () => {
+    const current = settings.welcomeAudio || defaultWelcomeAudio;
+
+    return (
+      <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-fuchsia-500/20 space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-fuchsia-300 flex items-center gap-2">
+              <Icons.Activity /> صوت الترحيب داخل الموقع
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 leading-6 max-w-3xl">
+              ارفع ملف صوتي وسيتم تشغيله للزائر بعد أول لمسة أو ضغطة داخل الموقع، مع زر صغير للعميل يقدر يقفل أو يشغل الصوت منه.
+            </p>
+          </div>
+
+          <label className={`flex items-center gap-3 px-5 py-3 rounded-2xl border cursor-pointer transition-all ${current.enabled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+            <input
+              type="checkbox"
+              checked={current.enabled === true}
+              onChange={(e) => handleWelcomeAudioChange('enabled', e.target.checked)}
+              className="w-5 h-5 accent-emerald-500"
+            />
+            <span className="font-black text-sm">{current.enabled ? 'الصوت مفعل' : 'الصوت متوقف'}</span>
+          </label>
+        </div>
+
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6">
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-fuchsia-500/20 p-6 rounded-3xl text-center relative hover:bg-white/5 transition-colors cursor-pointer group">
+              <input
+                type="file"
+                accept="audio/*,.mp3,.wav,.m4a"
+                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="text-4xl mb-3">🎧</div>
+              <p className="text-sm text-white font-black truncate">{audioFile ? audioFile.name : 'اختار ملف صوت الترحيب'}</p>
+              <p className="text-xs text-gray-500 mt-2">MP3 / WAV / M4A — يفضل ملف خفيف أقل من 10MB</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleUploadWelcomeAudio}
+              disabled={audioUploading || !audioFile}
+              className="w-full bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95"
+            >
+              {audioUploading ? 'جاري رفع الصوت...' : 'رفع صوت الترحيب'}
+            </button>
+
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">رابط الصوت الحالي</label>
+              <input
+                type="text"
+                value={current.audioUrl || ''}
+                onChange={(e) => handleWelcomeAudioChange('audioUrl', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-fuchsia-500"
+                placeholder="سيظهر هنا رابط الصوت بعد الرفع، ويمكنك لصق رابط مباشر أيضاً"
+              />
+            </div>
+          </div>
+
+          <div className="bg-[#05070a] border border-fuchsia-500/10 rounded-3xl p-6 space-y-5">
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">مستوى الصوت: {Math.round((Number(current.volume ?? 0.45)) * 100)}%</label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round((Number(current.volume ?? 0.45)) * 100)}
+                onChange={(e) => handleWelcomeAudioChange('volume', Number(e.target.value) / 100)}
+                className="w-full accent-fuchsia-500"
+              />
+            </div>
+
+            <label className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl cursor-pointer">
+              <span className="text-white font-bold">تكرار الصوت تلقائياً</span>
+              <input
+                type="checkbox"
+                checked={current.loop !== false}
+                onChange={(e) => handleWelcomeAudioChange('loop', e.target.checked)}
+                className="w-5 h-5 accent-fuchsia-500"
+              />
+            </label>
+
+            {current.audioUrl ? (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500 font-bold">معاينة الصوت الحالي</p>
+                <audio controls src={current.audioUrl} className="w-full" />
+              </div>
+            ) : (
+              <div className="border border-dashed border-white/10 rounded-2xl p-6 text-center text-gray-500 text-sm font-bold">
+                لا يوجد صوت مرفوع حالياً.
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
+              <p className="text-xs text-fuchsia-200 font-bold leading-6">
+                ملاحظة: المتصفح سيشغل الصوت بعد أول لمسة/ضغطة من الزائر داخل الموقع، وهذا طبيعي حتى لا يتم حظر الصوت.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const SmartNotificationsEditor = () => {
@@ -1769,6 +1949,8 @@ const SettingsManager = () => {
         </div>
 
         <SmartNotificationsEditor />
+
+        <WelcomeAudioEditor />
 
         {/* قسم حساب المشاهدة */}
         <div className="lg:col-span-2 bg-black/30 p-8 rounded-3xl border border-blue-500/20 space-y-6">

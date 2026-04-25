@@ -1,4 +1,16 @@
 const { db } = require('../config/firebase');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
+
+// =============================
+// 🎧 إعداد صوت الترحيب
+// =============================
+const defaultWelcomeAudio = {
+  enabled: false,
+  audioUrl: '',
+  volume: 0.5,
+  loop: true
+};
 
 const defaultViewerAccount = {
   accountNumber: '',
@@ -54,82 +66,60 @@ const defaultSettings = {
   heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
   viewerAccount: defaultViewerAccount,
   liveStats: defaultLiveStats,
-  smartNotifications: defaultSmartNotifications
+  smartNotifications: defaultSmartNotifications,
+  welcomeAudio: defaultWelcomeAudio
 };
 
+// =============================
+// 🔧 Normalizers
+// =============================
 const normalizeLiveStatsItems = (items) => {
   if (!Array.isArray(items)) return [];
-
   return items.map((item, index) => ({
     id: item?.id || `${Date.now()}-${index}`,
     title: item?.title || '',
     count: Number(item?.count) || 0,
     note: item?.note || '',
-    isVisible: item?.isVisible === false ? false : true,
-    active: item?.active === false ? false : true
+    isVisible: item?.isVisible !== false,
+    active: item?.active !== false
   }));
-};
-
-const normalizeSmartNotificationItems = (items) => {
-  if (!Array.isArray(items)) return [];
-
-  return items.map((item, index) => ({
-    id: item?.id || `${Date.now()}-${index}`,
-    text: item?.text || '',
-    type: item?.type || 'general',
-    isVisible: item?.isVisible === false ? false : true,
-    active: item?.active === false ? false : true
-  })).filter((item) => item.text.trim() !== '');
 };
 
 const normalizeSmartNotifications = (smartNotifications) => {
   return {
-    enabled: smartNotifications?.enabled === false ? false : true,
-    firstDelaySeconds: Number(smartNotifications?.firstDelaySeconds) || defaultSmartNotifications.firstDelaySeconds,
-    intervalMinSeconds: Number(smartNotifications?.intervalMinSeconds) || defaultSmartNotifications.intervalMinSeconds,
-    intervalMaxSeconds: Number(smartNotifications?.intervalMaxSeconds) || defaultSmartNotifications.intervalMaxSeconds,
-    displaySeconds: Number(smartNotifications?.displaySeconds) || defaultSmartNotifications.displaySeconds,
-    position: smartNotifications?.position || defaultSmartNotifications.position,
-    items: normalizeSmartNotificationItems(
-      Array.isArray(smartNotifications?.items) && smartNotifications.items.length
-        ? smartNotifications.items
-        : defaultSmartNotifications.items
-    )
+    enabled: smartNotifications?.enabled !== false,
+    firstDelaySeconds: Number(smartNotifications?.firstDelaySeconds) || 3,
+    intervalMinSeconds: Number(smartNotifications?.intervalMinSeconds) || 10,
+    intervalMaxSeconds: Number(smartNotifications?.intervalMaxSeconds) || 20,
+    displaySeconds: Number(smartNotifications?.displaySeconds) || 5,
+    position: smartNotifications?.position || 'top',
+    items: (smartNotifications?.items || []).map((item, index) => ({
+      id: item?.id || `${Date.now()}-${index}`,
+      text: item?.text || '',
+      type: item?.type || 'general',
+      isVisible: item?.isVisible !== false
+    }))
   };
 };
 
-// جلب الإعدادات الحالية
+// =============================
+// 📥 GET SETTINGS
+// =============================
 const getSettings = async (req, res) => {
   try {
     const doc = await db.collection('settings').doc('general').get();
 
     if (!doc.exists) {
-      return res.status(200).json({
-        success: true,
-        data: defaultSettings
-      });
+      return res.json({ success: true, data: defaultSettings });
     }
 
-    const data = doc.data() || {};
+    const data = doc.data();
 
-    return res.status(200).json({
+    res.json({
       success: true,
       data: {
-        contact: data.contact || defaultSettings.contact,
-        faqs: Array.isArray(data.faqs) ? data.faqs : [],
-        terms: data.terms || '',
-        aboutUs: data.aboutUs || '',
-        heroPhrases: Array.isArray(data.heroPhrases) && data.heroPhrases.length
-          ? data.heroPhrases
-          : defaultSettings.heroPhrases,
-        viewerAccount: {
-          accountNumber: data.viewerAccount?.accountNumber || '',
-          broker: data.viewerAccount?.broker || '',
-          server: data.viewerAccount?.server || '',
-          password: data.viewerAccount?.password || '',
-          platform: data.viewerAccount?.platform || '',
-          note: data.viewerAccount?.note || ''
-        },
+        ...defaultSettings,
+        ...data,
         liveStats: {
           headline: data.liveStats?.headline || defaultLiveStats.headline,
           description: data.liveStats?.description || defaultLiveStats.description,
@@ -137,15 +127,23 @@ const getSettings = async (req, res) => {
           management: normalizeLiveStatsItems(data.liveStats?.management),
           bots: normalizeLiveStatsItems(data.liveStats?.bots)
         },
-        smartNotifications: normalizeSmartNotifications(data.smartNotifications)
+        smartNotifications: normalizeSmartNotifications(data.smartNotifications),
+        welcomeAudio: {
+          enabled: data.welcomeAudio?.enabled || false,
+          audioUrl: data.welcomeAudio?.audioUrl || '',
+          volume: data.welcomeAudio?.volume ?? 0.5,
+          loop: data.welcomeAudio?.loop !== false
+        }
       }
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// حفظ وتحديث الإعدادات
+// =============================
+// 💾 UPDATE SETTINGS
+// =============================
 const updateSettings = async (req, res) => {
   try {
     const {
@@ -156,48 +154,68 @@ const updateSettings = async (req, res) => {
       heroPhrases,
       viewerAccount,
       liveStats,
-      smartNotifications
+      smartNotifications,
+      welcomeAudio
     } = req.body;
 
     const dataToSave = {
-      contact: {
-        telegram: contact?.telegram || '',
-        whatsapp: contact?.whatsapp || '',
-        email: contact?.email || ''
-      },
-      faqs: Array.isArray(faqs) ? faqs : [],
-      terms: terms || '',
-      aboutUs: aboutUs || '',
-      heroPhrases: Array.isArray(heroPhrases) && heroPhrases.length
-        ? heroPhrases
-        : defaultSettings.heroPhrases,
-      viewerAccount: {
-        accountNumber: viewerAccount?.accountNumber || '',
-        broker: viewerAccount?.broker || '',
-        server: viewerAccount?.server || '',
-        password: viewerAccount?.password || '',
-        platform: viewerAccount?.platform || '',
-        note: viewerAccount?.note || ''
-      },
-      liveStats: {
-        headline: liveStats?.headline || defaultLiveStats.headline,
-        description: liveStats?.description || defaultLiveStats.description,
-        subscriptions: normalizeLiveStatsItems(liveStats?.subscriptions),
-        management: normalizeLiveStatsItems(liveStats?.management),
-        bots: normalizeLiveStatsItems(liveStats?.bots)
-      },
-      smartNotifications: normalizeSmartNotifications(smartNotifications)
+      contact,
+      faqs,
+      terms,
+      aboutUs,
+      heroPhrases,
+      viewerAccount,
+      liveStats,
+      smartNotifications,
+      welcomeAudio: {
+        enabled: welcomeAudio?.enabled || false,
+        audioUrl: welcomeAudio?.audioUrl || '',
+        volume: welcomeAudio?.volume ?? 0.5,
+        loop: welcomeAudio?.loop !== false
+      }
     };
 
     await db.collection('settings').doc('general').set(dataToSave, { merge: true });
 
-    return res.status(200).json({
-      success: true,
-      message: 'تم حفظ الإعدادات بنجاح'
-    });
+    res.json({ success: true, message: 'تم الحفظ' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = { getSettings, updateSettings };
+// =============================
+// 🎧 UPLOAD AUDIO
+// =============================
+const uploadWelcomeAudio = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'لا يوجد ملف' });
+    }
+
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'video'
+    });
+
+    fs.unlinkSync(req.file.path);
+
+    await db.collection('settings').doc('general').set({
+      welcomeAudio: {
+        audioUrl: result.secure_url
+      }
+    }, { merge: true });
+
+    res.json({
+      success: true,
+      audioUrl: result.secure_url
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  getSettings,
+  updateSettings,
+  uploadWelcomeAudio
+};

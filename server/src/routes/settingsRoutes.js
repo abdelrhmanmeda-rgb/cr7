@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const verifyAdmin = require('../middlewares/verifyAdmin');
+const upload = require('../middlewares/upload');
 const settingsController = require('../controllers/settingsController');
 
 // ==========================================
@@ -16,6 +17,10 @@ const updateSettings = settingsController.updateSettings || ((req, res) =>
   res.status(500).json({ success: false, message: "Missing updateSettings" })
 );
 
+const uploadWelcomeAudio = settingsController.uploadWelcomeAudio || ((req, res) =>
+  res.status(500).json({ success: false, message: "Missing uploadWelcomeAudio" })
+);
+
 /**
  * جلب إعدادات الموقع
  * مفتوح للموقع الرئيسي عشان يعرض:
@@ -25,6 +30,8 @@ const updateSettings = settingsController.updateSettings || ((req, res) =>
  * - الأسئلة الشائعة
  * - بيانات حساب المشاهدة
  * - الأعداد المباشرة liveStats
+ * - الإشعارات الذكية smartNotifications
+ * - صوت الترحيب welcomeAudio
  */
 router.get('/', getSettings);
 
@@ -33,5 +40,11 @@ router.get('/', getSettings);
  * محمي للأدمن فقط
  */
 router.post('/', verifyAdmin, updateSettings);
+
+/**
+ * رفع ملف صوت الترحيب
+ * محمي للأدمن فقط
+ */
+router.post('/welcome-audio/upload', verifyAdmin, upload.single('audio'), uploadWelcomeAudio);
 
 module.exports = router;

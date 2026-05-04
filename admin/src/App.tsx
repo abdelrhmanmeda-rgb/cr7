@@ -198,6 +198,46 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+
+// ==========================================
+// أدوات اتصال ذكية بالسيرفر لتقليل أخطاء Vercel Cold Start
+// ==========================================
+const API_BASE_URL = 'https://cr7-kappa.vercel.app';
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const wakeBackendServer = async () => {
+  try {
+    await fetch(API_BASE_URL, { method: 'GET', cache: 'no-store' });
+  } catch (error) {
+    console.warn('Backend wake-up request failed, retry flow will continue.');
+  }
+};
+
+const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 3, delay = 1200): Promise<Response> => {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      cache: options.cache || 'no-store'
+    });
+
+    if (!response.ok && response.status >= 500 && retries > 0) {
+      await sleep(delay);
+      await wakeBackendServer();
+      return fetchWithRetry(url, options, retries - 1, delay * 1.5);
+    }
+
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      await sleep(delay);
+      await wakeBackendServer();
+      return fetchWithRetry(url, options, retries - 1, delay * 1.5);
+    }
+    throw error;
+  }
+};
+
 // ---------------------------------------------------------
 // 1. شاشة تسجيل الدخول للوحة التحكم
 // ---------------------------------------------------------
@@ -278,7 +318,7 @@ const StatisticsManager = () => {
     const fetchRealStats = async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        const res = await fetch('https://cr7-kappa.vercel.app/api/statistics', {
+        const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/statistics', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -302,7 +342,7 @@ const StatisticsManager = () => {
     setLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/statistics/reset', {
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/statistics/reset', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -508,7 +548,7 @@ const ResultsManager = () => {
 
   const fetchResults = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/results');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results');
       const data = await res.json();
       if (data.success) setResults(data.data);
     } catch (err) { console.error("Error fetching results"); }
@@ -527,7 +567,8 @@ const ResultsManager = () => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/results/upload', { 
+      await wakeBackendServer();
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/upload', { 
         method: 'POST', 
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData 
@@ -547,7 +588,7 @@ const ResultsManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذه النتيجة نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/results/${id}`, { 
+      const res = await fetchWithRetry(`https://cr7-kappa.vercel.app/api/results/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -629,7 +670,7 @@ const BotsManager = () => {
 
   const fetchBots = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/bots');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/bots');
       const data = await res.json();
       if (data.success) setBots(data.data);
     } catch (err) { console.error("Bots fetch error"); }
@@ -698,7 +739,7 @@ const BotsManager = () => {
     if (!confirm('هل أنت متأكد من الحذف النهائي لهذا البوت؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/bots/${id}`, { 
+      const res = await fetchWithRetry(`https://cr7-kappa.vercel.app/api/bots/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -808,7 +849,7 @@ const SubscriptionsManager = () => {
 
   const fetchPlans = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/subscriptions');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/subscriptions');
       const data = await res.json();
       if (data.success) setPlans(data.data);
     } catch (err) { console.error("Plans fetch error"); }
@@ -870,7 +911,7 @@ const SubscriptionsManager = () => {
     if (!confirm('هل أنت متأكد من الحذف النهائي لهذه الباقة؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/subscriptions/${id}`, { 
+      const res = await fetchWithRetry(`https://cr7-kappa.vercel.app/api/subscriptions/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -973,7 +1014,7 @@ const BlogManager = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/blog');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/blog');
       const data = await res.json();
       if (data.success) setPosts(data.data);
     } catch (err) { console.error("Blog fetch error"); }
@@ -993,7 +1034,8 @@ const BlogManager = () => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/blog/add', { 
+      await wakeBackendServer();
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/blog/add', { 
         method: 'POST', 
         headers: { 'Authorization': `Bearer ${token}` },
         body: form 
@@ -1025,7 +1067,7 @@ const BlogManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذا البوست نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${id}`, { 
+      const res = await fetchWithRetry(`https://cr7-kappa.vercel.app/api/blog/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -1038,7 +1080,7 @@ const BlogManager = () => {
     if (!confirm('هل أنت متأكد من حذف هذا التعليق نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/comment/${commentId}`, { 
+      const res = await fetchWithRetry(`https://cr7-kappa.vercel.app/api/blog/${postId}/comment/${commentId}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -1190,7 +1232,7 @@ const SettingsManager = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/settings');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/settings');
       const data = await res.json();
       if (data.success && data.data) {
         setSettings({
@@ -1241,7 +1283,8 @@ const SettingsManager = () => {
     setLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/settings', {
+      await wakeBackendServer();
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/settings', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -1440,7 +1483,8 @@ const SettingsManager = () => {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/settings/welcome-audio/upload', {
+      await wakeBackendServer();
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/settings/welcome-audio/upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: form
@@ -2121,7 +2165,7 @@ const TestimonialsManager = () => {
 
   const fetchTestimonials = async () => {
     try {
-      const res = await fetch('https://cr7-kappa.vercel.app/api/testimonials');
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/testimonials');
       const data = await res.json();
       if (data.success) setTestimonials(data.data || []);
     } catch (err) {
@@ -2201,7 +2245,7 @@ const TestimonialsManager = () => {
     if (!confirm('هل أنت متأكد من حذف رأي العميل نهائياً؟')) return;
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('https://cr7-kappa.vercel.app/api/testimonials/' + id, {
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/testimonials/' + id, {
         method: 'DELETE',
         headers: { 'Authorization': 'Bearer ' + token }
       });

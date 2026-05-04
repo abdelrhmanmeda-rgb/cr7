@@ -2,25 +2,35 @@ const multer = require('multer');
 const path = require('path');
 
 // ==========================================
-// 📦 تحديد أنواع الملفات المسموح بها (صور + صوت)
+// 📦 تحديد أنواع الملفات المسموح بها
+// صور + صوت + فيديو
 // ==========================================
 const fileFilter = (req, file, cb) => {
-  const allowedImageTypes = /jpeg|jpg|png|webp/;
-  const allowedAudioTypes = /mp3|wav|m4a/;
-
   const ext = path.extname(file.originalname).toLowerCase();
-  const isImage = allowedImageTypes.test(ext) && file.mimetype.startsWith('image/');
-  const isAudio = allowedAudioTypes.test(ext) && file.mimetype.startsWith('audio/');
 
-  if (isImage || isAudio) {
+  const isImage =
+    ['.jpeg', '.jpg', '.png', '.webp'].includes(ext) &&
+    file.mimetype.startsWith('image/');
+
+  const isAudio =
+    ['.mp3', '.wav', '.m4a'].includes(ext) &&
+    file.mimetype.startsWith('audio/');
+
+  const isVideo =
+    ['.mp4', '.mov', '.webm'].includes(ext) &&
+    file.mimetype.startsWith('video/');
+
+  if (isImage || isAudio || isVideo) {
     return cb(null, true);
-  } else {
-    cb(new Error('❌ نوع الملف غير مدعوم! (مسموح: صور + mp3 + wav + m4a)'));
   }
+
+  return cb(
+    new Error('❌ نوع الملف غير مدعوم! مسموح: صور + صوت + فيديو')
+  );
 };
 
 // ==========================================
-// 📁 مكان الحفظ المؤقت (Vercel)
+// 📁 مكان الحفظ المؤقت على Vercel
 // ==========================================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -36,10 +46,10 @@ const storage = multer.diskStorage({
 // ⚙️ إعداد multer
 // ==========================================
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB علشان الصوت
+    fileSize: 25 * 1024 * 1024
   }
 });
 

@@ -569,14 +569,6 @@ const ResultsManager = () => {
 
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append('media', file);
-    formData.append('profitAmount', profit);
-    formData.append('notes', notes);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
-
     try {
       const token = await auth.currentUser?.getIdToken();
 
@@ -585,43 +577,73 @@ const ResultsManager = () => {
         return;
       }
 
-      await wakeBackendServer();
+      // ==========================================
+      // 1) رفع مباشر إلى Cloudinary
+      // ==========================================
+      const cloudinaryForm = new FormData();
+      cloudinaryForm.append('file', file);
+      cloudinaryForm.append('upload_preset', 'cr7_results_unsigned');
+      cloudinaryForm.append('folder', 'cr7_bot_results');
 
-      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-        signal: controller.signal
-      });
+      const detectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
+      const cloudinaryResource = detectedMediaType === 'video' ? 'video' : 'image';
 
-      const contentType = res.headers.get('content-type') || '';
-      const data = contentType.includes('application/json')
-        ? await res.json()
-        : { success: false, message: await res.text() };
+      const cloudinaryRes = await fetch(
+        `https://api.cloudinary.com/v1_1/dazvddyzm/${cloudinaryResource}/upload`,
+        {
+          method: 'POST',
+          body: cloudinaryForm
+        }
+      );
 
-      if (!res.ok || !data.success) {
-        alert('❌ خطأ أثناء رفع النتيجة: ' + (data.message || `Status ${res.status}`));
+      const cloudinaryData = await cloudinaryRes.json();
+
+      if (!cloudinaryRes.ok || !cloudinaryData.secure_url) {
+        console.error('Cloudinary upload error:', cloudinaryData);
+        alert('❌ فشل رفع الملف على Cloudinary: ' + (cloudinaryData.error?.message || 'خطأ غير معروف'));
         return;
       }
 
-      alert('تم رفع النتيجة بنجاح! ✅');
+      // ==========================================
+      // 2) حفظ الرابط فقط في السيرفر
+      // ==========================================
+      await wakeBackendServer();
+
+      const saveRes = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mediaUrl: cloudinaryData.secure_url,
+          mediaType: detectedMediaType,
+          profitAmount: profit,
+          notes,
+          publicId: cloudinaryData.public_id
+        })
+      });
+
+      const contentType = saveRes.headers.get('content-type') || '';
+      const saveData = contentType.includes('application/json')
+        ? await saveRes.json()
+        : { success: false, message: await saveRes.text() };
+
+      if (!saveRes.ok || !saveData.success) {
+        alert('❌ تم رفع الملف لكن فشل حفظ النتيجة: ' + (saveData.message || `Status ${saveRes.status}`));
+        return;
+      }
+
+      alert('تم رفع النتيجة بنجاح 🚀');
       await fetchResults();
       setFile(null);
       setProfit('');
       setNotes('');
 
     } catch (err: any) {
-      console.error('Results upload error:', err);
-
-      if (err?.name === 'AbortError') {
-        alert('⏱️ الرفع أخذ وقت طويل جدًا. جرّب صورة أصغر أو أعد المحاولة.');
-      } else {
-        alert('❌ فشل الاتصال بالسيرفر أثناء رفع النتيجة.');
-      }
+      console.error('Direct results upload error:', err);
+      alert('❌ فشل رفع النتيجة. راجع Upload Preset في Cloudinary أو اتصال الإنترنت.');
     } finally {
-      clearTimeout(timeout);
       setLoading(false);
     }
   };

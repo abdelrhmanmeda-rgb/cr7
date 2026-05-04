@@ -37,7 +37,7 @@ const saveResultFromUrl = async (req, res) => {
 
     const doc = await db.collection('daily_results').add(data);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'تم حفظ النتيجة بنجاح',
       data: { id: doc.id, ...data }
@@ -46,7 +46,7 @@ const saveResultFromUrl = async (req, res) => {
   } catch (error) {
     console.error('❌ saveResultFromUrl Error:', error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'فشل حفظ النتيجة'
     });
@@ -68,13 +68,15 @@ const getResults = async (req, res) => {
       ...doc.data()
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: results
     });
 
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ getResults Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: 'فشل جلب النتائج'
     });
@@ -105,20 +107,24 @@ const deleteResult = async (req, res) => {
         await cloudinary.uploader.destroy(data.cloudinaryPublicId, {
           resource_type: data.cloudinaryResourceType || 'image'
         });
+
+        console.log("🗑️ تم حذف الصورة من Cloudinary");
       } catch (err) {
-        console.error("⚠️ حذف Cloudinary فشل:", err.message);
+        console.error("⚠️ فشل حذف Cloudinary:", err.message);
       }
     }
 
     await docRef.delete();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'تم الحذف'
     });
 
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ deleteResult Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: 'فشل الحذف'
     });

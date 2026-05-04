@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 

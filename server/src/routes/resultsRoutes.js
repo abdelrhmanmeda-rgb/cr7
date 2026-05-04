@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-// استدعاء الأدوات المساعدة (Middlewares)
 const upload = require('../middlewares/upload');
 const verifyAdmin = require('../middlewares/verifyAdmin');
 
-// استدعاء المتحكم (Controller)
 const {
   uploadResult,
   getResults,
@@ -13,9 +11,8 @@ const {
 } = require('../controllers/resultsController');
 
 // ==========================================
-// 🏆 مسارات إدارة النتائج
+// 🛡️ معالجة أخطاء Multer
 // ==========================================
-
 const handleUploadError = (req, res, next) => {
   upload.single('media')(req, res, function (err) {
     if (err) {
@@ -31,21 +28,19 @@ const handleUploadError = (req, res, next) => {
   });
 };
 
-/**
- * 1. مسار الرفع (POST)
- * محمي للأدمن فقط لأن الرفع يتم من لوحة التحكم
- */
-router.post('/upload', verifyAdmin, handleUploadError, uploadResult);
-
-/**
- * 2. مسار جلب البيانات (GET)
- */
+// ==========================================
+// 📥 جلب النتائج
+// ==========================================
 router.get('/', getResults);
 
-/**
- * 3. مسار حذف النتيجة (DELETE)
- * محمي للأدمن فقط
- */
+// ==========================================
+// 🚀 رفع نتيجة جديدة
+// ==========================================
+router.post('/upload', verifyAdmin, handleUploadError, uploadResult);
+
+// ==========================================
+// 🗑️ حذف نتيجة
+// ==========================================
 router.delete('/:id', verifyAdmin, deleteResult);
 
 module.exports = router;

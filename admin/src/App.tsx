@@ -559,55 +559,44 @@ const ResultsManager = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // منع الضغط المتكرر أثناء الرفع
     if (loading) return;
 
     if (!file) {
-      alert('يرجى اختيار ملف!');
+      alert('يرجى اختيار صورة!');
+      return;
+    }
+
+    if (!profit) {
+      alert('اكتب مبلغ الربح');
       return;
     }
 
     setLoading(true);
 
     try {
-      const token = await auth.currentUser?.getIdToken();
-
-      if (!token) {
-        alert('انتهت جلسة تسجيل الدخول. سجل دخول مرة أخرى.');
-        return;
-      }
-
-      // ==========================================
-      // 1) رفع مباشر إلى Cloudinary
-      // ==========================================
+      // ======================================
+      // 1️⃣ رفع مباشر إلى Cloudinary بدون المرور على السيرفر
+      // ======================================
       const cloudinaryForm = new FormData();
       cloudinaryForm.append('file', file);
       cloudinaryForm.append('upload_preset', 'cr7_results_unsigned');
-      cloudinaryForm.append('folder', 'cr7_bot_results');
 
-      const detectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
-      const cloudinaryResource = detectedMediaType === 'video' ? 'video' : 'image';
+      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/dtkagfhbx/image/upload', {
+        method: 'POST',
+        body: cloudinaryForm
+      });
 
-      const cloudinaryRes = await fetch(
-        `https://api.cloudinary.com/v1_1/dazvddyzm/${cloudinaryResource}/upload`,
-        {
-          method: 'POST',
-          body: cloudinaryForm
-        }
-      );
+      const cloudData = await cloudRes.json();
 
-      const cloudinaryData = await cloudinaryRes.json();
-
-      if (!cloudinaryRes.ok || !cloudinaryData.secure_url) {
-        console.error('Cloudinary upload error:', cloudinaryData);
-        alert('❌ فشل رفع الملف على Cloudinary: ' + (cloudinaryData.error?.message || 'خطأ غير معروف'));
-        return;
+      if (!cloudRes.ok || !cloudData.secure_url) {
+        console.error('Cloudinary Error:', cloudData);
+        throw new Error(cloudData.error?.message || 'فشل رفع الصورة على Cloudinary');
       }
 
-      // ==========================================
-      // 2) حفظ الرابط فقط في السيرفر
-      // ==========================================
-      await wakeBackendServer();
+      // ======================================
+      // 2️⃣ حفظ رابط الصورة والبيانات فقط في السيرفر
+      // ======================================
+      const token = await auth.currentUser?.getIdToken();
 
       const saveRes = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/save', {
         method: 'POST',
@@ -616,33 +605,30 @@ const ResultsManager = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          mediaUrl: cloudinaryData.secure_url,
-          mediaType: detectedMediaType,
+          mediaUrl: cloudData.secure_url,
+          imageUrl: cloudData.secure_url,
+          publicId: cloudData.public_id,
+          mediaType: 'image',
           profitAmount: profit,
-          notes,
-          publicId: cloudinaryData.public_id
+          notes
         })
       });
 
-      const contentType = saveRes.headers.get('content-type') || '';
-      const saveData = contentType.includes('application/json')
-        ? await saveRes.json()
-        : { success: false, message: await saveRes.text() };
+      const saveData = await saveRes.json();
 
-      if (!saveRes.ok || !saveData.success) {
-        alert('❌ تم رفع الملف لكن فشل حفظ النتيجة: ' + (saveData.message || `Status ${saveRes.status}`));
-        return;
+      if (saveData.success) {
+        alert('تم رفع النتيجة بنجاح 🚀');
+        await fetchResults();
+        setFile(null);
+        setProfit('');
+        setNotes('');
+      } else {
+        alert('خطأ أثناء حفظ النتيجة: ' + (saveData.message || 'فشل غير معروف'));
       }
 
-      alert('تم رفع النتيجة بنجاح 🚀');
-      await fetchResults();
-      setFile(null);
-      setProfit('');
-      setNotes('');
-
     } catch (err: any) {
-      console.error('Direct results upload error:', err);
-      alert('❌ فشل رفع النتيجة. راجع Upload Preset في Cloudinary أو اتصال الإنترنت.');
+      console.error('Upload Error:', err);
+      alert('❌ فشل رفع النتيجة: ' + (err.message || 'حدث خطأ غير معروف'));
     } finally {
       setLoading(false);
     }
@@ -674,26 +660,13 @@ const ResultsManager = () => {
         <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3"><Icons.Activity /> رفع أرباح اليوم</h2>
         <form onSubmit={handleUpload} className="space-y-5">
           <div className="border-2 border-dashed border-white/10 p-8 rounded-3xl text-center relative hover:bg-white/5 transition-colors cursor-pointer group">
-            <input
-              type="file"
-              accept="image/*,video/*"
-              disabled={loading}
-              onChange={e => setFile(e.target.files?.[0] || null)}
-              className={`absolute inset-0 w-full h-full opacity-0 z-10 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-            />
+            <input type="file" accept="image/*" disabled={loading} onChange={e => setFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed" />
             <div className="flex justify-center mb-3 text-gray-500 group-hover:text-blue-500 transition-colors"><Icons.Image /></div>
-            <p className="text-xs text-gray-400 truncate">{file ? file.name : 'اسحب ملف الصورة أو الفيديو هنا'}</p>
+            <p className="text-xs text-gray-400 truncate">{file ? file.name : 'اختار صورة النتيجة هنا'}</p>
           </div>
           <input type="number" placeholder="مبلغ الربح ($)" value={profit} onChange={e => setProfit(e.target.value)} required className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all" />
           <textarea placeholder="ملاحظات (اختياري)..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none h-28 focus:border-blue-500 transition-all" />
-          <button
-            disabled={loading}
-            className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all ${
-              loading
-                ? 'bg-gray-600 cursor-not-allowed opacity-80'
-                : 'bg-green-600 hover:bg-green-700 active:scale-95'
-            }`}
-          >
+          <button disabled={loading} className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all ${loading ? 'bg-gray-600 cursor-not-allowed opacity-80' : 'bg-green-600 hover:bg-green-700 active:scale-95'}`}>
             {loading ? '⏳ جاري رفع النتيجة... لا تغلق الصفحة' : 'نشر النتيجة الآن'}
           </button>
         </form>

@@ -558,29 +558,72 @@ const ResultsManager = () => {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert('يرجى اختيار ملف!');
+
+    // منع الضغط المتكرر أثناء الرفع
+    if (loading) return;
+
+    if (!file) {
+      alert('يرجى اختيار ملف!');
+      return;
+    }
+
     setLoading(true);
+
     const formData = new FormData();
     formData.append('media', file);
     formData.append('profitAmount', profit);
     formData.append('notes', notes);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180000);
+
     try {
       const token = await auth.currentUser?.getIdToken();
+
+      if (!token) {
+        alert('انتهت جلسة تسجيل الدخول. سجل دخول مرة أخرى.');
+        return;
+      }
+
       await wakeBackendServer();
-      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/upload', { 
-        method: 'POST', 
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData 
+
+      const res = await fetchWithRetry('https://cr7-kappa.vercel.app/api/results/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+        signal: controller.signal
       });
-      const data = await res.json();
-      if (data.success) {
-        alert('تم رفع النتيجة بنجاح! ✅');
-        fetchResults();
-        setFile(null); setProfit(''); setNotes('');
-      } else { alert('خطأ من السيرفر: ' + data.message); }
-    } catch (err) { alert('فشل الاتصال بالسيرفر! تأكد من تشغيل الباك إند.'); }
-    setLoading(false);
+
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await res.json()
+        : { success: false, message: await res.text() };
+
+      if (!res.ok || !data.success) {
+        alert('❌ خطأ أثناء رفع النتيجة: ' + (data.message || `Status ${res.status}`));
+        return;
+      }
+
+      alert('تم رفع النتيجة بنجاح! ✅');
+      await fetchResults();
+      setFile(null);
+      setProfit('');
+      setNotes('');
+
+    } catch (err: any) {
+      console.error('Results upload error:', err);
+
+      if (err?.name === 'AbortError') {
+        alert('⏱️ الرفع أخذ وقت طويل جدًا. جرّب صورة أصغر أو أعد المحاولة.');
+      } else {
+        alert('❌ فشل الاتصال بالسيرفر أثناء رفع النتيجة.');
+      }
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id?: string) => {
@@ -609,14 +652,27 @@ const ResultsManager = () => {
         <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3"><Icons.Activity /> رفع أرباح اليوم</h2>
         <form onSubmit={handleUpload} className="space-y-5">
           <div className="border-2 border-dashed border-white/10 p-8 rounded-3xl text-center relative hover:bg-white/5 transition-colors cursor-pointer group">
-            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+            <input
+              type="file"
+              accept="image/*,video/*"
+              disabled={loading}
+              onChange={e => setFile(e.target.files?.[0] || null)}
+              className={`absolute inset-0 w-full h-full opacity-0 z-10 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            />
             <div className="flex justify-center mb-3 text-gray-500 group-hover:text-blue-500 transition-colors"><Icons.Image /></div>
             <p className="text-xs text-gray-400 truncate">{file ? file.name : 'اسحب ملف الصورة أو الفيديو هنا'}</p>
           </div>
           <input type="number" placeholder="مبلغ الربح ($)" value={profit} onChange={e => setProfit(e.target.value)} required className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all" />
           <textarea placeholder="ملاحظات (اختياري)..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none h-28 focus:border-blue-500 transition-all" />
-          <button disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-            {loading ? 'جاري النشر...' : 'نشر النتيجة الآن'}
+          <button
+            disabled={loading}
+            className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all ${
+              loading
+                ? 'bg-gray-600 cursor-not-allowed opacity-80'
+                : 'bg-green-600 hover:bg-green-700 active:scale-95'
+            }`}
+          >
+            {loading ? '⏳ جاري رفع النتيجة... لا تغلق الصفحة' : 'نشر النتيجة الآن'}
           </button>
         </form>
       </div>

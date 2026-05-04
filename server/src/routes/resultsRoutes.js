@@ -1,32 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const upload = require('../middlewares/upload');
 const verifyAdmin = require('../middlewares/verifyAdmin');
 
 const {
-  uploadResult,
+  saveResultFromUrl,
   getResults,
   deleteResult
 } = require('../controllers/resultsController');
-
-// ==========================================
-// 🛡️ معالجة أخطاء Multer
-// ==========================================
-const handleUploadError = (req, res, next) => {
-  upload.single('media')(req, res, function (err) {
-    if (err) {
-      console.error('❌ خطأ Multer أثناء رفع النتيجة:', err);
-
-      return res.status(400).json({
-        success: false,
-        message: err.message || 'حدث خطأ أثناء تجهيز الملف للرفع'
-      });
-    }
-
-    next();
-  });
-};
 
 // ==========================================
 // 📥 جلب النتائج
@@ -34,9 +15,9 @@ const handleUploadError = (req, res, next) => {
 router.get('/', getResults);
 
 // ==========================================
-// 🚀 رفع نتيجة جديدة
+// 🚀 حفظ نتيجة (Direct Upload)
 // ==========================================
-router.post('/upload', verifyAdmin, handleUploadError, uploadResult);
+router.post('/save', verifyAdmin, saveResultFromUrl);
 
 // ==========================================
 // 🗑️ حذف نتيجة

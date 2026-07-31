@@ -151,6 +151,12 @@ interface Settings {
     displayDurationMs?: number;
     items?: SmartNotificationItem[];
   };
+  welcomeAudio?: {
+  enabled?: boolean;
+  audioUrl?: string;
+  volume?: number;
+  loop?: boolean;
+  };
 }
 
 interface CommentData {
@@ -437,6 +443,9 @@ export default function App() {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [activeSmartNotification, setActiveSmartNotification] = useState<SmartNotificationItem | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isWelcomeAudioPlaying, setIsWelcomeAudioPlaying] = useState(false);
+  const [welcomeAudioUnlocked, setWelcomeAudioUnlocked] = useState(false);
 
   const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
   const goldCardClass = "bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#bf953f]/20 rounded-[40px] hover:border-[#bf953f]/60 transition-all duration-500 shadow-2xl";

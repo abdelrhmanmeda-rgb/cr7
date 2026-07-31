@@ -59,11 +59,19 @@ const defaultSmartNotifications = {
 };
 
 const defaultSettings = {
-  contact: { telegram: '', whatsapp: '', email: '' },
+  contact: {
+    telegram: '',
+    whatsapp: '',
+    email: ''
+  },
   faqs: [],
   terms: '',
   aboutUs: '',
-  heroPhrases: ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك'],
+  heroPhrases: [
+    'يعمل لأجلك',
+    'يحقق أحلامك',
+    'يصنع ثروتك'
+  ],
   viewerAccount: defaultViewerAccount,
   liveStats: defaultLiveStats,
   smartNotifications: defaultSmartNotifications,
@@ -74,7 +82,10 @@ const defaultSettings = {
 // 🔧 Normalizers
 // =============================
 const normalizeLiveStatsItems = (items) => {
-  if (!Array.isArray(items)) return [];
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
   return items.map((item, index) => ({
     id: item?.id || `${Date.now()}-${index}`,
     title: item?.title || '',
@@ -88,17 +99,40 @@ const normalizeLiveStatsItems = (items) => {
 const normalizeSmartNotifications = (smartNotifications) => {
   return {
     enabled: smartNotifications?.enabled !== false,
-    firstDelaySeconds: Number(smartNotifications?.firstDelaySeconds) || 3,
-    intervalMinSeconds: Number(smartNotifications?.intervalMinSeconds) || 10,
-    intervalMaxSeconds: Number(smartNotifications?.intervalMaxSeconds) || 20,
-    displaySeconds: Number(smartNotifications?.displaySeconds) || 5,
-    position: smartNotifications?.position || 'top',
-    items: (smartNotifications?.items || []).map((item, index) => ({
-      id: item?.id || `${Date.now()}-${index}`,
-      text: item?.text || '',
-      type: item?.type || 'general',
-      isVisible: item?.isVisible !== false
-    }))
+    firstDelaySeconds:
+      Number(smartNotifications?.firstDelaySeconds) || 3,
+    intervalMinSeconds:
+      Number(smartNotifications?.intervalMinSeconds) || 10,
+    intervalMaxSeconds:
+      Number(smartNotifications?.intervalMaxSeconds) || 20,
+    displaySeconds:
+      Number(smartNotifications?.displaySeconds) || 5,
+    position:
+      smartNotifications?.position || 'top',
+    items: Array.isArray(smartNotifications?.items)
+      ? smartNotifications.items.map((item, index) => ({
+          id: item?.id || `${Date.now()}-${index}`,
+          text: item?.text || '',
+          type: item?.type || 'general',
+          isVisible: item?.isVisible !== false
+        }))
+      : []
+  };
+};
+
+const normalizeWelcomeAudio = (welcomeAudio) => {
+  const parsedVolume = Number(welcomeAudio?.volume);
+
+  return {
+    enabled: welcomeAudio?.enabled === true,
+    audioUrl:
+      typeof welcomeAudio?.audioUrl === 'string'
+        ? welcomeAudio.audioUrl.trim()
+        : '',
+    volume: Number.isFinite(parsedVolume)
+      ? Math.min(1, Math.max(0, parsedVolume))
+      : 0.5,
+    loop: welcomeAudio?.loop !== false
   };
 };
 
@@ -107,37 +141,76 @@ const normalizeSmartNotifications = (smartNotifications) => {
 // =============================
 const getSettings = async (req, res) => {
   try {
-    const doc = await db.collection('settings').doc('general').get();
+    const doc = await db
+      .collection('settings')
+      .doc('general')
+      .get();
 
     if (!doc.exists) {
-      return res.json({ success: true, data: defaultSettings });
+      return res.status(200).json({
+        success: true,
+        data: defaultSettings
+      });
     }
 
-    const data = doc.data();
+    const data = doc.data() || {};
 
-    res.json({
+    return res.status(200).json({
       success: true,
       data: {
         ...defaultSettings,
         ...data,
-        liveStats: {
-          headline: data.liveStats?.headline || defaultLiveStats.headline,
-          description: data.liveStats?.description || defaultLiveStats.description,
-          subscriptions: normalizeLiveStatsItems(data.liveStats?.subscriptions),
-          management: normalizeLiveStatsItems(data.liveStats?.management),
-          bots: normalizeLiveStatsItems(data.liveStats?.bots)
+
+        contact: {
+          ...defaultSettings.contact,
+          ...(data.contact || {})
         },
-        smartNotifications: normalizeSmartNotifications(data.smartNotifications),
-        welcomeAudio: {
-          enabled: data.welcomeAudio?.enabled || false,
-          audioUrl: data.welcomeAudio?.audioUrl || '',
-          volume: data.welcomeAudio?.volume ?? 0.5,
-          loop: data.welcomeAudio?.loop !== false
-        }
+
+        viewerAccount: {
+          ...defaultViewerAccount,
+          ...(data.viewerAccount || {})
+        },
+
+        liveStats: {
+          headline:
+            data.liveStats?.headline ||
+            defaultLiveStats.headline,
+
+          description:
+            data.liveStats?.description ||
+            defaultLiveStats.description,
+
+          subscriptions: normalizeLiveStatsItems(
+            data.liveStats?.subscriptions
+          ),
+
+          management: normalizeLiveStatsItems(
+            data.liveStats?.management
+          ),
+
+          bots: normalizeLiveStatsItems(
+            data.liveStats?.bots
+          )
+        },
+
+        smartNotifications:
+          normalizeSmartNotifications(
+            data.smartNotifications
+          ),
+
+        welcomeAudio:
+          normalizeWelcomeAudio(
+            data.welcomeAudio
+          )
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Get settings error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'حدث خطأ أثناء تحميل الإعدادات'
+    });
   }
 };
 
@@ -156,30 +229,105 @@ const updateSettings = async (req, res) => {
       liveStats,
       smartNotifications,
       welcomeAudio
-    } = req.body;
+    } = req.body || {};
 
-    const dataToSave = {
-      contact,
-      faqs,
-      terms,
-      aboutUs,
-      heroPhrases,
-      viewerAccount,
-      liveStats,
-      smartNotifications,
-      welcomeAudio: {
-        enabled: welcomeAudio?.enabled || false,
-        audioUrl: welcomeAudio?.audioUrl || '',
-        volume: welcomeAudio?.volume ?? 0.5,
-        loop: welcomeAudio?.loop !== false
+    const dataToSave = {};
+
+    if (contact !== undefined) {
+      dataToSave.contact = contact;
+    }
+
+    if (faqs !== undefined) {
+      dataToSave.faqs = faqs;
+    }
+
+    if (terms !== undefined) {
+      dataToSave.terms = terms;
+    }
+
+    if (aboutUs !== undefined) {
+      dataToSave.aboutUs = aboutUs;
+    }
+
+    if (heroPhrases !== undefined) {
+      dataToSave.heroPhrases = heroPhrases;
+    }
+
+    if (viewerAccount !== undefined) {
+      dataToSave.viewerAccount = {
+        ...defaultViewerAccount,
+        ...(viewerAccount || {})
+      };
+    }
+
+    if (liveStats !== undefined) {
+      dataToSave.liveStats = {
+        headline:
+          liveStats?.headline ||
+          defaultLiveStats.headline,
+
+        description:
+          liveStats?.description ||
+          defaultLiveStats.description,
+
+        subscriptions: normalizeLiveStatsItems(
+          liveStats?.subscriptions
+        ),
+
+        management: normalizeLiveStatsItems(
+          liveStats?.management
+        ),
+
+        bots: normalizeLiveStatsItems(
+          liveStats?.bots
+        )
+      };
+    }
+
+    if (smartNotifications !== undefined) {
+      dataToSave.smartNotifications =
+        normalizeSmartNotifications(
+          smartNotifications
+        );
+    }
+
+    if (welcomeAudio !== undefined) {
+      dataToSave.welcomeAudio =
+        normalizeWelcomeAudio(
+          welcomeAudio
+        );
+    }
+
+    await db
+      .collection('settings')
+      .doc('general')
+      .set(dataToSave, { merge: true });
+
+    const updatedDoc = await db
+      .collection('settings')
+      .doc('general')
+      .get();
+
+    const updatedData = updatedDoc.data() || {};
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم حفظ الإعدادات بنجاح',
+      data: {
+        ...updatedData,
+        welcomeAudio:
+          normalizeWelcomeAudio(
+            updatedData.welcomeAudio
+          )
       }
-    };
-
-    await db.collection('settings').doc('general').set(dataToSave, { merge: true });
-
-    res.json({ success: true, message: 'تم الحفظ' });
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Update settings error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'حدث خطأ أثناء حفظ الإعدادات'
+    });
   }
 };
 
@@ -187,30 +335,118 @@ const updateSettings = async (req, res) => {
 // 🎧 UPLOAD AUDIO
 // =============================
 const uploadWelcomeAudio = async (req, res) => {
+  let localFilePath = null;
+
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'لا يوجد ملف' });
+      return res.status(400).json({
+        success: false,
+        message: 'لا يوجد ملف صوت مرفوع'
+      });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: 'video'
-    });
+    localFilePath = req.file.path;
 
-    fs.unlinkSync(req.file.path);
-
-    await db.collection('settings').doc('general').set({
-      welcomeAudio: {
-        audioUrl: result.secure_url
+    const result = await cloudinary.uploader.upload(
+      localFilePath,
+      {
+        resource_type: 'video',
+        folder: 'cr7/welcome-audio',
+        use_filename: true,
+        unique_filename: true,
+        overwrite: false
       }
-    }, { merge: true });
+    );
 
-    res.json({
+    if (!result?.secure_url) {
+      throw new Error(
+        'لم يتم استلام رابط ملف الصوت من Cloudinary'
+      );
+    }
+
+    const audioUrl = result.secure_url;
+
+    const currentDoc = await db
+      .collection('settings')
+      .doc('general')
+      .get();
+
+    const currentData = currentDoc.exists
+      ? currentDoc.data()
+      : {};
+
+    const currentWelcomeAudio =
+      currentData?.welcomeAudio || {};
+
+    const parsedCurrentVolume = Number(
+      currentWelcomeAudio.volume
+    );
+
+    const welcomeAudioToSave = {
+      enabled: true,
+      audioUrl,
+      volume: Number.isFinite(parsedCurrentVolume)
+        ? Math.min(
+            1,
+            Math.max(0, parsedCurrentVolume)
+          )
+        : 0.5,
+      loop: currentWelcomeAudio.loop !== false
+    };
+
+    await db
+      .collection('settings')
+      .doc('general')
+      .set(
+        {
+          welcomeAudio: welcomeAudioToSave
+        },
+        {
+          merge: true
+        }
+      );
+
+    if (
+      localFilePath &&
+      fs.existsSync(localFilePath)
+    ) {
+      fs.unlinkSync(localFilePath);
+      localFilePath = null;
+    }
+
+    return res.status(200).json({
       success: true,
-      audioUrl: result.secure_url
+      message:
+        'تم رفع صوت الترحيب وتفعيله بنجاح',
+      audioUrl,
+      welcomeAudio: welcomeAudioToSave
     });
-
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error(
+      'Upload welcome audio error:',
+      error
+    );
+
+    if (
+      localFilePath &&
+      fs.existsSync(localFilePath)
+    ) {
+      try {
+        fs.unlinkSync(localFilePath);
+      } catch (unlinkError) {
+        console.error(
+          'Delete temporary audio error:',
+          unlinkError
+        );
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        'حدث خطأ أثناء رفع ملف الصوت'
+    });
   }
 };
 

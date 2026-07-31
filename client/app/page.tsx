@@ -911,6 +911,8 @@ export default function App() {
 
   const welcomeAudioSettings = settings.welcomeAudio || {};
   const welcomeAudioEnabled = welcomeAudioSettings.enabled === true && Boolean(welcomeAudioSettings.audioUrl);
+  console.log("Welcome Audio:", settings.welcomeAudio);
+  console.log("Enabled:", welcomeAudioEnabled);
   const welcomeAudioVolume = Math.min(1, Math.max(0, Number(welcomeAudioSettings.volume ?? 0.45)));
 
   useEffect(() => {

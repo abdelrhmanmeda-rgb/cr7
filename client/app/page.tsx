@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
@@ -417,7 +416,70 @@ const BackgroundAnimation = () => {
 // ==========================================
 // App
 // ==========================================
+
+const PAYMENT_API = 'https://cr7-kappa.vercel.app/api/orders';
+const PAYMENT_ADDRESS = 'TKw4wpm7EB9BERFhvMVnK2GZ5Sqnc2gtBC';
+const PaymentCheckout = ({ bot, onClose }: { bot: Bot; onClose: () => void }) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState('');
+  const [contact, setContact] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [method, setMethod] = useState('trc20');
+  const [requestId] = useState(() => crypto.randomUUID());
+  useEffect(() => {
+    if (!file) { setPreview(''); return; }
+    const url = URL.createObjectURL(file); setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  const copy = async (value: string) => {
+    try { await navigator.clipboard.writeText(value); setMessage('تم النسخ'); }
+    catch { setMessage('انسخ بيانات التحويل يدويًا'); }
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); if (busy || orderId) return;
+    if (!file || !contact.trim()) { setMessage('ارفع إثبات الدفع واكتب وسيلة التواصل'); return; }
+    setBusy(true); setMessage('');
+    try {
+      let customer = auth.currentUser;
+      if (!customer) customer = (await signInWithPopup(auth, googleProvider)).user;
+      const form = new FormData();
+      form.append('proof', file); form.append('botId', bot.id || bot._id || '');
+      form.append('contact', contact.trim()); form.append('method', method); form.append('requestId', requestId);
+      const response = await fetch(PAYMENT_API, { method: 'POST', headers: { Authorization: `Bearer ${await customer.getIdToken()}` }, body: form });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إرسال الطلب');
+      setOrderId(data.data.id);
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر إرسال الطلب، حاول تاني'); }
+    finally { setBusy(false); }
+  };
+  return <div className="fixed inset-0 z-[140] bg-black/90 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="الدفع" dir="rtl">
+    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-[#bf953f]/40 bg-[#0a0a0a] p-6 text-white">
+      <button type="button" onClick={onClose} disabled={busy} className="float-left p-2" aria-label="إغلاق">✕</button>
+      <h2 className="text-2xl font-bold text-[#fcf6ba] mb-4">شراء {bot.name}</h2>
+      {orderId ? <div role="status" className="space-y-4"><p className="text-green-400">تم إرسال طلبك — بانتظار مراجعة الدفع</p><p className="break-all">رقم الطلب: {orderId}</p><p>هنراجع التحويل ونتواصل معاك لتسليم البوت.</p><button onClick={onClose} className="p-3 bg-[#bf953f] text-black rounded-xl">تمام</button></div> : <form onSubmit={submit} className="space-y-4">
+        <p className="font-bold">المبلغ المطلوب: {bot.price} USDT</p>
+        <label className="block">طريقة التحويل<select disabled={busy} value={method} onChange={e => setMethod(e.target.value)} className="block w-full bg-zinc-900 p-3 rounded-xl mt-2"><option value="trc20">USDT عبر شبكة TRC20</option><option value="binance">تحويل داخلي باستخدام Binance ID</option></select></label>
+        <div className="bg-zinc-900 rounded-xl p-4 space-y-3">
+          <p>{method === 'trc20' ? 'عنوان الاستلام — USDT / TRC20' : 'Binance ID'}</p>
+          <p dir="ltr" className="break-all select-all">{method === 'trc20' ? PAYMENT_ADDRESS : '112375457'}</p>
+          <button type="button" onClick={() => copy(method === 'trc20' ? PAYMENT_ADDRESS : '112375457')} className="text-[#fcf6ba]">نسخ بيانات التحويل</button>
+          {method === 'trc20' && <p className="text-sm text-gray-300">اختار شبكة TRC20، وتأكد إن المبلغ اللي هيوصل بعد رسوم السحب يساوي سعر البوت.</p>}
+        </div>
+        <label className="block">يوزر تيليجرام أو رقم واتساب للتواصل<input disabled={busy} required maxLength={120} value={contact} onChange={e => setContact(e.target.value)} className="block w-full bg-zinc-900 p-3 rounded-xl mt-2" /></label>
+        <label className="block">صورة إثبات الدفع<input disabled={busy} required type="file" accept="image/jpeg,image/png,image/webp" className="block mt-2 w-full" onChange={e => { const selected=e.target.files?.[0]; setFile(null); if (!selected) return; if (!['image/jpeg','image/png','image/webp'].includes(selected.type) || selected.size > 2*1024*1024) { setMessage('اختار صورة JPG أو PNG أو WEBP بحجم أقصى 2 ميجا'); e.target.value=''; return; } setMessage(''); setFile(selected); }} /></label>
+        {preview && <img src={preview} alt="معاينة إثبات الدفع" className="max-h-48 mx-auto rounded-xl object-contain" />}
+        {message && <p role="status" className="text-[#fcf6ba]">{message}</p>}
+        <button disabled={busy || !file || !contact.trim()} className="w-full p-4 rounded-xl bg-[#bf953f] text-black font-bold disabled:opacity-50">{busy ? 'جاري الإرسال...' : 'إرسال إثبات الدفع للمراجعة'}</button>
+        <p className="text-xs text-gray-400">عند الإرسال، سجّل دخول بحساب Google لو مش مسجل. تسليم البوت بعد تأكيد وصول التحويل.</p>
+      </form>}
+    </div>
+  </div>;
+};
+
 export default function App() {
+  const [checkoutBot, setCheckoutBot] = useState<Bot | null>(null);
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [results, setResults] = useState<Result[]>([]);
   const [bots, setBots] = useState<Bot[]>([]);
@@ -811,9 +873,7 @@ export default function App() {
   };
 
   const handleBotPurchaseClick = (bot: Bot) => {
-    trackUserAction('buy_bot', bot.name, bot.price);
-    const text = `مرحباً، أود شراء بوت التداول بالكامل:%0A%0A🤖 البوت: ${bot.name}%0A💰 السعر: $${bot.price}%0A🎯 الدقة: ${bot.accuracy}%0A%0Aأرجو تزويدي بتفاصيل ووسائل الدفع لاستلام البوت.`;
-    window.open(`https://t.me/CR7bot0?text=${text}`, '_blank');
+    setCheckoutBot(bot);
   };
 
   const handlePlanClick = (type: string, title: string, capital: string, fee: string) => {
@@ -2306,6 +2366,8 @@ export default function App() {
           <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.5em]">© 2026 CR7 TRADING SYSTEMS - ALL RIGHTS RESERVED</p>
         </div>
       </footer>
+
+      {checkoutBot && <PaymentCheckout bot={checkoutBot} onClose={() => setCheckoutBot(null)} />}
 
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

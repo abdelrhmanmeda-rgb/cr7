@@ -2420,6 +2420,54 @@ const TestimonialsManager = () => {
 
 // التطبيق الرئيسي (Root Component)
 // ---------------------------------------------------------
+
+interface PurchaseOrder {
+  id: string; botName: string; amount: number; contact: string; email: string;
+  status: 'pending' | 'approved' | 'rejected'; createdAt: string; proofUrl: string; method: string;
+}
+const OrdersManager = () => {
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setBusy(true); setError('');
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch('https://cr7-kappa.vercel.app/api/orders', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+      const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل الطلبات');
+      setOrders(data.data);
+    } catch (e) { setError(e instanceof Error ? e.message : 'تعذر تحميل الطلبات'); }
+    finally { setBusy(false); }
+  };
+  useEffect(() => { void load(); }, []);
+  const update = async (id: string, status: string) => {
+    if (!confirm(status === 'approved' ? 'هل تأكدت من وصول التحويل؟' : 'تأكيد رفض إثبات الدفع؟')) return;
+    setBusy(true); setError('');
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch(`https://cr7-kappa.vercel.app/api/orders/${id}/status`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({status}) });
+      const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحديث الطلب');
+      await load();
+    } catch(e) { setError(e instanceof Error ? e.message : 'تعذر تحديث الطلب'); }
+    finally { setBusy(false); }
+  };
+  return <section dir="rtl" className="space-y-5 text-white">
+    <div className="flex justify-between items-center"><h2 className="text-2xl font-bold">طلبات شراء البوتات</h2><button disabled={busy} onClick={load} className="bg-blue-600 rounded-xl p-3">{busy ? 'جاري التحميل...' : 'تحديث'}</button></div>
+    {error && <p role="alert" className="text-red-400">{error}</p>}
+    {!busy && !error && !orders.length && <p>لا توجد طلبات حتى الآن.</p>}
+    {orders.map(order => <article key={order.id} className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-3">
+      <h3 className="text-xl font-bold">{order.botName} — {order.amount} USDT</h3>
+      <p>الحالة: {order.status === 'pending' ? 'بانتظار مراجعة الدفع' : order.status === 'approved' ? 'تم تأكيد الدفع' : 'مرفوض'}</p>
+      <p className="break-all">التواصل: {order.contact} | {order.email}</p>
+      <p>طريقة التحويل: {order.method === 'trc20' ? 'USDT / TRC20' : 'Binance ID'}</p>
+      <p className="text-sm text-gray-400">{new Date(order.createdAt).toLocaleString('ar-EG')} | رقم الطلب: {order.id}</p>
+      <a href={order.proofUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline">فتح إثبات الدفع</a>
+      {order.status === 'pending' && <div className="flex gap-3"><button disabled={busy} onClick={() => update(order.id,'approved')} className="bg-green-700 p-3 rounded-xl">تأكيد وصول الدفع</button><button disabled={busy} onClick={() => update(order.id,'rejected')} className="bg-red-700 p-3 rounded-xl">رفض الإثبات</button></div>}
+      {order.status === 'approved' && <p className="text-sm text-gray-400">تسليم البوت للعميل يتم يدويًا بعد تأكيد الدفع.</p>}
+    </article>)}
+  </section>;
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
@@ -2480,7 +2528,7 @@ export default function App() {
           <button onClick={() => { setActiveTab('subscriptions'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'subscriptions' ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.ShieldCheck /> الاشتراكات والإدارة
           </button>
-          <button onClick={() => { setActiveTab('results'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'results' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button onClick={() => { setActiveTab('results'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'orders' ? 'طلبات الشراء 💳' : activeTab === 'results' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Activity /> إدارة نتائج التداول
           </button>
           <button onClick={() => { setActiveTab('blog'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'blog' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
@@ -2489,6 +2537,7 @@ export default function App() {
           <button onClick={() => { setActiveTab('testimonials'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'testimonials' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.MessageCircle /> آراء العملاء
           </button>
+          <button onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} className="w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm text-white hover:bg-blue-600"><Icons.ShieldAlert /> طلبات الشراء</button>
           <button onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'settings' ? 'bg-gray-700 text-white shadow-2xl border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Settings /> الإعدادات العامة
           </button>
@@ -2519,7 +2568,7 @@ export default function App() {
             </div>
             
             <div className="w-full">
-              {activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'testimonials' ? <TestimonialsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
+              {activeTab === 'orders' ? <OrdersManager /> : activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'testimonials' ? <TestimonialsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
             </div>
           </div>
         </main>

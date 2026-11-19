@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 
-// إظهار رابط التسجيل خطوة منفصلة عن تشغيل Firebase، عشان نختبره قبل فتحه من الرئيسية.
 const site = {
   name: "صناديق الخليج الذكية",
   tagline: "دليلك لفهم الاستثمار",
   headline: ["الاستثمار", "بصورة أوضح"],
   description: "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.",
-  registrationUrl: process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED === "1" &&
-    process.env.NEXT_PUBLIC_SGF_SIGNUP_VISIBLE === "1" ? "/register" : "",
+  registrationUrl: (process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED ?? "1") === "1" &&
+    (process.env.NEXT_PUBLIC_SGF_SIGNUP_VISIBLE ?? "1") === "1" ? "/register" : "",
   telegramUrl: "https://t.me/CR7_B3",
 };
 

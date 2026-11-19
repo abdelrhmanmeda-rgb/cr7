@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LuxuryPhoto } from "../luxury-photo";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getApps, initializeApp } from "firebase/app";
 import {
@@ -212,8 +213,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="sgf-account" dir="rtl" lang="ar">
-      <style>{styles}</style>
+    <main className="sgf-account sgf-account-lux" dir="rtl" lang="ar">
       <header className="sgf-account-shell sgf-account-head">
         <Link href="/" className="sgf-account-brand">
           <span aria-hidden="true"><svg width="25" height="25" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.25"><path d="M3 21 14 4l11 17H3Zm6 0 5-8 5 8m-5-8v8M7 25h14" strokeLinejoin="round" /></svg></span>
@@ -224,6 +224,7 @@ export default function AccountPage() {
 
       <div className="sgf-account-shell sgf-account-grid">
         <aside className="sgf-account-intro">
+          <LuxuryPhoto asset="hero" />
           <span className="sgf-account-eyebrow">صناديق الخليج الذكية</span>
           <h1>حسابك في المنصة</h1>
           <p>أنشئ حسابك باستخدام بريدك الإلكتروني، أو سجّل الدخول إذا سبق لك التسجيل.</p>
@@ -290,41 +291,3 @@ export default function AccountPage() {
     </main>
   );
 }
-
-const styles = `
-.sgf-account{--gold:#dfbe82;--text:#f8f4ec;--muted:#b6c0c9;--line:#dfbe8235;min-height:100vh;background:#090e14;color:var(--text);overflow-wrap:anywhere}
-.sgf-account *{box-sizing:border-box}
-.sgf-account a{color:var(--gold);text-decoration:none}
-.sgf-account h1,.sgf-account h2,.sgf-account p{margin:0}
-.sgf-account-shell{width:min(1060px,calc(100% - 36px));margin-inline:auto}
-.sgf-account-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:76px;border-bottom:1px solid var(--line)}
-.sgf-account-brand{display:flex;gap:9px;align-items:center;font-weight:850}
-.sgf-account-brand>span{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;background:#23201b;flex:none}
-.sgf-account-back{font-size:.85rem}
-.sgf-account-grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:clamp(22px,6vw,76px);align-items:center;padding-block:clamp(35px,9vw,105px);min-height:calc(100vh - 76px)}
-.sgf-account-intro h1{font-size:clamp(2.6rem,5.2vw,4rem);font-weight:900;line-height:1.16;margin:13px 0 17px}
-.sgf-account-intro p,.sgf-account-panel p{color:var(--muted);line-height:1.8}
-.sgf-account-eyebrow{color:var(--gold);font-weight:750;font-size:.81rem}
-.sgf-account-note{margin-top:25px;border-inline-start:2px solid var(--gold);padding-inline:12px;font-size:.85rem;color:var(--muted)}
-.sgf-account-panel{border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#182430,#101720 75%);padding:clamp(19px,4.8vw,42px);box-shadow:0 25px 65px #0006}
-.sgf-account-panel h2{font-size:clamp(1.65rem,3vw,2.3rem);font-weight:850;margin:4px 0 9px}
-.sgf-account-panel form{display:grid;gap:12px;margin:18px 0 0}
-.sgf-account-panel label{font-size:.9rem}
-.sgf-account-panel input:not([type="checkbox"]){display:block;width:100%;margin-top:4px;padding:.6rem .7rem;border:1px solid #5f6573;border-radius:8px;color:var(--text);background:#0d151d;font:inherit;min-height:43px}
-.sgf-account-panel input[type="checkbox"]{accent-color:var(--gold)}
-.sgf-account-consent{display:flex;align-items:flex-start;gap:8px}
-.sgf-account-consent input{margin-top:5px}
-.sgf-account-panel button,.sgf-account-button{cursor:pointer;font:inherit;border:1px solid var(--line);color:var(--gold);padding:8px 14px;border-radius:9px;background:#121b25}
-.sgf-account-panel button:disabled{opacity:.6;cursor:wait}
-.sgf-account-panel .sgf-account-button{display:inline-flex;align-items:center;justify-content:center;min-height:43px;color:#231909;background:#dfbe82;border-color:transparent;font-weight:850;margin-top:9px}
-.sgf-account-panel .sgf-account-button:hover{background:#f1d59e}
-.sgf-account-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:13px}
-.sgf-account-actions .sgf-account-button{margin-top:0}
-.sgf-account-panel .sgf-account-message{margin-top:14px;padding:9px 11px;color:#cce2c8;background:#142521;border-radius:8px;font-size:.87rem}
-.sgf-account-panel .sgf-account-message[data-kind="error"]{color:#ffd5ce;background:#2e1c24}
-.sgf-account-privacy{color:var(--muted);border-top:1px solid var(--line);padding-top:11px;margin-top:17px;font-size:.82rem}
-.sgf-account-privacy summary{cursor:pointer;color:var(--gold)}
-.sgf-account-privacy p{margin-top:7px}
-.sgf-account :is(a,button,input,summary):focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-@media(max-width:730px){.sgf-account-grid{grid-template-columns:minmax(0,1fr);min-height:0}.sgf-account-note{margin-top:12px}}
-`;

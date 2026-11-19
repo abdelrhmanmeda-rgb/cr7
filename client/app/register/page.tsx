@@ -224,10 +224,10 @@ export default function AccountPage() {
 
       <div className="sgf-account-shell sgf-account-grid">
         <aside className="sgf-account-intro">
-          <span className="sgf-account-eyebrow">حسابك في المنصة</span>
-          <h1>كل شي يبدأ من بريد مؤكّد.</h1>
-          <p>تقدر تتصفّح محتوى المنصة بدون حساب. إذا تبي تسجّل، استخدم بريد تقدر توصله، وأكّده قبل دخولك للحساب.</p>
-          <div className="sgf-account-note">الحساب للمحتوى المعرفي. ما فيه إيداع أو سحب أو اشتراك في صندوق من هالصفحة.</div>
+          <span className="sgf-account-eyebrow">صناديق الخليج الذكية</span>
+          <h1>حسابك في المنصة</h1>
+          <p>أنشئ حسابك باستخدام بريدك الإلكتروني، أو سجّل الدخول إذا سبق لك التسجيل.</p>
+          <div className="sgf-account-note">تأكيد البريد الإلكتروني عند التسجيل، واستعادة كلمة المرور عند الحاجة.</div>
         </aside>
 
         <section className="sgf-account-panel" aria-label="إدارة الحساب" aria-busy={busy}>
@@ -235,22 +235,22 @@ export default function AccountPage() {
            phase !== "available" ? (
              <>
                <span className="sgf-account-eyebrow">حالة التسجيل</span>
-               <h2>{phase === "closed" ? "التسجيل مو متاح حاليًا" : "خدمة الحسابات مو متاحة الحين"}</h2>
-               <p>تقدر ترجع للرئيسية وتطّلع على دليل الصناديق ومقالات مركز المعرفة.</p>
+               <h2>{phase === "closed" ? "التسجيل غير متاح حاليًا" : "خدمة الحسابات غير متاحة حاليًا"}</h2>
+               <p>يمكنك العودة للرئيسية أو متابعة القراءة في مركز المعرفة.</p>
                <Link href="/#knowledge" className="sgf-account-button">تصفّح مركز المعرفة</Link>
              </>
            ) : profile?.verified ? (
              <><span className="sgf-account-eyebrow">البريد مؤكّد</span>
-               <h2>{profile.name ? `حيّاك، ${profile.name}` : "حيّاك في حسابك"}</h2>
-               <p>تم تأكيد بريدك وتقدر تستخدم حسابك.</p>
+               <h2>{profile.name ? `مرحبًا، ${profile.name}` : "مرحبًا بك في حسابك"}</h2>
+               <p>تم تأكيد بريدك الإلكتروني بنجاح.</p>
                <p><bdi>{profile.email}</bdi></p>
-               <Link href="/#knowledge" className="sgf-account-button">روح لمركز المعرفة</Link>
+               <Link href="/#knowledge" className="sgf-account-button">انتقل إلى مركز المعرفة</Link>
              </>
            ) : profile ? (
              <>
                <span className="sgf-account-eyebrow">خطوة التأكيد</span>
-               <h2>أكّد بريدك أول</h2>
-               <p>افتح رسالة التأكيد على <bdi>{profile.email}</bdi> وبعدها اضغط «تأكدت من بريدي».</p>
+               <h2>أكّد بريدك الإلكتروني</h2>
+               <p>افتح رابط التأكيد المرسل إلى <bdi>{profile.email}</bdi>، ثم اضغط «تأكدت من بريدي».</p>
                <div className="sgf-account-actions">
                  <button type="button" disabled={busy} onClick={checkEmail} className="sgf-account-button">تأكدت من بريدي</button>
                  <button type="button" disabled={busy} onClick={() => run(async () => {
@@ -263,7 +263,7 @@ export default function AccountPage() {
              <>
                <span className="sgf-account-eyebrow">حساب {brand}</span>
                <h2>{titles[view]}</h2>
-               <p>{view === "create" ? "بنرسل لك رابط لتأكيد بريدك." : "استخدم بريدك المرتبط بالحساب."}</p>
+               <p>{view === "create" ? "سنرسل إلى بريدك رابط تأكيد الحساب." : "استخدم البريد الإلكتروني المرتبط بحسابك."}</p>
                <form method="post" onSubmit={submit} key={view}>
                  {view === "create" && <label>اسمك<input name="name" autoComplete="name" required minLength={2} maxLength={90} /></label>}
                  <label>البريد الإلكتروني<input type="email" name="email" autoComplete="email" dir="ltr" required maxLength={200} /></label>
@@ -282,8 +282,8 @@ export default function AccountPage() {
           {phase === "available" && profile && <div className="sgf-account-actions"><button type="button" disabled={busy} onClick={() => run(async () => { await signOut(authForSite()); setProfile(null); setView("login"); })}>تسجيل الخروج</button></div>}
           {notice && <p className="sgf-account-message" data-kind={notice.kind} role="status">{notice.text}</p>}
           {phase === "available" && privacyTelegram && <details className="sgf-account-privacy"><summary>شروط التسجيل والخصوصية</summary>
-            <p>حسابك يتيح لك الوصول للمحتوى المعرفي. التسجيل ما يعني إنك اشتركت في صندوق، وما يطلب منك أي دفع.</p>
-            <p>نستخدم اسمك وبريدك لإدارة الحساب، وتُدار بيانات الدخول في Firebase. إذا تبي تستفسر عن بياناتك أو تطلب حذف حسابك، تواصل مع {operator} عبر <a href={privacyTelegram} rel="noreferrer">تليجرام <bdi>@{telegramHandle}</bdi></a>.</p>
+            <p>إنشاء الحساب يتيح تسجيل الدخول وإدارة بياناته، ولا ينشئ اشتراكًا في أي منتج استثماري.</p>
+            <p>نستخدم اسمك وبريدك الإلكتروني لإدارة الحساب، وتُدار بيانات الدخول في Firebase. للاستفسار عن بياناتك أو طلب حذف حسابك، تواصل مع {operator} عبر <a href={privacyTelegram} rel="noreferrer">تليجرام <bdi>@{telegramHandle}</bdi></a>.</p>
           </details>}
         </section>
       </div>

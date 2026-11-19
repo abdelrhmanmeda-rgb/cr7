@@ -23,18 +23,23 @@ const brand = "صناديق الخليج الذكية";
 const officialOrigin = "https://www.cr7botai.com";
 const name = "smart-gulf-funds-registration";
 const config = {
-  apiKey: process.env.NEXT_PUBLIC_SGF_FIREBASE_API_KEY,
-  projectId: process.env.NEXT_PUBLIC_SGF_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_SGF_FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_SGF_FIREBASE_API_KEY?.trim() || "AIzaSyAjvTzEBmejj6AoOWx3qQAHQ2ITmdj1meU",
+  projectId: process.env.NEXT_PUBLIC_SGF_FIREBASE_PROJECT_ID?.trim() || "smart-gulf-funds",
+  appId: process.env.NEXT_PUBLIC_SGF_FIREBASE_APP_ID?.trim() || "1:677177948074:web:f4635a3e251ab4f7f8ddd3",
 };
-const operator = process.env.NEXT_PUBLIC_SGF_OPERATOR?.trim();
-const privacyEmail = process.env.NEXT_PUBLIC_SGF_PRIVACY_EMAIL?.trim();
+const operator = process.env.NEXT_PUBLIC_SGF_OPERATOR?.trim() || "إدارة صناديق الخليج الذكية";
+const telegramHandle = (process.env.NEXT_PUBLIC_SGF_PRIVACY_TELEGRAM?.trim() || "Khaled_AlAlya")
+  .replace(/^(?:https:\/\/)?t\.me\//i, "")
+  .replace(/^@|\/$/g, "");
+const privacyTelegram = telegramHandle && /^[a-zA-Z0-9_]{3,32}$/.test(telegramHandle)
+  ? `https://t.me/${telegramHandle}`
+  : null;
 const emailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const enabled = process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED === "1" &&
-  !!config.apiKey && /^1:\d+:web:[a-f0-9]+$/i.test(config.appId ?? "") &&
-  /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(config.projectId ?? "") &&
-  config.projectId !== "cr7bot-85133" &&
-  !!operator && !!privacyEmail && /^[a-zA-Z0-9._+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(privacyEmail);
+// The homepage link stays controlled by its separate visibility flag during testing.
+const enabled = (process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED ?? "1") === "1" &&
+  /^AIza[A-Za-z0-9_-]{35}$/.test(config.apiKey) && /^1:\d+:web:[a-f0-9]+$/i.test(config.appId) &&
+  /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(config.projectId) &&
+  config.projectId !== "cr7bot-85133" && !!privacyTelegram;
 const actions = { url: officialOrigin + "/register", handleCodeInApp: false };
 let sharedAuth: Auth | undefined;
 
@@ -276,9 +281,9 @@ export default function AccountPage() {
            )}
           {phase === "available" && profile && <div className="sgf-account-actions"><button type="button" disabled={busy} onClick={() => run(async () => { await signOut(authForSite()); setProfile(null); setView("login"); })}>تسجيل الخروج</button></div>}
           {notice && <p className="sgf-account-message" data-kind={notice.kind} role="status">{notice.text}</p>}
-          {phase === "available" && <details className="sgf-account-privacy"><summary>شروط التسجيل والخصوصية</summary>
+          {phase === "available" && privacyTelegram && <details className="sgf-account-privacy"><summary>شروط التسجيل والخصوصية</summary>
             <p>حسابك يتيح لك الوصول للمحتوى المعرفي. التسجيل ما يعني إنك اشتركت في صندوق، وما يطلب منك أي دفع.</p>
-            <p>نستخدم اسمك وبريدك لإدارة الحساب، وتُدار بيانات الدخول في Firebase. إذا تبي تستفسر عن الخصوصية أو تطلب حذف حسابك، تواصل مع مشغّل الموقع: {operator}، على <a href={"mailto:" + privacyEmail}><bdi>{privacyEmail}</bdi></a>.</p>
+            <p>نستخدم اسمك وبريدك لإدارة الحساب، وتُدار بيانات الدخول في Firebase. إذا تبي تستفسر عن بياناتك أو تطلب حذف حسابك، تواصل مع {operator} عبر <a href={privacyTelegram} rel="noreferrer">تليجرام <bdi>@{telegramHandle}</bdi></a>.</p>
           </details>}
         </section>
       </div>

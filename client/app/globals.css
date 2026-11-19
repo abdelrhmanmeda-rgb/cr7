@@ -8,7 +8,7 @@
   /* GOLD SYSTEM */
   --gold-1: #bf953f;
   --gold-2: #fcf6ba;
-  --gold-3: #b38728;
+  --gold-3: #b38728;ِ}
 }
 
 /* ========= BASE ========= */
@@ -528,4 +528,102 @@ html:has(.sgf-drawer[open]) {overflow:hidden}
   :where(.sgf-universe,.sgf-editorial-lux,.sgf-account-lux) *, :where(.sgf-universe,.sgf-editorial-lux,.sgf-account-lux) *::after {
     animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;
   }
+}
+
+/* A shallow 3D stage, kept outside the text and interactive layers. */
+.sgf-universe {
+  background:radial-gradient(ellipse at 0% 31%,#ece0c9 0,transparent 39%),
+    radial-gradient(ellipse at 99% 61%,#e5ecea 0,transparent 34%),var(--sgf-ivory);
+}
+.sgf-universe .afq-hero-stage {
+  isolation:isolate;
+  background:radial-gradient(ellipse at 18% 26%,#285064 0%,transparent 43%),
+    radial-gradient(ellipse at 82% 78%,#242638 0%,transparent 51%),
+    linear-gradient(133deg,#08121f 3%,#122238 56%,#0a1423);
+}
+.sgf-universe .sgf-depth-scene {
+  --scene-edge:rgba(224,187,122,.34);
+  position:absolute;inset:0;z-index:-1;overflow:hidden;
+  perspective:1100px;perspective-origin:24% 48%;
+  pointer-events:none;
+}
+.sgf-universe .sgf-depth-scene::before {
+  content:"";position:absolute;inset-inline:-24%;inset-block:49% -67%;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 60px,#d7ba862b 61px 62px),
+    repeating-linear-gradient(90deg,transparent 0 60px,#d7ba862b 61px 62px);
+  transform:rotateX(64deg) rotateZ(-13deg);
+  transform-origin:50% 22%;
+  mask-image:linear-gradient(to bottom,transparent,#000 23%,#000 58%,transparent 92%);
+  opacity:.75;
+}
+.sgf-universe .sgf-depth-scene i {
+  display:block;position:absolute;inline-size:clamp(380px,72vw,1160px);aspect-ratio:1;
+  inset-block-start:-34%;inset-inline-end:-13%;border-radius:50%;
+  border:1px solid var(--scene-edge);
+  background:radial-gradient(ellipse at center,transparent 62%,#d2a66e0d 66%,transparent 71%);
+  box-shadow:inset 0 0 32px #e2ab5112,0 0 38px #d8aa7113;
+  transform:rotateY(-42deg) rotateX(34deg) rotateZ(24deg) translateZ(-42px);
+}
+.sgf-universe .sgf-depth-scene i:nth-child(2) {
+  inset-block-start:-21%;inset-inline-end:-20%;border-color:#8dc5c249;
+  transform:rotateY(-47deg) rotateX(45deg) rotateZ(17deg) translateZ(-88px);
+}
+.sgf-universe .sgf-depth-scene i:nth-child(3) {
+  inset-block-start:-8%;inset-inline-end:-22%;border-style:dashed;opacity:.65;
+  transform:rotateY(-45deg) rotateX(48deg) rotateZ(27deg) translateZ(-130px);
+}
+.sgf-universe .afq-hero-art {
+  border-color:#dbb7816a;
+  box-shadow:0 34px 70px #02071191,0 1px 0 #f6d7ab38 inset,0 0 32px #80d0ca13;
+}
+.sgf-universe .afq-hero-art::before {
+  z-index:-2;
+  background:linear-gradient(0deg,#07111fed 0%,#0a182b35 44%,#0b13214d 80%,#0b13218f),
+    radial-gradient(ellipse at center,#14293a49,transparent 65%);
+}
+.sgf-universe .afq-art-caption {
+  position:relative;background:linear-gradient(90deg,#1019256b,#0a121cd9);font-weight:650;
+}
+.sgf-universe .afq-art-label {position:relative;z-index:1}
+.sgf-universe .sgf-orbit-art {
+  --orbit-size:clamp(174px,27vw,350px);
+  inline-size:var(--orbit-size);aspect-ratio:1;position:absolute;
+  inset-inline-start:50%;inset-block-start:50%;translate:50% -50%;
+  display:grid;place-items:center;perspective:780px;
+  pointer-events:none;
+}
+.sgf-universe .sgf-orbit {
+  display:block;position:absolute;inset:0;border-radius:50%;
+  border:clamp(3px,.53vw,7px) solid transparent;
+  background:linear-gradient(133deg,#523429,#e1ad6d 21%,#ffffdc 34%,#9a713f 45%,#623f29 65%,#efcc93 81%,#664229) border-box;
+  mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  filter:drop-shadow(0 2px 6px #fde1a274);
+}
+.sgf-universe .sgf-orbit-outer {transform:rotateX(32deg) rotateY(-46deg) rotateZ(-20deg)}
+.sgf-universe .sgf-orbit-middle {inset:6%;transform:rotateX(54deg) rotateY(23deg) rotateZ(27deg);opacity:.85}
+.sgf-universe .sgf-orbit-inner {inset:13%;transform:rotateX(-17deg) rotateY(43deg) rotateZ(-38deg);opacity:.64}
+.sgf-universe .sgf-orbit-mark {
+  position:relative;width:32%;height:auto;padding:4%;border-radius:50%;
+  border:1px solid #d0ac7273;transform:rotate(-7deg);
+  background:radial-gradient(circle at 30% 20%,#263e51f5,#0a1525ed 68%);
+  box-shadow:0 9px 21px #0009,inset 0 0 24px #b9915328;
+}
+.sgf-editorial-lux {
+  background:radial-gradient(ellipse at 2% 0%,#ecdfc6,transparent 34rem),
+    radial-gradient(ellipse at 100% 36%,#e5edeb,transparent 42rem),var(--sgf-ivory);
+}
+.sgf-editorial-lux .sgf-guide-part+.sgf-guide-part {border-block-start:1px solid #ddd8cb;padding-block-start:26px}
+.sgf-universe .afq-faq details[open] {border-color:#c5a46d;background:#fffefa}
+@media (prefers-reduced-motion:no-preference) {
+  .sgf-universe .sgf-orbit-art {animation:sgf-orbit-arrive .85s cubic-bezier(.2,.6,.25,1) both}
+  @keyframes sgf-orbit-arrive {from {opacity:.72;transform:scale(.94) rotate(-6deg)} to {opacity:1;transform:scale(1) rotate(0)}}
+}
+@media (max-width:700px) {
+  .sgf-universe .sgf-depth-scene i {inset-inline-end:-48%;inset-block-start:1%}
+  .sgf-universe .sgf-depth-scene i:nth-child(2) {inset-inline-end:-52%;inset-block-start:9%}
+  .sgf-universe .sgf-depth-scene i:nth-child(3) {display:none}
+  .sgf-universe .sgf-orbit-art {--orbit-size:clamp(145px,45vw,240px)}
+  .sgf-universe .afq-art-caption {font-size:.81rem}
 }

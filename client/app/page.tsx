@@ -1,2386 +1,441 @@
-'use client';
+import type { Metadata } from "next";
 
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut,
-  type User
-} from 'firebase/auth';
-
-// ==========================================
-// Firebase
-// ==========================================
-const firebaseConfig = {
-  apiKey: "AIzaSyC2oPdDjR-0sOrMVcveOXnmQJ4b1QFvJho",
-  authDomain: "cr7bot-85133.firebaseapp.com",
-  projectId: "cr7bot-85133",
-  storageBucket: "cr7bot-85133.appspot.com",
-  messagingSenderId: "532213195017",
-  appId: "1:532213195017:web:035e6ce336c9aebce3f3d8"
+// إعدادات الصفحة. اترك رابط التسجيل فارغًا لحد ما الحسابات الحقيقية تبقى جاهزة.
+const site = {
+  name: "آفاق الخليج",
+  headline: ["استثمارات", "برؤية أوسع"],
+  description: "محتوى عربي يساعدك تفهم الأسواق، وتقارن بين أدوات الاستثمار، وتبدأ من الأسئلة الصح.",
+  registrationUrl: "",
+  telegramUrl: "https://t.me/CR7_B3",
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
-// ==========================================
-// Types
-// ==========================================
-interface IconProps {
-  size?: number;
-  className?: string;
-  fill?: string;
-}
-
-interface Bot {
-  id?: string;
-  _id?: string;
-  name: string;
-  description: string;
-  accuracy: string;
-  price: string;
-  imageUrl: string;
-  features: string[];
-  isBestSeller?: boolean | string;
-  salesCount?: number | string;
-}
-
-interface Plan {
-  id?: string;
-  _id?: string;
-  type: string;
-  title: string;
-  capital: string;
-  fee: string;
-  features: string[];
-  isBestSeller?: boolean | string;
-  subscribersCount?: number | string;
-}
-
-interface Result {
-  id?: string;
-  _id?: string;
-  mediaType: string;
-  mediaUrl: string;
-  profitAmount: string | number;
-  notes?: string;
-  createdAt: string;
-}
-
-interface Activity {
-  action: string;
-  date: string;
-}
-
-interface LiveStatItem {
-  id?: string;
-  title: string;
-  count: number | string;
-  note?: string;
-  active?: boolean;
-}
-
-interface SmartNotificationItem {
-  id?: string;
-  title?: string;
-  text: string;
-  type?: 'sale' | 'subscribe' | 'management' | 'copy' | 'telegram' | 'custom';
-  icon?: string;
-  service?: string;
-  country?: string;
-  isVisible?: boolean;
-}
-
-interface TestimonialItem {
-  id?: string;
-  imageUrl: string;
-  title?: string;
-  customerName?: string;
-  service?: string;
-  date?: string;
-  note?: string;
-  active?: boolean;
-  isVisible?: boolean;
-  featured?: boolean;
-}
-
-interface Settings {
-  contact: {
-    telegram: string;
-    whatsapp: string;
-    email: string;
-    facebook?: string;
-    instagram?: string;
-    tiktok?: string;
-  };
-  faqs: { question: string; answer: string }[];
-  terms: string;
-  aboutUs: string;
-  heroPhrases?: string[];
-  viewerAccount?: {
-    accountNumber?: string;
-    broker?: string;
-    server?: string;
-    password?: string;
-    platform?: string;
-    note?: string;
-  };
-  liveStats?: {
-    headline?: string;
-    subheadline?: string;
-    subscriptions?: LiveStatItem[];
-    management?: LiveStatItem[];
-    bots?: LiveStatItem[];
-    updatedAt?: string;
-  };
-  testimonials?: {
-    headline?: string;
-    subheadline?: string;
-    items?: TestimonialItem[];
-  };
-  smartNotifications?: {
-    enabled?: boolean;
-    startDelayMs?: number;
-    minDelayMs?: number;
-    maxDelayMs?: number;
-    displayDurationMs?: number;
-    items?: SmartNotificationItem[];
-  };
-  welcomeAudio?: {
-  enabled?: boolean;
-  audioUrl?: string;
-  volume?: number;
-  loop?: boolean;
-  };
-}
-
-interface CommentData {
-  id: string;
-  userId: string;
-  userName: string;
-  userImage: string;
-  text: string;
-  date: string;
-}
-
-interface PostData {
-  id?: string;
-  _id?: string;
-  title: string;
-  content: string;
-  imageUrl: string;
-  createdAt: string;
-  likes?: string[];
-  comments?: CommentData[];
-}
-
-// ==========================================
-// Icons
-// ==========================================
-const Icons = {
-  Menu: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="4" x2="20" y1="12" y2="12" />
-      <line x1="4" x2="20" y1="6" y2="6" />
-      <line x1="4" x2="20" y1="18" y2="18" />
-    </svg>
-  ),
-  X: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  ),
-  TrendingUp: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  ),
-  ShieldCheck: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  ),
-  Zap: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m13 2-2 10h3l-2 10 2-10h-3z" />
-    </svg>
-  ),
-  BarChart3: ({ className = "", size = 24, fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M3 3v18h18" />
-      <path d="M18 17V9" />
-      <path d="M13 17V5" />
-      <path d="M8 17v-3" />
-    </svg>
-  ),
-  BookOpen: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-    </svg>
-  ),
-  Heart: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  ),
-  MessageCircle: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-    </svg>
-  ),
-  ChevronRight: ({ className = "", size = 24, fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  ),
-  Globe: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a14.5 14.5 0 0 0 0 20" />
-      <path d="M2 12h20" />
-    </svg>
-  ),
-  AlertCircle: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" x2="12" y1="8" y2="12" />
-      <line x1="12" x2="12.01" y1="16" y2="16" />
-    </svg>
-  ),
-  RefreshCw: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-      <path d="M3 21v-5h5" />
-    </svg>
-  ),
-  ArrowUpRight: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M7 7h10v10" />
-      <path d="M7 17 17 7" />
-    </svg>
-  ),
-  Cpu: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
-      <rect x="9" y="9" width="6" height="6" />
-      <line x1="9" y1="1" x2="9" y2="4" />
-      <line x1="15" y1="1" x2="15" y2="4" />
-      <line x1="9" y1="20" x2="9" y2="23" />
-      <line x1="15" y1="20" x2="15" y2="23" />
-      <line x1="20" y1="9" x2="23" y2="9" />
-      <line x1="20" y1="14" x2="24" y2="14" />
-      <line x1="1" y1="9" x2="4" y2="9" />
-      <line x1="1" y1="14" x2="4" y2="14" />
-    </svg>
-  ),
-  CheckCircle: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  ),
-  CreditCard: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-      <line x1="1" y1="10" x2="23" y2="10" />
-    </svg>
-  ),
-  Check: ({ size = 20, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  ),
-  Info: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  ),
-  Star: ({ size = 20, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  ),
-  Telegram: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m22 2-7 20-4-9-9-4Z" />
-      <path d="M22 2 11 13v8l4-5" />
-    </svg>
-  ),
-  Facebook: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-  ),
-  Instagram: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  ),
-  TikTok: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5v3a3 3 0 0 1-3-3v11a4 4 0 1 1-4-4z" />
-    </svg>
-  ),
-  Phone: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  ),
-  HelpCircle: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  ),
-  FileText: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  ),
-  User: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  ),
-  LogOut: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  ),
-  Google: ({ size = 24, className = "", fill = "none" }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className={className} fill={fill}>
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-    </svg>
-  )
+export const metadata: Metadata = {
+  title: `${site.name} | المعرفة الاستثمارية`,
+  description: site.description,
+  openGraph: { title: `${site.name} | ${site.headline.join(" ")}`, description: site.description, locale: "ar", type: "website" },
 };
 
-// ==========================================
-// Background
-// ==========================================
-const BackgroundAnimation = () => {
+const topics = [
+  { title: "الذهب والمعادن", tag: "الأصول الملموسة", icon: "gold", intro: "كيف يتحرك الذهب، وما الفرق بين امتلاكه والتعرّض لسعره؟", body: "قد يختلف الأثر بين شراء معدن مادي، وامتلاك وحدة في صندوق يتتبع السعر، والتداول بعقود. قارِن طريقة الحفظ والتكاليف والسيولة قبل المقارنة بين الأسعار." },
+  { title: "الأسواق المالية", tag: "فهم حركة السوق", icon: "market", intro: "تعرّف على دورة السوق والعوامل اللي بتحرّك الأسعار.", body: "الأسعار تتأثر بالأخبار والسيولة وتوقعات المشاركين. ابدأ بفهم نوع السوق وساعات التداول وتكلفة التنفيذ، بدل الاعتماد على حركة السعر وحدها." },
+  { title: "الأسهم العالمية والخليجية", tag: "ملكية الشركات", icon: "stocks", intro: "اقرأ الشركة وراء السهم وافهم أثر القطاع والعملة.", body: "السهم حصة في شركة. من المفيد قراءة نتائجها ومصادر إيراداتها وديونها، وفهم قواعد السوق والعملة التي تُسعّر بها قبل مقارنة سهمين." },
+  { title: "الصناديق الاستثمارية", tag: "استثمار جماعي", icon: "funds", intro: "افهم اختلاف الصناديق من حيث الهدف والرسوم وطريقة التداول.", body: "تتبع بعض الصناديق مؤشرًا، بينما تدار أخرى بنشاط. اقرأ مستند الصندوق لمعرفة ما يملكه وطريقة تسعير وحداته والاسترداد والتكاليف." },
+  { title: "الاستثمار العقاري", tag: "أصول وعقود", icon: "property", intro: "الفرق بين شراء عقار مباشرة والاستثمار عبر صندوق عقاري.", body: "امتلاك عقار مباشرة يختلف عن شراء وحدة في صندوق عقاري في الإدارة والسيولة والتكلفة. ادرس عقود الإيجار والمصروفات والقدرة على البيع قبل تقييم الدخل." },
+  { title: "الصكوك وأدوات الدخل", tag: "هيكل وتدفقات", icon: "income", intro: "تعرّف على آجال الأدوات وطبيعة التدفقات المرتبطة بها.", body: "راجع هيكل الأداة والجهة المصدرة وشروط التوزيع والاسترداد. قارن بين مخاطر المُصدر وتوقيت التوزيعات وإمكانية البيع قبل موعد الاستحقاق." },
+  { title: "بناء المحافظ", tag: "أهداف وتوزيع", icon: "portfolio", intro: "طريقة منظمة للتفكير في توزيع الأصول والسيولة.", body: "تبدأ المحفظة بهدف ومدة واحتياج واضح للسيولة. التنويع يقلّل التركّز، لكنه لا يلغي الخسارة، وقد تتصرف أدوات مختلفة بطريقة متشابهة وقت الأزمات." },
+  { title: "مقارنة الفرص", tag: "قرار أكثر وضوحًا", icon: "compare", intro: "مجموعة أسئلة ثابتة تساعدك تقارن بين خيارات مختلفة.", body: "اعرف مصدر العائد، ووقت الخروج، والرسوم، والسيناريو الأقل ملاءمة. لو معلومة مؤثرة غير واضحة، اشتغل على فهمها قبل اتخاذ القرار." },
+] as const;
+
+const icons: Record<(typeof topics)[number]["icon"], string> = {
+  gold: "M3 17h18l-4-8H7l-4 8Zm5-5h8M8 21h8",
+  market: "M3 4v16h18M6 15l5-5 4 3 5-6M17 7h3v3",
+  stocks: "M4 20h16M6 16v-4h3v4m2 0V8h3v8m2 0V5h3v11",
+  funds: "m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5",
+  property: "m3 10 5-4 5 4v10H3V10Zm10-4h8v14h-8m3-11h2m-2 4h2m-11 7v-5h3v5",
+  income: "M6 3h9l3 3v15H6V3Zm9 0v4h3M9 11h6m-6 4h6m-6 3h3",
+  portfolio: "M10 3a8 8 0 1 0 11 11h-9V3h-2ZM14 3v9h9a9 9 0 0 0-9-9Z",
+  compare: "M4 7h16M4 12h16M4 17h16M8 5v4m8 1v4m-5 1v4",
+};
+
+const articles = [
+  {
+    number: "01",
+    label: "أساسيات",
+    title: "إزاي تقرأ شروط أي فرصة استثمارية؟",
+    intro: "قبل ما تسأل عن النسبة، اسأل عن مصدرها، ومدتها، وتكلفتها، وإمكانية الخروج.",
+    paragraphs: [
+      "اقرأ وصف الأداة، والجهة التي تديرها، ونوع النسبة المذكورة: هل هي مستهدفة، نتيجة سابقة، أم مثال للتوضيح؟ المقارنة تحتاج نفس المدة ونفس طريقة الحساب.",
+      "احسب أثر الرسوم، وشوف لو فيه قيود على البيع أو الاسترداد. اسأل كيف تتغير النتيجة لو احتجت تخرج مبكرًا أو تغيّرت ظروف السوق.",
+    ],
+  },
+  {
+    number: "02",
+    label: "إدارة المحفظة",
+    title: "التنويع يبدأ من فهم اللي عندك",
+    intro: "زيادة عدد الأصول مش دايمًا معناها إن المخاطر اتوزعت.",
+    paragraphs: [
+      "أحيانًا تمتلك عدة أدوات، لكنها مرتبطة بالسوق نفسه أو العملة نفسها. ابدأ بحصر مصادر التركّز: القطاع، والمنطقة، ونوع الأصل.",
+      "راجع توزيعك على فترات حسب أهدافك واحتياجك للسيولة. ممكن تتغيّر الأوزان حتى من غير ما تضيف أي استثمار، بسبب اختلاف أداء الأصول.",
+    ],
+  },
+  {
+    number: "03",
+    label: "مصطلحات",
+    title: "إيه الفرق بين السيولة والعائد؟",
+    intro: "السيولة بتجاوب عن سؤال إمتى وبأي تكلفة تقدر تخرج، والعائد بيقيس النتيجة.",
+    paragraphs: [
+      "الأداة ذات السوق النشط قد تكون أسهل في البيع من أداة بتتطلب انتظار أو موافقة. اتأكد إنك فاهم وقت التنفيذ والرسوم وقت البيع.",
+      "قارن العائد بعد التكاليف وعلى مدة متقاربة. خُد في اعتبارك ظروف الخروج بدل اختيار أداة على أساس رقم العائد وحده.",
+    ],
+  },
+] as const;
+
+const links = [
+  ["about", "عن المنصة"],
+  ["sectors", "المجالات"],
+  ["plans", "الخطط"],
+  ["knowledge", "مركز المعرفة"],
+  ["faq", "الأسئلة الشائعة"],
+] as const;
+
+function safeExternalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function Brand() {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#030303]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1a150a_0%,#030303_100%)]"></div>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-      <div className="absolute top-[10%] left-[20%] w-[30vw] h-[30vw] bg-[#bf953f]/5 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute bottom-[10%] right-[10%] w-[40vw] h-[40vw] bg-[#8B6E36]/10 rounded-full blur-[150px] animate-pulse"></div>
-      <div className="absolute inset-0 opacity-20 flex items-center justify-center mix-blend-screen">
-        <style>{`@keyframes drawLine { 0% { stroke-dashoffset: 2000; } 100% { stroke-dashoffset: 0; } }`}</style>
-        <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="none">
-          <path
-            d="M-100,600 C100,500 200,700 350,450 C500,200 650,550 800,300 C950,50 1100,350 1300,150"
-            fill="none"
-            stroke="url(#chartGradient)"
-            strokeWidth="3"
-            strokeDasharray="2000"
-            style={{ animation: 'drawLine 15s linear infinite' }}
-          />
-          <defs>
-            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#bf953f" stopOpacity="0" />
-              <stop offset="50%" stopColor="#fcf6ba" stopOpacity="1" />
-              <stop offset="100%" stopColor="#bf953f" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+    <a className="afq-brand" href="#top" aria-label={site.name + " — الرئيسية"}>
+      <span className="afq-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" width="35" height="35">
+          <path d="M7 27 20 8l13 19H7Z" stroke="currentColor" strokeWidth="1.35" strokeLinejoin="round" />
+          <path d="M12 28.5 20 16l8 12.5M20 16v12.5M8.5 32h23" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
+          <path d="M20 3.5v3M32 11h3M5 11h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".65" />
         </svg>
-      </div>
+      </span>
+      <span><strong>{site.name}</strong><small lang="en">AFAQ AL KHALEEJ</small></span>
+    </a>
+  );
+}
+
+function SectionTitle({ label, title, text }: { label: string; title: string; text?: string }) {
+  return (
+    <div className="afq-section-title">
+      <span className="afq-eyebrow">{label}</span>
+      <h2>{title}</h2>
+      {text && <p>{text}</p>}
     </div>
   );
-};
+}
 
-// ==========================================
-// App
-// ==========================================
+function HeroArt() {
+  return (
+    <div className="afq-hero-art" aria-hidden="true">
+      <span className="afq-art-label"><span /> نظرة على عالم الاستثمار</span>
+      <svg viewBox="0 0 560 440" preserveAspectRatio="xMidYMid meet" fill="none" className="afq-art-svg">
+        <defs>
+          <pattern id="afq-grid" width="34" height="34" patternUnits="userSpaceOnUse">
+            <path d="M34 0H0V34" stroke="#d0b278" strokeOpacity=".105" />
+          </pattern>
+          <radialGradient id="afq-glow" cx=".54" cy=".46" r=".51">
+            <stop stopColor="#a6814b" stopOpacity=".25" />
+            <stop offset="1" stopColor="#080d14" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="afq-gold" x1="0" x2="1" y1="1" y2="0">
+            <stop stopColor="#91683b" stopOpacity=".55" />
+            <stop offset="1" stopColor="#f4d9a3" />
+          </linearGradient>
+          <linearGradient id="afq-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop stopColor="#dfb66a" stopOpacity=".24" />
+            <stop offset="1" stopColor="#dfb66a" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <rect x="25" y="46" width="510" height="346" rx="22" fill="url(#afq-grid)" />
+        <rect x="12" y="36" width="536" height="369" fill="url(#afq-glow)" />
+        <circle cx="301" cy="191" r="132" stroke="#c5a76f" strokeOpacity=".14" />
+        <circle cx="301" cy="191" r="105" stroke="#c5a76f" strokeOpacity=".2" strokeDasharray="3 7" />
+        <circle cx="301" cy="191" r="73" stroke="#c5a76f" strokeOpacity=".24" />
+        <path d="M301 71v240M181 191h240M215 105l172 172m0-172L215 277" stroke="#c5a76f" strokeOpacity=".15" />
+        <path d="m301 126 33 65-33 64-34-64 34-65Z" fill="#dbb274" fillOpacity=".10" stroke="#e4bc77" strokeOpacity=".65" />
+        <path d="m301 126-1 65 34 0m-67 0h33l1 64" stroke="#e4bc77" strokeOpacity=".55" />
+        <path d="M29 354 101 311 154 326 213 265 262 279 335 211 399 231 459 153 531 177V393H29Z" fill="url(#afq-fill)" />
+        <path d="M29 354 101 311 154 326 213 265 262 279 335 211 399 231 459 153 531 177" stroke="url(#afq-gold)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="m30 375 74-17 50 6 60-37 72 9 60-45 50 10 63-39 72 18" stroke="#8aa6af" strokeOpacity=".55" strokeWidth="1.2" />
+        <circle cx="459" cy="153" r="13" fill="#f2cb86" fillOpacity=".17" />
+        <circle cx="459" cy="153" r="4.5" fill="#f2cb86" />
+        <circle cx="213" cy="265" r="3.5" fill="#f2cb86" />
+        <path d="M67 101h13m-6.5-6.5v13m404 233h13m-6.5-6.5v13" stroke="#c5a76f" strokeOpacity=".55" />
+      </svg>
+      <div className="afq-art-caption"><span>مفاهيم تُرى بوضوح</span><span>رسم توضيحي</span></div>
+    </div>
+  );
+}
 
-const PAYMENT_API = 'https://cr7-kappa.vercel.app/api/orders';
-const PAYMENT_ADDRESS = 'TKw4wpm7EB9BERFhvMVnK2GZ5Sqnc2gtBC';
-const PaymentCheckout = ({ bot, onClose }: { bot: Bot; onClose: () => void }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState('');
-  const [contact, setContact] = useState('');
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [orderId, setOrderId] = useState('');
-  const [method, setMethod] = useState('trc20');
-  const [requestId] = useState(() => crypto.randomUUID());
-  useEffect(() => {
-    if (!file) { setPreview(''); return; }
-    const url = URL.createObjectURL(file); setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-  const copy = async (value: string) => {
-    try { await navigator.clipboard.writeText(value); setMessage('تم النسخ'); }
-    catch { setMessage('انسخ بيانات التحويل يدويًا'); }
-  };
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault(); if (busy || orderId) return;
-    if (!file || !contact.trim()) { setMessage('ارفع إثبات الدفع واكتب وسيلة التواصل'); return; }
-    setBusy(true); setMessage('');
-    try {
-      let customer = auth.currentUser;
-      if (!customer) customer = (await signInWithPopup(auth, googleProvider)).user;
-      const form = new FormData();
-      form.append('proof', file); form.append('botId', bot.id || bot._id || '');
-      form.append('contact', contact.trim()); form.append('method', method); form.append('requestId', requestId);
-      const response = await fetch(PAYMENT_API, { method: 'POST', headers: { Authorization: `Bearer ${await customer.getIdToken()}` }, body: form });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إرسال الطلب');
-      setOrderId(data.data.id);
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر إرسال الطلب، حاول تاني'); }
-    finally { setBusy(false); }
-  };
-  return <div className="fixed inset-0 z-[140] bg-black/90 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="الدفع" dir="rtl">
-    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-[#bf953f]/40 bg-[#0a0a0a] p-6 text-white">
-      <button type="button" onClick={onClose} disabled={busy} className="float-left p-2" aria-label="إغلاق">✕</button>
-      <h2 className="text-2xl font-bold text-[#fcf6ba] mb-4">شراء {bot.name}</h2>
-      {orderId ? <div role="status" className="space-y-4"><p className="text-green-400">تم إرسال طلبك — بانتظار مراجعة الدفع</p><p className="break-all">رقم الطلب: {orderId}</p><p>هنراجع التحويل ونتواصل معاك لتسليم البوت.</p><button onClick={onClose} className="p-3 bg-[#bf953f] text-black rounded-xl">تمام</button></div> : <form onSubmit={submit} className="space-y-4">
-        <p className="font-bold">المبلغ المطلوب: {bot.price} USDT</p>
-        <label className="block">طريقة التحويل<select disabled={busy} value={method} onChange={e => setMethod(e.target.value)} className="block w-full bg-zinc-900 p-3 rounded-xl mt-2"><option value="trc20">USDT عبر شبكة TRC20</option><option value="binance">تحويل داخلي باستخدام Binance ID</option></select></label>
-        <div className="bg-zinc-900 rounded-xl p-4 space-y-3">
-          <p>{method === 'trc20' ? 'عنوان الاستلام — USDT / TRC20' : 'Binance ID'}</p>
-          <p dir="ltr" className="break-all select-all">{method === 'trc20' ? PAYMENT_ADDRESS : '112375457'}</p>
-          <button type="button" onClick={() => copy(method === 'trc20' ? PAYMENT_ADDRESS : '112375457')} className="text-[#fcf6ba]">نسخ بيانات التحويل</button>
-          {method === 'trc20' && <p className="text-sm text-gray-300">اختار شبكة TRC20، وتأكد إن المبلغ اللي هيوصل بعد رسوم السحب يساوي سعر البوت.</p>}
+export default function Page() {
+  const registrationUrl = safeExternalUrl(site.registrationUrl);
+  const telegramUrl = safeExternalUrl(site.telegramUrl);
+  const faqs = [
+    ["هل أقدر أستثمر أو أودع من الموقع؟", "الموقع يعرض محتوى معرفي عن الاستثمار. مفيش خدمات إيداع أو سحب أو دفع من الصفحة."],
+    ["إمتى أقدر أعمل حساب؟", registrationUrl ? "زر إنشاء الحساب بينقلك لخدمة التسجيل. اتبع خطوات تأكيد البريد من هناك." : "التسجيل لم يُفتح بعد. هتلاقي رابط التسجيل هنا بعد إطلاق خدمة الحسابات."],
+    ["هل المجالات المعروضة كلها خدمات متاحة؟", "المجالات دي أدلة تعريفية. عرضها هنا بيساعدك تتعلم عنها، ومش معناه إن المنصة بتوفر خدمة في كل مجال."],
+    ["هل المقالات توصيات شراء أو بيع؟", "المقالات بتشرح أدوات ومفاهيم عامة. مفيش فيها توصية شخصية أو وعد بنتيجة استثمارية."],
+  ];
+
+  return (
+    <div id="top" className="afq" lang="ar" dir="rtl">
+      <style>{styles}</style>
+      <a className="afq-skip" href="#content">انتقل للمحتوى</a>
+
+      <header className="afq-header">
+        <div className="afq-wrap afq-nav">
+          <Brand />
+          <nav className="afq-nav-links" aria-label="أقسام الموقع">
+            {links.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
+          </nav>
+          <a className="afq-button afq-button-small" href={registrationUrl ?? "#contact"}>{registrationUrl ? "إنشاء حساب" : "تواصل معنا"}</a>
         </div>
-        <label className="block">يوزر تيليجرام أو رقم واتساب للتواصل<input disabled={busy} required maxLength={120} value={contact} onChange={e => setContact(e.target.value)} className="block w-full bg-zinc-900 p-3 rounded-xl mt-2" /></label>
-        <label className="block">صورة إثبات الدفع<input disabled={busy} required type="file" accept="image/jpeg,image/png,image/webp" className="block mt-2 w-full" onChange={e => { const selected=e.target.files?.[0]; setFile(null); if (!selected) return; if (!['image/jpeg','image/png','image/webp'].includes(selected.type) || selected.size > 2*1024*1024) { setMessage('اختار صورة JPG أو PNG أو WEBP بحجم أقصى 2 ميجا'); e.target.value=''; return; } setMessage(''); setFile(selected); }} /></label>
-        {preview && <img src={preview} alt="معاينة إثبات الدفع" className="max-h-48 mx-auto rounded-xl object-contain" />}
-        {message && <p role="status" className="text-[#fcf6ba]">{message}</p>}
-        <button disabled={busy || !file || !contact.trim()} className="w-full p-4 rounded-xl bg-[#bf953f] text-black font-bold disabled:opacity-50">{busy ? 'جاري الإرسال...' : 'إرسال إثبات الدفع للمراجعة'}</button>
-        <p className="text-xs text-gray-400">عند الإرسال، سجّل دخول بحساب Google لو مش مسجل. تسليم البوت بعد تأكيد وصول التحويل.</p>
-      </form>}
-    </div>
-  </div>;
-};
-
-export default function App() {
-  const [checkoutBot, setCheckoutBot] = useState<Bot | null>(null);
-  const [currentPage, setCurrentPage] = useState<string>('home');
-  const [results, setResults] = useState<Result[]>([]);
-  const [bots, setBots] = useState<Bot[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [posts, setPosts] = useState<PostData[]>([]);
-  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState('');
-  const [settings, setSettings] = useState<Settings>({
-    contact: { telegram: '', whatsapp: '', email: '' },
-    faqs: [],
-    terms: '',
-    aboutUs: ''
-  });
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-  const [userActivity, setUserActivity] = useState<Activity[]>([]);
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState<number>(0);
-  const [selectedResult, setSelectedResult] = useState<Result | null>(null);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialItem | null>(null);
-  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
-  const [activeSmartNotification, setActiveSmartNotification] = useState<SmartNotificationItem | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [isWelcomeAudioPlaying, setIsWelcomeAudioPlaying] = useState(false);
-  const [welcomeAudioUnlocked, setWelcomeAudioUnlocked] = useState(false);
-
-  const goldTextClass = "text-transparent bg-clip-text bg-gradient-to-b from-[#bf953f] via-[#fcf6ba] to-[#b38728] font-black";
-  const goldCardClass = "bg-[#0a0a0a]/80 backdrop-blur-2xl border border-[#bf953f]/20 rounded-[40px] hover:border-[#bf953f]/60 transition-all duration-500 shadow-2xl";
-  const goldBtnClass = "bg-gradient-to-r from-[#bf953f] via-[#fcf6ba] to-[#b38728] text-black font-black transition-all hover:scale-105 active:scale-95 shadow-xl";
-
-  const heroPhrases = settings.heroPhrases || ['يعمل لأجلك', 'يحقق أحلامك', 'يصنع ثروتك', 'يؤمن مستقبلك'];
-
-  const launchDate = new Date('2024-01-01').getTime();
-  const now = new Date().getTime();
-  const daysPassed = Math.floor((now - launchDate) / (1000 * 60 * 60 * 24));
-  const dynamicReturn = 284 + Math.floor(daysPassed * 0.5);
-  const dynamicTrades = 1250 + Math.floor(daysPassed * 3);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const savedActivity = JSON.parse(localStorage.getItem(`activity_${currentUser.uid}`) || "[]");
-        setUserActivity(savedActivity);
-      } else {
-        setUserActivity([]);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setShowLoginModal(false);
-    } catch (error: any) {
-      console.error("خطأ في تسجيل الدخول:", error);
-      if (error?.code === 'auth/unauthorized-domain') {
-        alert('هذا النطاق غير مصرح له بتسجيل الدخول. أضفه داخل Firebase Authorized Domains.');
-      } else {
-        alert('حدث خطأ أثناء تسجيل الدخول، حاول مرة تانية.');
-      }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setCurrentPage('home');
-    } catch (error) {
-      console.error("خطأ في تسجيل الخروج:", error);
-    }
-  };
-
-  const trackUserAction = async (actionType: string, itemName?: string, price?: string | number) => {
-    try {
-      await fetch('https://cr7-kappa.vercel.app/api/statistics/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          actionType,
-          itemName,
-          price: price ? String(price).replace(/[^0-9.]/g, '') : 0
-        })
-      });
-    } catch (e) {
-      console.log('Tracking error', e);
-    }
-  };
-
-  useEffect(() => {
-    trackUserAction('visit');
-  }, []);
-
-  const trackActivity = useCallback((pageName: string) => {
-    if (!user) return;
-
-    const pageLabels: Record<string, string> = {
-      home: 'الرئيسية',
-      about: 'من نحن',
-      bots: 'البوتات',
-      results: 'النتائج',
-      services: 'خدماتنا',
-      subscribe: 'الاشتراكات والإدارة',
-      testimonials: 'آراء العملاء',
-      blog: 'المدونة',
-      faqs: 'الأسئلة الشائعة',
-      terms: 'الشروط والأحكام',
-      profile: 'الملف الشخصي',
-      contact: 'تواصل معنا'
-    };
-
-    const newActivity: Activity = {
-      action: `قام بزيارة قسم ${pageLabels[pageName] || pageName}`,
-      date: new Date().toISOString()
-    };
-
-    setUserActivity((prev) => {
-      const updated = [newActivity, ...prev].slice(0, 20);
-      try {
-        localStorage.setItem(`activity_${user.uid}`, JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
-  }, [user]);
-
-  const navigateTo = (page: string) => {
-    setCurrentPage(page);
-    setIsMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    trackActivity(page);
-  };
-
-  useEffect(() => {
-    document.title = "CR7 BOT";
-
-    const existingIcons = document.querySelectorAll("link[rel*='icon']");
-    existingIcons.forEach((icon) => {
-      if (icon.parentNode) icon.parentNode.removeChild(icon);
-    });
-
-    const favicon = document.createElement('link');
-    favicon.rel = 'icon';
-    favicon.type = 'image/jpeg';
-    favicon.href = "https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg";
-    document.head.appendChild(favicon);
-
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = `
-      nextjs-portal,
-      #nextjs-build-indicator,
-      [data-nextjs-toast] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-      }
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #bf953f70; border-radius: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #bf953f; }
-      @keyframes testimonialFloat0 {
-        0%, 100% { transform: translateY(0px) rotate(-0.35deg); }
-        50% { transform: translateY(-16px) rotate(0.35deg); }
-      }
-      @keyframes testimonialFloat1 {
-        0%, 100% { transform: translateY(-8px) rotate(0.45deg); }
-        50% { transform: translateY(12px) rotate(-0.45deg); }
-      }
-      @keyframes testimonialFloat2 {
-        0%, 100% { transform: translateY(6px) rotate(0.25deg); }
-        50% { transform: translateY(-14px) rotate(-0.25deg); }
-      }
-      .testimonial-float {
-        will-change: transform;
-        transform-style: preserve-3d;
-      }
-      .testimonial-float-0 { animation: testimonialFloat0 6.5s ease-in-out infinite; }
-      .testimonial-float-1 { animation: testimonialFloat1 7.4s ease-in-out infinite; }
-      .testimonial-float-2 { animation: testimonialFloat2 8.2s ease-in-out infinite; }
-      .testimonial-float:hover {
-        animation-play-state: paused;
-        transform: translateY(-14px) scale(1.015) !important;
-      }
-      @keyframes smartToastIn {
-        0% { opacity: 0; transform: translateY(-18px) scale(0.96); filter: blur(6px); }
-        12% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        86% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        100% { opacity: 0; transform: translateY(-12px) scale(0.98); filter: blur(4px); }
-      }
-      @keyframes smartToastGlow {
-        0%, 100% { box-shadow: 0 0 22px rgba(191,149,63,0.14); }
-        50% { box-shadow: 0 0 34px rgba(252,246,186,0.24); }
-      }
-      .smart-toast {
-        animation: smartToastIn 5.2s ease-in-out both, smartToastGlow 2.2s ease-in-out infinite;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .testimonial-float-0, .testimonial-float-1, .testimonial-float-2 { animation: none !important; }
-        .smart-toast { animation: none !important; }
-      }
-    `;
-    document.head.appendChild(styleTag);
-
-    return () => {
-      if (styleTag.parentNode) styleTag.parentNode.removeChild(styleTag);
-    };
-  }, []);
-
-  const fetchResults = useCallback(async (retries = 5, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/results');
-      if (!response.ok) throw new Error('فشل الاتصال بسيرفر النتائج');
-      const data = await response.json();
-      if (data.success) {
-        setResults(data.data || []);
-        setError(null);
-      }
-    } catch (err) {
-      if (retries > 0) setTimeout(() => fetchResults(retries - 1, delay * 2), delay);
-      else setError('لا يمكن الاتصال بالسيرفر حالياً. تأكد إن الباك إند شغال.');
-    } finally {
-      if (retries === 5) setLoading(false);
-    }
-  }, []);
-
-  const fetchBots = useCallback(async (retries = 3, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/bots');
-      const data = await response.json();
-      if (data.success && data.data) setBots(data.data);
-    } catch (err) {
-      if (retries > 0) setTimeout(() => fetchBots(retries - 1, delay * 2), delay);
-    }
-  }, []);
-
-  const fetchPlans = useCallback(async (retries = 3, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/subscriptions');
-      const data = await response.json();
-      if (data.success && data.data) setPlans(data.data);
-    } catch (err) {
-      if (retries > 0) setTimeout(() => fetchPlans(retries - 1, delay * 2), delay);
-    }
-  }, []);
-
-  const fetchSettings = useCallback(async (retries = 3, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/settings');
-      const data = await response.json();
-      if (data.success && data.data) setSettings(data.data);
-    } catch (err) {
-      if (retries > 0) setTimeout(() => fetchSettings(retries - 1, delay * 2), delay);
-    }
-  }, []);
-
-  const fetchPosts = useCallback(async (retries = 3, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/blog');
-      const data = await response.json();
-      if (data.success && data.data) setPosts(data.data);
-    } catch (err) {
-      if (retries > 0) setTimeout(() => fetchPosts(retries - 1, delay * 2), delay);
-    }
-  }, []);
-
-  const fetchTestimonials = useCallback(async (retries = 3, delay = 1000) => {
-    try {
-      const response = await fetch('https://cr7-kappa.vercel.app/api/testimonials');
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        setTestimonials(data.data);
-      }
-    } catch (err) {
-      if (retries > 0) {
-        setTimeout(() => fetchTestimonials(retries - 1, delay * 2), delay);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchResults();
-    fetchBots();
-    fetchPlans();
-    fetchSettings();
-    fetchPosts();
-    fetchTestimonials();
-  }, [fetchResults, fetchBots, fetchPlans, fetchSettings, fetchPosts, fetchTestimonials]);
-
-  const handleLike = async (postId: string) => {
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        const id = post.id || post._id;
-        if (id === postId) {
-          const likes = post.likes || [];
-          const hasLiked = likes.includes(user.uid);
-          return {
-            ...post,
-            likes: hasLiked ? likes.filter((uid) => uid !== user.uid) : [...likes, user.uid]
-          };
-        }
-        return post;
-      })
-    );
-
-    try {
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId: user.uid })
-      });
-
-      const text = await res.text();
-      try {
-        const data = JSON.parse(text);
-        if (!data.success) {
-          alert('خطأ من السيرفر: ' + data.message);
-        } else {
-          trackUserAction('like_post', postId);
-        }
-      } catch (parseError) {
-        console.error("رد السيرفر غير متوقع:", text);
-      }
-    } catch (e) {
-      console.error("Fetch Error:", e);
-    }
-  };
-
-  const handleAddComment = async (postId: string) => {
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-    if (!commentText.trim()) return;
-
-    const newComment: CommentData = {
-      id: Date.now().toString(),
-      userId: user.uid,
-      userName: user.displayName || 'مستخدم',
-      userImage: user.photoURL || 'https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg',
-      text: commentText,
-      date: new Date().toISOString()
-    };
-
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        const id = post.id || post._id;
-        if (id === postId) {
-          return { ...post, comments: [...(post.comments || []), newComment] };
-        }
-        return post;
-      })
-    );
-    setCommentText('');
-
-    try {
-      const res = await fetch(`https://cr7-kappa.vercel.app/api/blog/${postId}/comment`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newComment)
-      });
-
-      const text = await res.text();
-      try {
-        const data = JSON.parse(text);
-        if (!data.success) {
-          alert('خطأ من السيرفر: ' + data.message);
-        } else {
-          trackUserAction('comment_post', postId);
-        }
-      } catch (parseError) {
-        console.error("رد السيرفر غير متوقع:", text);
-      }
-    } catch (e) {
-      console.error("Fetch Error:", e);
-    }
-  };
-
-  const handleBotPurchaseClick = (bot: Bot) => {
-    setCheckoutBot(bot);
-  };
-
-  const handlePlanClick = (type: string, title: string, capital: string, fee: string) => {
-    if (type === 'الإدارة') trackUserAction('management', title);
-    else trackUserAction('subscribe', title, fee);
-
-    const text = `مرحباً، أود الانضمام لقسم (${type}):%0A%0A📌 التفاصيل: ${title}%0A💰 رأس المال: ${capital}%0A💳 الرسوم: ${fee}%0A%0Aأرجو تزويدي بخطوات البدء فوراً.`;
-    window.open(`https://t.me/CR7BOT01?text=${text}`, '_blank');
-  };
-
-  const viewerAccount = settings.viewerAccount || {};
-  const hasViewerAccount = Boolean(
-    viewerAccount.accountNumber ||
-    viewerAccount.broker ||
-    viewerAccount.server ||
-    viewerAccount.password ||
-    viewerAccount.platform ||
-    viewerAccount.note
-  );
-
-  const copyToClipboard = async (text: string, fieldName: string) => {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(fieldName);
-      setTimeout(() => setCopiedField(null), 1800);
-    } catch (e) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        setCopiedField(fieldName);
-        setTimeout(() => setCopiedField(null), 1800);
-      } catch (err) {
-        alert('لم يتم النسخ تلقائياً، انسخ البيانات يدوياً.');
-      }
-      document.body.removeChild(textarea);
-    }
-  };
-
-  const copyViewerAccount = () => {
-    const details = [
-      viewerAccount.platform ? `المنصة: ${viewerAccount.platform}` : '',
-      viewerAccount.broker ? `البروكر: ${viewerAccount.broker}` : '',
-      viewerAccount.server ? `السيرفر: ${viewerAccount.server}` : '',
-      viewerAccount.accountNumber ? `رقم الحساب: ${viewerAccount.accountNumber}` : '',
-      viewerAccount.password ? `باسورد المشاهدة: ${viewerAccount.password}` : '',
-      viewerAccount.note ? `ملاحظة: ${viewerAccount.note}` : ''
-    ].filter(Boolean).join('\n');
-
-    copyToClipboard(details, 'all-viewer-account');
-    trackUserAction('copy_viewer_account');
-  };
-
-  const subscriptionPlans = plans.filter((p) => p.type === 'الاشتراكات');
-  const managementPlans = plans.filter((p) => p.type === 'الإدارة');
-
-  const formatLiveCount = (value?: number | string) => {
-    const parsed = Number(value || 0);
-    if (!Number.isFinite(parsed)) return '0';
-    return parsed.toLocaleString('en-US');
-  };
-
-  const visibleLiveItems = (items?: LiveStatItem[]) => (items || []).filter((item) => item.active !== false);
-
-  const liveSubscriptions = visibleLiveItems(settings.liveStats?.subscriptions).length > 0
-    ? visibleLiveItems(settings.liveStats?.subscriptions)
-    : subscriptionPlans.map((plan) => ({
-        id: plan.id || plan._id,
-        title: plan.title,
-        count: plan.subscribersCount || 0,
-        note: plan.fee ? `رسوم ${plan.fee}` : plan.capital
-      }));
-
-  const liveManagement = visibleLiveItems(settings.liveStats?.management).length > 0
-    ? visibleLiveItems(settings.liveStats?.management)
-    : managementPlans.map((plan) => ({
-        id: plan.id || plan._id,
-        title: plan.title,
-        count: plan.subscribersCount || 0,
-        note: plan.capital || plan.fee
-      }));
-
-  const liveBots = visibleLiveItems(settings.liveStats?.bots).length > 0
-    ? visibleLiveItems(settings.liveStats?.bots)
-    : bots.map((bot) => ({
-        id: bot.id || bot._id,
-        title: bot.name,
-        count: bot.salesCount || 0,
-        note: bot.price ? `سعر $${bot.price}` : bot.accuracy
-      }));
-
-  const hasLiveStats = liveSubscriptions.length > 0 || liveManagement.length > 0 || liveBots.length > 0;
-
-  const testimonialsHeadline = settings.testimonials?.headline || 'آراء العملاء من تيليجرام';
-  const testimonialsSubheadline = settings.testimonials?.subheadline || 'لقطات حقيقية من رسائل العملاء بعد الاشتراك واستخدام خدمات CR7 BOT.';
-  const testimonialItems = testimonials.filter((item) => item.active !== false && item.isVisible !== false && item.imageUrl);
-  const featuredTestimonials = testimonialItems.filter((item) => item.featured).length > 0 ? testimonialItems.filter((item) => item.featured) : testimonialItems.slice(0, 6);
-
-  const welcomeAudioSettings = settings.welcomeAudio || {};
-  const welcomeAudioEnabled = welcomeAudioSettings.enabled === true && Boolean(welcomeAudioSettings.audioUrl);
-  console.log("Welcome Audio:", settings.welcomeAudio);
-  console.log("Enabled:", welcomeAudioEnabled);
-  const welcomeAudioVolume = Math.min(1, Math.max(0, Number(welcomeAudioSettings.volume ?? 0.45)));
-
-  useEffect(() => {
-    if (!welcomeAudioEnabled || !welcomeAudioSettings.audioUrl) {
-      if (welcomeAudioRef.current) {
-        welcomeAudioRef.current.pause();
-        welcomeAudioRef.current.currentTime = 0;
-        welcomeAudioRef.current = null;
-      }
-      setIsWelcomeAudioPlaying(false);
-      setWelcomeAudioUnlocked(false);
-      return;
-    }
-
-    const audio = new Audio(welcomeAudioSettings.audioUrl);
-    audio.loop = welcomeAudioSettings.loop !== false;
-    audio.volume = welcomeAudioVolume;
-    audio.preload = 'auto';
-    welcomeAudioRef.current = audio;
-    setIsWelcomeAudioPlaying(false);
-    setWelcomeAudioUnlocked(false);
-
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
-      if (welcomeAudioRef.current === audio) welcomeAudioRef.current = null;
-      setIsWelcomeAudioPlaying(false);
-    };
-  }, [welcomeAudioEnabled, welcomeAudioSettings.audioUrl, welcomeAudioSettings.loop, welcomeAudioVolume]);
-
-  useEffect(() => {
-    if (!welcomeAudioEnabled) return;
-
-    const startWelcomeAudio = () => {
-      const audio = welcomeAudioRef.current;
-      if (!audio) return;
-
-      audio.volume = welcomeAudioVolume;
-      audio.play()
-        .then(() => {
-          setWelcomeAudioUnlocked(true);
-          setIsWelcomeAudioPlaying(true);
-        })
-        .catch(() => {
-          setIsWelcomeAudioPlaying(false);
-        });
-    };
-
-    window.addEventListener('pointerdown', startWelcomeAudio, { once: true });
-    window.addEventListener('touchstart', startWelcomeAudio, { once: true });
-    window.addEventListener('keydown', startWelcomeAudio, { once: true });
-
-    return () => {
-      window.removeEventListener('pointerdown', startWelcomeAudio);
-      window.removeEventListener('touchstart', startWelcomeAudio);
-      window.removeEventListener('keydown', startWelcomeAudio);
-    };
-  }, [welcomeAudioEnabled, welcomeAudioVolume]);
-
-  useEffect(() => {
-    const stopAudioOnExit = () => {
-      if (welcomeAudioRef.current) {
-        welcomeAudioRef.current.pause();
-      }
-      setIsWelcomeAudioPlaying(false);
-    };
-
-    window.addEventListener('pagehide', stopAudioOnExit);
-    window.addEventListener('beforeunload', stopAudioOnExit);
-
-    return () => {
-      window.removeEventListener('pagehide', stopAudioOnExit);
-      window.removeEventListener('beforeunload', stopAudioOnExit);
-    };
-  }, []);
-
-  const toggleWelcomeAudio = async () => {
-    const audio = welcomeAudioRef.current;
-    if (!audio) return;
-
-    if (isWelcomeAudioPlaying) {
-      audio.pause();
-      setIsWelcomeAudioPlaying(false);
-      return;
-    }
-
-    try {
-      audio.volume = welcomeAudioVolume;
-      await audio.play();
-      setWelcomeAudioUnlocked(true);
-      setIsWelcomeAudioPlaying(true);
-    } catch (e) {
-      alert('اضغط مرة أخرى لتشغيل الصوت.');
-    }
-  };
-
-  const maskedNames = useMemo(() => ['A****', 'M****', 'K****', 'S****', 'Y****', 'R****', 'H****', 'T****'], []);
-  const countries = useMemo(() => ['السعودية', 'الإمارات', 'الكويت', 'قطر', 'مصر', 'الأردن', 'المغرب'], []);
-
-  const defaultSmartNotifications = useMemo<SmartNotificationItem[]>(() => {
-    const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || arr[0];
-    const botItems = bots.slice(0, 4).map((bot, index) => ({
-      id: `auto-bot-${bot.id || bot._id || index}`,
-      title: 'عملية شراء جديدة',
-      text: `${pick(maskedNames)} اشترى ${bot.name}`,
-      type: 'sale' as const,
-      icon: '🤖',
-      service: bot.name,
-      country: pick(countries),
-      isVisible: true
-    }));
-
-    const subItems = subscriptionPlans.slice(0, 4).map((plan, index) => ({
-      id: `auto-sub-${plan.id || plan._id || index}`,
-      title: 'اشتراك جديد',
-      text: `${pick(maskedNames)} اشترك في ${plan.title}`,
-      type: 'subscribe' as const,
-      icon: '💳',
-      service: plan.title,
-      country: pick(countries),
-      isVisible: true
-    }));
-
-    const mgmtItems = managementPlans.slice(0, 3).map((plan, index) => ({
-      id: `auto-mgmt-${plan.id || plan._id || index}`,
-      title: 'تفعيل إدارة حساب',
-      text: `${pick(maskedNames)} فعّل ${plan.title}`,
-      type: 'management' as const,
-      icon: '🛡️',
-      service: plan.title,
-      country: pick(countries),
-      isVisible: true
-    }));
-
-    return [
-      ...subItems,
-      ...mgmtItems,
-      ...botItems,
-      { id: 'auto-copy-viewer', title: 'نشاط مباشر', text: `${pick(maskedNames)} نسخ بيانات حساب المشاهدة`, type: 'copy', icon: '👁️', country: pick(countries), isVisible: true },
-      { id: 'auto-telegram', title: 'انضمام جديد', text: `${pick(maskedNames)} انضم لقناة CR7 BOT`, type: 'telegram', icon: '✈️', country: pick(countries), isVisible: true }
-    ];
-  }, [bots, subscriptionPlans, managementPlans, maskedNames, countries]);
-
-  const smartNotificationsConfig = settings.smartNotifications || {};
-  const smartNotificationsPool = useMemo(() => {
-    const dashboardItems = (smartNotificationsConfig.items || []).filter((item) => item.isVisible !== false && item.text?.trim());
-    return dashboardItems.length > 0 ? dashboardItems : defaultSmartNotifications;
-  }, [smartNotificationsConfig.items, defaultSmartNotifications]);
-
-  useEffect(() => {
-    const enabled = smartNotificationsConfig.enabled !== false;
-    if (!enabled || smartNotificationsPool.length === 0 || showLoginModal || selectedResult || selectedTestimonial) {
-      setActiveSmartNotification(null);
-      return;
-    }
-
-    let cancelled = false;
-    let showTimer: ReturnType<typeof setTimeout> | null = null;
-    let hideTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const startDelay = Number(smartNotificationsConfig.startDelayMs || 1400);
-    const minDelay = Number(smartNotificationsConfig.minDelayMs || 6500);
-    const maxDelay = Number(smartNotificationsConfig.maxDelayMs || 15000);
-    const displayDuration = Number(smartNotificationsConfig.displayDurationMs || 5200);
-
-    const showNext = () => {
-      if (cancelled) return;
-      const item = smartNotificationsPool[Math.floor(Math.random() * smartNotificationsPool.length)];
-      setActiveSmartNotification({ ...item, id: `${item.id || 'notification'}-${Date.now()}` });
-
-      hideTimer = setTimeout(() => {
-        if (cancelled) return;
-        setActiveSmartNotification(null);
-        showTimer = setTimeout(showNext, randomBetween(minDelay, maxDelay));
-      }, displayDuration);
-    };
-
-    showTimer = setTimeout(showNext, startDelay);
-
-    return () => {
-      cancelled = true;
-      if (showTimer) clearTimeout(showTimer);
-      if (hideTimer) clearTimeout(hideTimer);
-    };
-  }, [smartNotificationsConfig.enabled, smartNotificationsConfig.startDelayMs, smartNotificationsConfig.minDelayMs, smartNotificationsConfig.maxDelayMs, smartNotificationsConfig.displayDurationMs, smartNotificationsPool, showLoginModal, selectedResult, selectedTestimonial]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentPhraseIndex((prev) => (prev + 1) % heroPhrases.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [heroPhrases.length]);
-
-  const SmartNotificationToast = ({ item }: { item: SmartNotificationItem }) => {
-    const icon = item.icon || (item.type === 'sale' ? '🤖' : item.type === 'subscribe' ? '💳' : item.type === 'management' ? '🛡️' : item.type === 'copy' ? '👁️' : item.type === 'telegram' ? '✈️' : '⚡');
-
-    return (
-      <div className="fixed top-[92px] right-3 left-3 md:left-auto md:right-8 z-[80] pointer-events-none flex justify-center md:justify-end">
-        <div className="smart-toast w-full max-w-[360px] md:max-w-[390px] overflow-hidden rounded-2xl border border-[#bf953f]/35 bg-[#080808]/92 backdrop-blur-2xl shadow-2xl">
-          <div className="relative p-3.5 flex items-center gap-3 flex-row-reverse">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(252,246,186,0.14),transparent_40%)]"></div>
-            <div className="relative shrink-0 w-10 h-10 rounded-xl bg-[#bf953f]/15 border border-[#bf953f]/30 flex items-center justify-center text-lg">
-              {icon}
+      </header>
+
+      <main id="content">
+        <section className="afq-wrap afq-hero" aria-labelledby="afq-main-title">
+          <div className="afq-hero-text">
+            <span className="afq-eyebrow">معرفة. أسواق. رؤية.</span>
+            <h1 id="afq-main-title">{site.headline[0]}<br /><em>{site.headline[1]}</em></h1>
+            <p>{site.description}</p>
+            <div className="afq-actions">
+              <a href="#sectors" className="afq-button afq-button-gold">استكشف مجالات الاستثمار <span aria-hidden="true">←</span></a>
+              <a href={registrationUrl ?? "#registration"} className="afq-button">{registrationUrl ? "إنشاء حساب" : "عن التسجيل"}</a>
             </div>
-            <div className="relative min-w-0 flex-1 text-right">
-              <div className="flex items-center justify-between gap-2 flex-row-reverse mb-1">
-                <p className="text-[11px] text-[#fcf6ba] font-black line-clamp-1">{item.title || 'نشاط جديد داخل CR7 BOT'}</p>
-                <span className="shrink-0 flex items-center gap-1 text-[9px] text-emerald-300 font-black">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  LIVE
-                </span>
-              </div>
-              <p className="text-xs md:text-sm text-white font-bold line-clamp-1">{item.text}</p>
-              <p className="text-[10px] text-gray-500 mt-1 line-clamp-1">{item.country ? `${item.country} • ` : ''}منذ لحظات</p>
+            <div className="afq-hero-foot">
+              <span>٨ مجالات معرفية</span><span>محتوى عربي مبسّط</span><span>تصفّح من غير حساب</span>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  };
+          <HeroArt />
+        </section>
 
-  const LiveStatTile = ({ label, count, note, accent = 'gold' }: { label: string; count?: number | string; note?: string; accent?: 'gold' | 'blue' | 'green' }) => (
-    <div className="group relative overflow-hidden bg-black/45 border border-[#bf953f]/10 hover:border-[#bf953f]/50 rounded-3xl p-4 transition-all duration-500">
-      <div className={`absolute -top-10 -left-10 w-24 h-24 rounded-full blur-2xl opacity-20 ${accent === 'green' ? 'bg-emerald-400' : accent === 'blue' ? 'bg-sky-400' : 'bg-[#fcf6ba]'}`}></div>
-      <div className="relative z-10 text-right">
-        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 line-clamp-1">{label}</p>
-        <div className="flex items-end justify-between gap-3 flex-row-reverse">
-          <span className={`text-3xl md:text-4xl leading-none ${goldTextClass}`}>{formatLiveCount(count)}</span>
-          <span className="text-[10px] text-[#fcf6ba] bg-[#bf953f]/10 border border-[#bf953f]/20 px-2 py-1 rounded-full font-black">نشط</span>
-        </div>
-        {note ? <p className="text-[11px] text-gray-500 mt-3 line-clamp-1">{note}</p> : null}
-      </div>
-    </div>
-  );
-
-  const EmptyLiveStats = ({ text }: { text: string }) => (
-    <div className="bg-black/30 border border-dashed border-[#bf953f]/20 rounded-3xl p-5 text-center">
-      <p className="text-xs text-gray-500 font-bold">{text}</p>
-    </div>
-  );
-
-  const TestimonialScreenshotCard = ({ item, index }: { item: TestimonialItem; index: number }) => (
-    <button
-      onClick={() => {
-        setSelectedTestimonial(item);
-        trackUserAction('view_testimonial', item.title || item.customerName || 'testimonial');
-      }}
-      className={`testimonial-float testimonial-float-${index % 3} group relative text-right overflow-hidden bg-[#080808]/90 border border-[#bf953f]/20 rounded-[26px] p-2 shadow-2xl hover:border-[#fcf6ba]/70 transition-all duration-500 ${index % 5 === 1 ? 'xl:mt-8' : index % 5 === 3 ? 'xl:mt-5' : ''}`}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(252,246,186,0.16),transparent_35%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      <div className="relative z-10 bg-black rounded-[22px] overflow-hidden border border-white/10">
-        <div className="h-9 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-3 flex-row-reverse">
-          <div className="flex items-center gap-2 flex-row-reverse">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-[8px] sm:text-[9px] text-[#fcf6ba] font-black uppercase tracking-widest">Telegram Feedback</span>
-          </div>
-          <div className="flex gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-400/70"></span>
-            <span className="w-2 h-2 rounded-full bg-yellow-400/70"></span>
-            <span className="w-2 h-2 rounded-full bg-green-400/70"></span>
-          </div>
-        </div>
-        <div className="relative bg-[#0b0f14]">
-          <img src={item.imageUrl} alt={item.title || 'رأي عميل'} className="w-full h-[210px] sm:h-[250px] lg:h-[280px] xl:h-[260px] object-cover object-top group-hover:scale-[1.04] transition-transform duration-700" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-70"></div>
-          <div className="absolute bottom-3 right-3 left-3 flex items-end justify-between gap-3 flex-row-reverse">
-            <div className="text-right min-w-0">
-              <p className="text-white font-black line-clamp-1 text-sm">{item.title || item.customerName || 'رسالة عميل'}</p>
-              <p className="text-[11px] text-gray-300 mt-1 line-clamp-1">{item.service || 'CR7 BOT'}{item.date ? ' • ' + item.date : ''}</p>
-            </div>
-            <span className="shrink-0 bg-[#bf953f] text-black px-2.5 py-1 rounded-full text-[9px] font-black">عرض</span>
-          </div>
-        </div>
-      </div>
-      <div className="relative z-10 mt-3 px-1 flex items-center justify-between gap-2 flex-row-reverse">
-        <div className="flex items-center gap-2 flex-row-reverse text-[#fcf6ba] text-[11px] font-black">
-          <Icons.ShieldCheck size={14} />
-          <span>لقطة عميل حقيقية</span>
-        </div>
-        {item.note ? <span className="text-[10px] text-gray-500 line-clamp-1 max-w-[140px]">{item.note}</span> : null}
-      </div>
-    </button>
-  );
-
-  const TestimonialsSection = ({ compact = false }: { compact?: boolean }) => {
-    const items = compact ? featuredTestimonials.slice(0, 6) : testimonialItems;
-
-    if (items.length === 0) {
-      return (
-        <section className={`${compact ? 'pb-28' : 'py-20'} px-4 md:px-8 animate-in slide-in-from-bottom-10`}>
-          <div className="max-w-7xl mx-auto">
-            <SectionTitle title={testimonialsHeadline} desc={testimonialsSubheadline} />
-            <div className={`${goldCardClass} p-10 text-center`}>
-              <Icons.MessageCircle size={34} className="mx-auto text-[#bf953f] mb-4" />
-              <h3 className="text-2xl font-black mb-3">سيتم عرض اسكرينات العملاء هنا</h3>
-              <p className="text-gray-400 max-w-2xl mx-auto leading-7">بعد رفع لقطات تيليجرام من لوحة التحكم، هتظهر هنا بشكل معرض احترافي ويمكن للزائر فتح كل صورة كاملة.</p>
+        <section id="about" className="afq-section afq-section-band">
+          <div className="afq-wrap afq-about">
+            <SectionTitle label="عن آفاق الخليج" title="افهم الفرصة قبل ما تقارن الأرقام" text="بدأنا من فكرة بسيطة: المعلومة الواضحة بتخلي المقارنة أسهل. هنا هتلاقي شرح للأدوات والأسواق، وأسئلة عملية تساعدك تفهم الاختيارات قدامك." />
+            <div className="afq-about-card">
+              <span className="afq-eyebrow">طريقتنا</span>
+              <ol>
+                <li><span>١</span><div><strong>اعرف الأداة</strong><small>فهم هي بتشتغل إزاي، وإيه اللي ممكن يأثر عليها.</small></div></li>
+                <li><span>٢</span><div><strong>اقرأ الشروط</strong><small>راجع المدة والتكاليف والسيولة بكل وضوح.</small></div></li>
+                <li><span>٣</span><div><strong>قارِن على أساس واحد</strong><small>خلي الهدف والمدة أساس المقارنة.</small></div></li>
+              </ol>
             </div>
           </div>
         </section>
-      );
-    }
 
-    return (
-      <section className={`${compact ? 'pb-28' : 'py-20'} px-4 md:px-8 animate-in slide-in-from-bottom-10`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 bg-[#bf953f]/10 border border-[#bf953f]/30 text-[#fcf6ba] px-5 py-2 rounded-full text-[10px] font-black mb-5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
-              </span>
-              REAL TELEGRAM SCREENSHOTS
-            </div>
-            <h2 className={`text-4xl md:text-6xl mb-4 ${goldTextClass}`}>{testimonialsHeadline}</h2>
-            <p className="text-gray-400 max-w-3xl mx-auto leading-7">{testimonialsSubheadline}</p>
+        <section id="sectors" className="afq-wrap afq-section">
+          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختار المجال اللي يهمك وافتح البطاقة عشان تعرف الفرق بين الأدوات، وإيه الأسئلة اللي تبدأ بيها." />
+          <div className="afq-grid afq-topic-grid">
+            {topics.map((topic, index) => (
+              <details className="afq-topic" key={topic.icon}>
+                <summary>
+                  <span className="afq-card-top">
+                    <span className="afq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><path d={icons[topic.icon]} /></svg></span>
+                    <span className="afq-card-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  </span>
+                  <span className="afq-card-tag">{topic.tag}</span>
+                  <strong className="afq-card-title">{topic.title}</strong>
+                  <span className="afq-card-intro">{topic.intro}</span>
+                  <span className="afq-card-action">التفاصيل <span aria-hidden="true" className="afq-plus" /></span>
+                </summary>
+                <p className="afq-details-copy">{topic.body}</p>
+              </details>
+            ))}
           </div>
+        </section>
 
-          <div className="relative">
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[70%] h-40 bg-[#bf953f]/10 blur-[90px] rounded-full pointer-events-none"></div>
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
-              {items.map((item, index) => (
-                <TestimonialScreenshotCard key={item.id || `${item.imageUrl}-${index}`} item={item} index={index} />
+        <section id="plans" className="afq-wrap afq-section afq-plans">
+          <div className="afq-plans-panel">
+            <div>
+              <span className="afq-eyebrow">حالة الإتاحة</span>
+              <h2>الخطط الاستثمارية</h2>
+              <p>مفيش خطط مفتوحة للاشتراك على الموقع حاليًا. تقدَر تبدأ بدليل المجالات ومركز المعرفة.</p>
+            </div>
+            <a className="afq-button" href="#knowledge">استكشف مركز المعرفة <span aria-hidden="true">←</span></a>
+          </div>
+        </section>
+
+        <section id="knowledge" className="afq-wrap afq-section">
+          <SectionTitle label="اقرأ وتعرّف" title="مركز المعرفة" text="مقالات قصيرة تجاوب عن أسئلة عملية ممكن تقابلك وإنت بتقرأ عن الاستثمار." />
+          <div className="afq-grid afq-article-grid">
+            {articles.map((article) => (
+              <details className="afq-article" key={article.number}>
+                <summary>
+                  <span className="afq-card-top"><span className="afq-card-tag">{article.label}</span><span className="afq-card-index" aria-hidden="true">{article.number}</span></span>
+                  <strong className="afq-card-title">{article.title}</strong>
+                  <span className="afq-card-intro">{article.intro}</span>
+                  <span className="afq-card-action">اقرأ المقال <span aria-hidden="true" className="afq-plus" /></span>
+                </summary>
+                <div className="afq-details-copy">{article.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section id="faq" className="afq-section afq-section-band">
+          <div className="afq-wrap afq-faq-grid">
+            <SectionTitle label="إجابات واضحة" title="الأسئلة الشائعة" text="اعرف وضع التسجيل والخطط، وإيه المتاح على الموقع حاليًا." />
+            <div className="afq-faq">
+              {faqs.map(([question, answer]) => (
+                <details key={question}>
+                  <summary>{question}<span className="afq-plus" aria-hidden="true" /></summary>
+                  <p>{answer}</p>
+                </details>
               ))}
             </div>
           </div>
+        </section>
 
-          {compact && testimonialItems.length > 6 ? (
-            <div className="text-center mt-12">
-              <button onClick={() => navigateTo('testimonials')} className={`px-8 py-4 rounded-2xl ${goldBtnClass}`}>
-                شاهد كل آراء العملاء
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </section>
-    );
-  };
+        <section id="registration" className="afq-wrap afq-section afq-registration">
+          <SectionTitle label="حساب آفاق الخليج" title={registrationUrl ? "إنشاء حساب" : "التسجيل لم يُفتح بعد"} text={registrationUrl ? "أنشئ حسابك واتبع خطوات تأكيد البريد على صفحة التسجيل." : "تقدر تستكشف المحتوى من غير حساب. رابط التسجيل هيظهر هنا لما خدمة الحسابات تبقى متاحة."} />
+          <a className="afq-button afq-button-gold" href={registrationUrl ?? "#knowledge"}>{registrationUrl ? "الانتقال للتسجيل" : "ابدأ بالقراءة"} <span aria-hidden="true">←</span></a>
+        </section>
 
-  const StatCard = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-    <div className="bg-black/40 p-6 rounded-3xl border border-[#bf953f]/10 text-center">
-      <p className="text-[10px] text-gray-500 font-black mb-2 uppercase tracking-widest">{label}</p>
-      <p className={`text-3xl ${goldTextClass}`}>{value}</p>
-      {sub ? <p className="text-xs text-gray-500 mt-2">{sub}</p> : null}
-    </div>
-  );
-
-  const ViewerAccountField = ({ label, value, fieldKey }: { label: string; value?: string; fieldKey: string }) => (
-    <div className="bg-black/40 border border-[#bf953f]/10 rounded-2xl p-4 flex items-center justify-between gap-3 flex-row-reverse">
-      <div className="text-right min-w-0">
-        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-white font-black break-all">{value || 'غير متوفر حالياً'}</p>
-      </div>
-      <button
-        onClick={() => copyToClipboard(value || '', fieldKey)}
-        disabled={!value}
-        className={`shrink-0 px-4 py-2 rounded-xl text-xs font-black border transition-all ${value ? 'border-[#bf953f]/40 text-[#fcf6ba] hover:bg-[#bf953f] hover:text-black' : 'border-white/10 text-gray-600 cursor-not-allowed'}`}
-      >
-        {copiedField === fieldKey ? 'تم النسخ' : 'نسخ'}
-      </button>
-    </div>
-  );
-
-  const SectionTitle = ({ title, desc }: { title: string; desc?: string }) => (
-    <div className="text-center mb-14">
-      <h2 className={`text-4xl md:text-6xl mb-4 ${goldTextClass}`}>{title}</h2>
-      {desc ? <p className="text-gray-400 max-w-2xl mx-auto">{desc}</p> : null}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen text-white selection:bg-[#bf953f]/30 font-sans overflow-x-hidden flex flex-col relative bg-[#030303]" dir="rtl">
-      <BackgroundAnimation />
-      {activeSmartNotification && <SmartNotificationToast item={activeSmartNotification} />}
-
-      <nav className="sticky top-0 z-50 nav-blur">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-            <div className="w-12 h-12 bg-[#bf953f]/10 rounded-2xl flex items-center justify-center border border-[#bf953f]/30 overflow-hidden">
-              <img
-                src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg"
-                alt="Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className={`text-xl uppercase leading-none ${goldTextClass}`}>CR7 BOT</span>
-              <span className="text-[10px] text-gray-500 font-bold tracking-widest mt-1">SMART GOLD TRADING</span>
+        <section id="contact" className="afq-wrap afq-section afq-contact">
+          <div className="afq-contact-panel">
+            <div><span className="afq-eyebrow">التواصل</span><h2>عندك سؤال؟</h2><p>راجع الأسئلة الشائعة، أو افتح قناة CR7 الحالية للمتابعة.</p></div>
+            <div className="afq-actions">
+              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">قناة CR7 على تليجرام <span aria-hidden="true">↗</span></a>}
+              <a href="#faq" className="afq-button">الأسئلة الشائعة</a>
             </div>
           </div>
-
-          <div className="hidden lg:flex items-center gap-7 text-sm font-bold">
-            {[
-              ['home', 'الرئيسية'],
-              ['about', 'من نحن'],
-              ['bots', 'البوتات'],
-              ['results', 'النتائج'],
-              ['subscribe', 'الاشتراكات والإدارة'],
-              ['testimonials', 'آراء العملاء'],
-              ['blog', 'المدونة'],
-              ['contact', 'تواصل معنا']
-            ].map(([page, label]) => (
-              <button
-                key={page}
-                onClick={() => navigateTo(page)}
-                className={`transition-colors ${currentPage === page ? 'text-[#fcf6ba]' : 'text-gray-400 hover:text-white'}`}
-              >
-                {label}
-              </button>
-            ))}
-
-            <a
-              href="https://t.me/CR7_B3"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => trackUserAction('telegram')}
-              className="bg-[#bf953f]/10 text-[#fcf6ba] border border-[#bf953f]/30 px-5 py-2 rounded-full hover:bg-[#bf953f] hover:text-black transition-all"
-            >
-              مجتمعنا
-            </a>
-
-            {user ? (
-              <button onClick={() => navigateTo('profile')} className="flex items-center gap-2 bg-white/5 border border-[#bf953f]/30 px-4 py-2 rounded-full">
-                <img src={user.photoURL || ""} alt="profile" className="w-6 h-6 rounded-full" />
-                <span>{user.displayName?.split(' ')[0]}</span>
-              </button>
-            ) : (
-              <button onClick={() => setShowLoginModal(true)} className={`px-6 py-2 rounded-full ${goldBtnClass}`}>
-                دخول
-              </button>
-            )}
-          </div>
-
-          <button className="lg:hidden p-3 text-[#bf953f]" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <Icons.X /> : <Icons.Menu />}
-          </button>
-        </div>
-
-        {isMenuOpen && (
-          <div className="lg:hidden bg-black/95 p-8 flex flex-col gap-5 text-right font-bold border-b border-[#bf953f]/20">
-            {[
-              ['home', 'الرئيسية'],
-              ['about', 'من نحن'],
-              ['bots', 'البوتات'],
-              ['results', 'النتائج'],
-              ['subscribe', 'الاشتراكات والإدارة'],
-              ['testimonials', 'آراء العملاء'],
-              ['blog', 'المدونة'],
-              ['contact', 'تواصل معنا'],
-              ['faqs', 'الأسئلة الشائعة'],
-              ['terms', 'الشروط والأحكام']
-            ].map(([page, label]) => (
-              <button key={page} onClick={() => navigateTo(page)} className="text-gray-300 hover:text-[#fcf6ba]">
-                {label}
-              </button>
-            ))}
-
-            {user ? (
-              <button onClick={() => navigateTo('profile')} className="text-gray-300 hover:text-[#fcf6ba]">
-                الملف الشخصي
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setShowLoginModal(true);
-                }}
-                className={`mt-2 px-6 py-3 rounded-2xl ${goldBtnClass}`}
-              >
-                دخول
-              </button>
-            )}
-          </div>
-        )}
-      </nav>
-
-      <main className="flex-grow relative z-10">
-        {loading && (
-          <section className="py-24 px-4">
-            <div className={`${goldCardClass} max-w-2xl mx-auto p-10 text-center`}>
-              <Icons.RefreshCw className="mx-auto mb-5 animate-spin text-[#bf953f]" size={34} />
-              <h3 className="text-2xl font-black mb-2">جاري تحميل البيانات</h3>
-              <p className="text-gray-400">بنجهزلك أحدث البيانات والنتائج من السيرفر.</p>
-            </div>
-          </section>
-        )}
-
-        {!loading && error && (
-          <section className="py-24 px-4">
-            <div className={`${goldCardClass} max-w-2xl mx-auto p-10 text-center`}>
-              <Icons.AlertCircle className="mx-auto mb-5 text-red-400" size={34} />
-              <h3 className="text-2xl font-black mb-2">في مشكلة في الاتصال</h3>
-              <p className="text-gray-400 mb-6">{error}</p>
-              <button onClick={() => fetchResults()} className={`px-8 py-3 rounded-2xl ${goldBtnClass}`}>
-                إعادة المحاولة
-              </button>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'home' && (
-          <>
-            <section className="pt-20 pb-32 px-6 animate-in fade-in duration-700">
-              <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10">
-                <div className="text-center lg:text-right space-y-8">
-                  <div className="inline-block px-4 py-2 rounded-full bg-[#bf953f]/10 border border-[#bf953f]/20 text-[#fcf6ba] text-xs font-black">
-                    خوارزمية تداول الذهب الأكثر دقة
-                  </div>
-
-                  <h1 className="text-5xl md:text-7xl font-black leading-tight text-white">
-                    اجعل التداول <br />
-                    <span
-                      key={currentPhraseIndex}
-                      className="block text-7xl md:text-8xl font-black bg-gradient-to-b from-[#bf953f] via-                      [#fcf6ba] to-[#b38728] bg-clip-text text-transparent drop-                      shadow-[0_0_30px_rgba                      (191,149,63,0.3)] animate-pulse"
-                    >
-                      {heroPhrases[currentPhraseIndex]}
-                    </span>
-                  </h1>
-
-                  <p className="text-lg md:text-2xl text-gray-300 font-bold max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                    نظام تداول آلي بالكامل صُمم ليكون الأقوى في سوق الذهب والفوركس، بإدارة مخاطرة ذكية ونتائج مباشرة وتحديثات مستمرة.
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <button
-                      onClick={() => navigateTo('services')}
-                      className="gold-btn px-10 py-4 rounded-xl text-lg"
-                    >
-                      ابدأ الآن
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('testimonials')}
-                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/40 bg-[#bf953f]/10 text-[#fcf6ba] font-black hover:bg-[#bf953f] hover:text-black transition-all"
-                    >
-                      آراء العملاء
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('results')}
-                      className="px-10 py-5 rounded-2xl border border-[#bf953f]/30 bg-white/5 font-black hover:bg-white/10 transition-all"
-                    >
-                      شاهد النتائج
-                    </button>
-                  </div>
-
-                  <div className="pt-2 flex justify-center lg:justify-start">
-                    <a
-                      href="https://t.me/CR7_B3"
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => trackUserAction('telegram')}
-                      className="group relative flex items-center gap-5 bg-gradient-to-r from-[#7b5b17]/80 to-[#bf953f]/80 backdrop-blur-md border border-[#bf953f]/50 p-2 pr-2 pl-6 rounded-full shadow-[0_0_30px_rgba(191,149,63,0.25)] hover:shadow-[0_0_40px_rgba(191,149,63,0.4)] transition-all duration-300 active:scale-95"
-                    >
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#8B6E36] shadow-inner group-hover:scale-110 transition-transform duration-500">
-                        <Icons.Telegram size={24} />
-                      </div>
-                      <div className="flex flex-col text-right py-1">
-                        <span className="text-white font-black text-sm uppercase tracking-widest leading-none">انضم للقناة العامة</span>
-                        <span className="text-yellow-50/80 text-xs font-bold mt-1.5">تحديثات وتحليلات ونتائج يومية</span>
-                      </div>
-                    </a>
-                  </div>
-                </div>
-
-                <div className="relative overflow-hidden bg-[#0a0a0a]/85 backdrop-blur-2xl border border-[#bf953f]/20 rounded-[40px] p-6 md:p-8 space-y-6 shadow-2xl">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(252,246,186,0.12),transparent_35%),radial-gradient(circle_at_85%_80%,rgba(191,149,63,0.16),transparent_40%)] pointer-events-none"></div>
-                  <div className="relative z-10 flex justify-between items-start flex-row-reverse gap-4">
-                    <div className="text-right">
-                      <div className="inline-flex items-center gap-2 bg-[#bf953f]/10 border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-full text-[10px] font-black mb-4">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#fcf6ba] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#fcf6ba]"></span>
-                        </span>
-                        LIVE COMMUNITY DATA
-                      </div>
-                      <h3 className={`text-3xl md:text-4xl leading-tight ${goldTextClass}`}>
-                        {settings.liveStats?.headline || 'الأعداد المباشرة الحالية'}
-                      </h3>
-                      <p className="text-gray-400 text-sm mt-3 leading-7 max-w-xl">
-                        {settings.liveStats?.subheadline || 'هذه الأرقام تتحدث تلقائياً من الموقع مع كل اشتراك جديد، إدارة حساب، أو عملية شراء بوت.'}
-                      </p>
-                    </div>
-                    <div className="w-14 h-14 rounded-2xl bg-[#bf953f]/10 border border-[#bf953f]/30 flex items-center justify-center text-[#bf953f] shrink-0">
-                      <Icons.TrendingUp size={26} />
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 grid grid-cols-2 gap-3">
-                    <div className="bg-black/35 border border-[#bf953f]/10 rounded-3xl p-4 text-center">
-                      <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">إجمالي العملاء النشطين</p>
-                      <p className={`text-3xl ${goldTextClass}`}>{formatLiveCount([...liveSubscriptions, ...liveManagement, ...liveBots].reduce((sum, item) => sum + (Number(item.count || 0) || 0), 0))}</p>
-                    </div>
-                    <div className="bg-black/35 border border-[#bf953f]/10 rounded-3xl p-4 text-center">
-                      <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">آخر تحديث</p>
-                      <p className="text-sm md:text-base text-[#fcf6ba] font-black mt-2">
-                        {settings.liveStats?.updatedAt ? new Date(settings.liveStats.updatedAt).toLocaleDateString('ar-EG') : 'تلقائي'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 space-y-5 max-h-[430px] overflow-y-auto custom-scrollbar pr-1">
-                    <div>
-                      <div className="flex items-center justify-between mb-3 flex-row-reverse">
-                        <p className="text-sm text-[#fcf6ba] font-black">باقات الاشتراك</p>
-                        <span className="text-[10px] text-gray-500 font-bold">مشتركين حاليين</span>
-                      </div>
-                      {liveSubscriptions.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {liveSubscriptions.map((item, i) => (
-                            <LiveStatTile key={item.id || `${item.title}-${i}`} label={item.title} count={item.count} note={item.note} />
-                          ))}
-                        </div>
-                      ) : <EmptyLiveStats text="سيتم عرض أعداد مشتركي الباقات هنا بعد إضافتها من لوحة التحكم." />}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3 flex-row-reverse">
-                        <p className="text-sm text-[#fcf6ba] font-black">إدارة الحسابات</p>
-                        <span className="text-[10px] text-gray-500 font-bold">عملاء إدارة نشطين</span>
-                      </div>
-                      {liveManagement.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {liveManagement.map((item, i) => (
-                            <LiveStatTile key={item.id || `${item.title}-${i}`} label={item.title} count={item.count} note={item.note} accent="blue" />
-                          ))}
-                        </div>
-                      ) : <EmptyLiveStats text="سيتم عرض أعداد عملاء الإدارة هنا بعد إضافتها من لوحة التحكم." />}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3 flex-row-reverse">
-                        <p className="text-sm text-[#fcf6ba] font-black">مبيعات البوتات</p>
-                        <span className="text-[10px] text-gray-500 font-bold">عدد عمليات الشراء</span>
-                      </div>
-                      {liveBots.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {liveBots.map((item, i) => (
-                            <LiveStatTile key={item.id || `${item.title}-${i}`} label={item.title} count={item.count} note={item.note} accent="green" />
-                          ))}
-                        </div>
-                      ) : <EmptyLiveStats text="سيتم عرض عدد شراء كل بوت هنا بعد إضافته من لوحة التحكم." />}
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 bg-[#bf953f]/10 border border-[#bf953f]/20 rounded-3xl p-4 text-center">
-                    <p className="text-xs text-[#fcf6ba] font-bold leading-6">
-                      الأرقام يتم تحديثها تلقائياً لحظة بلحظة مع كل عملية اشتراك أو شراء داخل CR7 BOT. 
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="pb-28 px-4 md:px-8">
-              <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
-                <div className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.ShieldCheck size={34} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-3">إدارة مخاطرة ذكية</h3>
-                  <p className="text-gray-400">تقسيم صفقات مدروس، وتحكم واضح في التوسع والخروج، مناسب للحسابات الممولة والحقيقية.</p>
-                </div>
-                <div className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.Cpu size={34} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-3">خوارزميات متطورة</h3>
-                  <p className="text-gray-400">بوتات شغالة بمنطق تداول احترافي وسريع مع تتبع أداء وتحديثات مستمرة من السيرفر.</p>
-                </div>
-                <div className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.BarChart3 size={34} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-3">نتائج مباشرة</h3>
-                  <p className="text-gray-400">صور وفيديوهات أرباح موثقة، وسجل نتائج يتحدث باستمرار لعرض الأداء الفعلي.</p>
-                </div>
-              </div>
-            </section>
-
-            <TestimonialsSection compact />
-
-            {bots.length > 0 && (
-              <section className="pb-28 px-4 md:px-8">
-                <div className="max-w-7xl mx-auto">
-                  <SectionTitle title="أقوى البوتات" desc="أفضل الروبوتات المعروضة حالياً من CR7 BOT." />
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {bots.slice(0, 3).map((bot) => (
-                      <div key={bot.id || bot._id} className={`${goldCardClass} overflow-hidden flex flex-col`}>
-                        <div className="h-56 relative">
-                          <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover" />
-                          {(bot.isBestSeller === 'true' || bot.isBestSeller === true) && (
-                            <div className="absolute top-4 left-4 bg-[#bf953f] text-black px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                              الأكثر مبيعاً
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-8 flex flex-col flex-grow text-right">
-                          <h3 className="text-2xl font-black mb-3">{bot.name}</h3>
-                          <p className="text-gray-400 mb-5">{bot.description}</p>
-                          <div className="text-sm text-[#fcf6ba] font-bold mb-5">الدقة: {bot.accuracy}</div>
-                          <button onClick={() => handleBotPurchaseClick(bot)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
-                            شراء الآن
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
-        {!loading && !error && currentPage === 'about' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-6xl mx-auto">
-              <SectionTitle title="من نحن" desc="نبذة مختصرة عن CR7 BOT وخدماتنا." />
-              <div className={`${goldCardClass} p-8 md:p-12`}>
-                <div className="grid lg:grid-cols-2 gap-10 items-start">
-                  <div className="space-y-6 text-right">
-                    <p className="text-lg text-gray-300 leading-8 whitespace-pre-wrap">
-                      {settings.aboutUs || 'CR7 BOT هو نظام تداول آلي احترافي متخصص في تقديم بوتات تداول واشتراكات وإدارة حسابات مع واجهة احترافية، نتائج مباشرة، وتجربة استخدام واضحة وسريعة.'}
-                    </p>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <StatCard label="دقة متوقعة" value="94%+" />
-                      <StatCard label="تحديثات" value="مستمرة" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-6">
-                      <h4 className="font-black mb-2 text-[#fcf6ba]">رؤيتنا</h4>
-                      <p className="text-gray-400">نوفر بيئة احترافية تجمع بين البوتات، النتائج، الباقات، والدعم في مكان واحد.</p>
-                    </div>
-                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-6">
-                      <h4 className="font-black mb-2 text-[#fcf6ba]">مهمتنا</h4>
-                      <p className="text-gray-400">تقديم حلول تداول آلي قوية وسهلة، مع شفافية في عرض النتائج ووضوح في التواصل مع العميل.</p>
-                    </div>
-                    <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-6">
-                      <h4 className="font-black mb-2 text-[#fcf6ba]">ما يميزنا</h4>
-                      <p className="text-gray-400">تصميم سريع، مصادقة Google، مدونة تفاعلية، APIs مباشرة، وتجربة VIP متكاملة.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'bots' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-7xl mx-auto">
-              <SectionTitle title="البوتات والخوارزميات" desc="كل البوتات المتاحة حالياً للشراء." />
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {bots.map((bot) => (
-                  <div key={bot.id || bot._id} className={`${goldCardClass} overflow-hidden flex flex-col`}>
-                    <div className="h-60 relative">
-                      <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover" />
-                      {(bot.isBestSeller === 'true' || bot.isBestSeller === true) && (
-                        <div className="absolute top-4 left-4 bg-[#bf953f] text-black px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                          الأكثر مبيعاً
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-8 flex flex-col flex-grow text-right">
-                      <h3 className="text-2xl font-black mb-3">{bot.name}</h3>
-                      <p className="text-gray-400 mb-5">{bot.description}</p>
-                      <ul className="space-y-3 mb-8 flex-grow">
-                        {(bot.features || []).map((f, i) => (
-                          <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                            <Icons.CheckCircle size={16} className="text-[#bf953f]" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="flex justify-between items-center border-t border-[#bf953f]/10 pt-6">
-                        <span className={`text-3xl ${goldTextClass}`}>${bot.price}</span>
-                        <button onClick={() => handleBotPurchaseClick(bot)} className={`px-6 py-2 rounded-xl ${goldBtnClass}`}>
-                          شراء
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'results' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-7xl mx-auto">
-              <SectionTitle title="النتائج المباشرة" desc="اضغط على أي صورة لعرضها كاملة، وبيانات حساب المشاهدة متاحة للنسخ مباشرة." />
-
-              <div className={`${goldCardClass} p-6 md:p-8 mb-14`}>
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 border-b border-[#bf953f]/10 pb-6 mb-6">
-                  <div className="text-right">
-                    <div className="inline-flex items-center gap-2 bg-[#bf953f]/10 border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-full text-xs font-black mb-4">
-                      <Icons.ShieldCheck size={16} />
-                      حساب مشاهدة مباشر
-                    </div>
-                    <h3 className={`text-3xl md:text-4xl mb-3 ${goldTextClass}`}>بيانات حساب المشاهدة</h3>
-                    <p className="text-gray-400 max-w-2xl leading-7">
-                      استخدم البيانات التالية للدخول بحساب مشاهدة فقط ومتابعة الحساب والصفقات من منصة التداول.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={copyViewerAccount}
-                    disabled={!hasViewerAccount}
-                    className={`px-7 py-4 rounded-2xl ${hasViewerAccount ? goldBtnClass : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/10'}`}
-                  >
-                    {copiedField === 'all-viewer-account' ? 'تم نسخ بيانات الحساب' : 'نسخ بيانات الحساب'}
-                  </button>
-                </div>
-
-                {hasViewerAccount ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <ViewerAccountField label="المنصة" value={viewerAccount.platform} fieldKey="viewer-platform" />
-                    <ViewerAccountField label="البروكر" value={viewerAccount.broker} fieldKey="viewer-broker" />
-                    <ViewerAccountField label="السيرفر" value={viewerAccount.server} fieldKey="viewer-server" />
-                    <ViewerAccountField label="رقم الحساب" value={viewerAccount.accountNumber} fieldKey="viewer-account-number" />
-                    <ViewerAccountField label="باسورد المشاهدة" value={viewerAccount.password} fieldKey="viewer-password" />
-                    <ViewerAccountField label="ملاحظة" value={viewerAccount.note} fieldKey="viewer-note" />
-                  </div>
-                ) : (
-                  <div className="bg-black/40 border border-[#bf953f]/10 rounded-3xl p-6 text-center">
-                    <Icons.Info size={28} className="mx-auto text-[#bf953f] mb-3" />
-                    <p className="text-gray-400 font-bold">لم يتم إضافة بيانات حساب المشاهدة بعد. سيتم عرضها هنا تلقائياً بعد إضافتها من لوحة التحكم.</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {results.map((res) => (
-                  <div key={res.id || res._id} className={`${goldCardClass} overflow-hidden`}>
-                    <div
-                      className={`relative h-64 overflow-hidden ${res.mediaType === 'video' ? '' : 'cursor-zoom-in'}`}
-                      onClick={() => {
-                        if (res.mediaType !== 'video') setSelectedResult(res);
-                      }}
-                    >
-                      {res.mediaType === 'video' ? (
-                        <video
-                          src={res.mediaUrl}
-                          className="w-full h-full object-contain bg-black"
-                          loop
-                          controls
-                        />
-                      ) : (
-                        <>
-                          <img src={res.mediaUrl} alt="result" className="w-full h-full object-contain bg-white" />
-                          <div className="absolute inset-0 bg-black/0 hover:bg-black/25 transition-all flex items-center justify-center">
-                            <span className="opacity-0 hover:opacity-100 transition-all bg-black/80 border border-[#bf953f]/30 text-[#fcf6ba] px-4 py-2 rounded-full text-xs font-black">
-                              اضغط لعرض الصورة كاملة
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="p-6 text-right">
-                      <div className="flex justify-between items-center flex-row-reverse">
-                        <div>
-                          <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">صافي الربح</p>
-                          <p className={`text-3xl ${goldTextClass}`}>+${res.profitAmount}</p>
-                        </div>
-                        <button
-                          onClick={() => setSelectedResult(res)}
-                          className="w-12 h-12 rounded-2xl bg-[#bf953f]/10 border border-[#bf953f]/30 flex items-center justify-center text-[#bf953f] hover:bg-[#bf953f] hover:text-black transition-all"
-                          title="عرض النتيجة كاملة"
-                        >
-                          <Icons.ArrowUpRight size={24} />
-                        </button>
-                      </div>
-                      {res.notes ? <p className="text-gray-400 mt-4">{res.notes}</p> : null}
-                      <p className="text-xs text-gray-500 mt-4">{new Date(res.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'testimonials' && (
-          <TestimonialsSection />
-        )}
-
-        {!loading && !error && currentPage === 'services' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-7xl mx-auto">
-              <SectionTitle title="كل خدمات CR7 BOT" desc="بيع الروبوتات، باقات الاشتراك، وخدمات إدارة الحسابات في مكان واحد." />
-
-              {bots.length > 0 && (
-                <div className="mb-16">
-                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">بيع الروبوتات</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {bots.map((bot) => (
-                      <div key={bot.id || bot._id} className={`${goldCardClass} overflow-hidden flex flex-col`}>
-                        <div className="h-60 relative">
-                          <img src={bot.imageUrl} alt={bot.name} className="w-full h-full object-cover" />
-                          {(bot.isBestSeller === 'true' || bot.isBestSeller === true) && (
-                            <div className="absolute top-4 left-4 bg-[#bf953f] text-black px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                              الأكثر مبيعاً
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-8 flex flex-col flex-grow text-right">
-                          <h4 className="text-2xl font-black mb-3">{bot.name}</h4>
-                          <p className="text-gray-400 mb-5">{bot.description}</p>
-                          <ul className="space-y-3 mb-8 flex-grow">
-                            {(bot.features || []).map((f, i) => (
-                              <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                                <Icons.CheckCircle size={16} className="text-[#bf953f]" />
-                                {f}
-                              </li>
-                            ))}
-                          </ul>
-                          <div className="flex justify-between items-center border-t border-[#bf953f]/10 pt-6">
-                            <span className={`text-3xl ${goldTextClass}`}>${bot.price}</span>
-                            <button onClick={() => handleBotPurchaseClick(bot)} className={`px-6 py-2 rounded-xl ${goldBtnClass}`}>
-                              شراء الآن
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {subscriptionPlans.length > 0 && (
-                <div className="mb-16">
-                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">باقات الاشتراك</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {subscriptionPlans.map((plan) => (
-                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
-                        {(plan.isBestSeller === 'true' || plan.isBestSeller === true) && (
-                          <div className="mb-5 w-fit bg-[#bf953f] text-black px-4 py-1 rounded-full text-[10px] font-black uppercase">
-                            الأكثر طلباً
-                          </div>
-                        )}
-                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
-                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
-                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
-                        <ul className="space-y-3 mb-8 flex-grow">
-                          {(plan.features || []).map((f, i) => (
-                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                              <Icons.Check size={16} className="text-[#bf953f]" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <button onClick={() => handlePlanClick('الاشتراكات', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
-                          اشترك الآن
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {managementPlans.length > 0 && (
-                <div>
-                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">إدارة الحسابات</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {managementPlans.map((plan) => (
-                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
-                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
-                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
-                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
-                        <ul className="space-y-3 mb-8 flex-grow">
-                          {(plan.features || []).map((f, i) => (
-                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                              <Icons.Check size={16} className="text-[#bf953f]" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <button onClick={() => handlePlanClick('الإدارة', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
-                          ابدأ الإدارة
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-
-        {!loading && !error && currentPage === 'subscribe' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-7xl mx-auto">
-              <SectionTitle title="الاشتراكات والإدارة" desc="باقات الاشتراك الشهرية وخدمات إدارة الحسابات فقط." />
-
-              {subscriptionPlans.length > 0 && (
-                <div className="mb-16">
-                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">باقات الاشتراك</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {subscriptionPlans.map((plan) => (
-                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
-                        {(plan.isBestSeller === 'true' || plan.isBestSeller === true) && (
-                          <div className="mb-5 w-fit bg-[#bf953f] text-black px-4 py-1 rounded-full text-[10px] font-black uppercase">
-                            الأكثر طلباً
-                          </div>
-                        )}
-                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
-                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
-                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
-                        <ul className="space-y-3 mb-8 flex-grow">
-                          {(plan.features || []).map((f, i) => (
-                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                              <Icons.Check size={16} className="text-[#bf953f]" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <button onClick={() => handlePlanClick('الاشتراكات', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
-                          اشترك الآن
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {managementPlans.length > 0 && (
-                <div>
-                  <h3 className="text-2xl font-black mb-8 text-center text-[#fcf6ba]">إدارة الحسابات</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {managementPlans.map((plan) => (
-                      <div key={plan.id || plan._id} className={`${goldCardClass} p-8 flex flex-col text-right`}>
-                        <h4 className="text-2xl font-black mb-4">{plan.title}</h4>
-                        <p className="text-gray-400 mb-3">رأس المال: {plan.capital}</p>
-                        <p className={`text-4xl ${goldTextClass} mb-6`}>{plan.fee}</p>
-                        <ul className="space-y-3 mb-8 flex-grow">
-                          {(plan.features || []).map((f, i) => (
-                            <li key={i} className="flex items-center gap-2 justify-end text-sm text-gray-300">
-                              <Icons.Check size={16} className="text-[#bf953f]" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        <button onClick={() => handlePlanClick('الإدارة', plan.title, plan.capital, plan.fee)} className={`mt-auto px-6 py-3 rounded-2xl ${goldBtnClass}`}>
-                          ابدأ الإدارة
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'blog' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-4xl mx-auto">
-              <SectionTitle title="المدونة" desc="آخر المقالات والأخبار والتحديثات." />
-              <div className="space-y-12">
-                {posts.map((post) => {
-                  const pid = post.id || post._id || '';
-                  const isExpanded = expandedPostId === pid;
-                  return (
-                    <div key={pid} className={`${goldCardClass} overflow-hidden`}>
-                      <div className="p-6 flex items-center gap-4 border-b border-[#bf953f]/10 flex-row-reverse text-right">
-                        <img
-                          src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg"
-                          alt="author"
-                          className="w-10 h-10 rounded-full border border-[#bf953f]/30"
-                        />
-                        <div>
-                          <h4 className="font-black text-white text-sm">CR7 ADMIN</h4>
-                          <p className="text-[10px] text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="p-8 text-right space-y-4">
-                        <h3 className={`text-2xl font-black ${goldTextClass}`}>{post.title}</h3>
-                        <p className="text-gray-300 font-bold whitespace-pre-wrap leading-8">{post.content}</p>
-                      </div>
-
-                      {post.imageUrl ? <img src={post.imageUrl} alt={post.title} className="w-full border-y border-[#bf953f]/10" /> : null}
-
-                      <div className="p-4 flex gap-8 flex-row-reverse border-t border-[#bf953f]/10 px-8">
-                        <button onClick={() => handleLike(pid)} className={`flex items-center gap-2 ${user && post.likes?.includes(user.uid) ? 'text-red-500' : ''}`}>
-                          <Icons.Heart size={20} />
-                          {post.likes?.length || 0}
-                        </button>
-                        <button onClick={() => setExpandedPostId(isExpanded ? null : pid)} className="flex items-center gap-2 hover:text-[#bf953f]">
-                          <Icons.MessageCircle size={20} />
-                          {post.comments?.length || 0}
-                        </button>
-                      </div>
-
-                      {isExpanded && (
-                        <div className="p-6 bg-black/40 border-t border-[#bf953f]/10 space-y-6">
-                          <div className="max-h-60 overflow-y-auto space-y-4 custom-scrollbar">
-                            {(post.comments || []).map((c, i) => (
-                              <div key={i} className="bg-white/5 p-3 rounded-xl text-right">
-                                <div className="flex items-center gap-3 justify-end mb-2">
-                                  <span className={`text-xs font-black ${goldTextClass}`}>{c.userName}</span>
-                                  {c.userImage ? <img src={c.userImage} alt={c.userName} className="w-7 h-7 rounded-full" /> : null}
-                                </div>
-                                <p className="text-sm text-gray-300">{c.text}</p>
-                              </div>
-                            ))}
-                          </div>
-
-                          {user ? (
-                            <div className="flex gap-2 flex-row-reverse">
-                              <input
-                                type="text"
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                                placeholder="اكتب تعليقاً..."
-                                className="flex-1 bg-white/5 border border-[#bf953f]/20 rounded-lg px-4 text-right text-sm outline-none h-12"
-                              />
-                              <button onClick={() => handleAddComment(pid)} className={`px-4 py-2 rounded-lg text-xs ${goldBtnClass}`}>
-                                إرسال
-                              </button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setShowLoginModal(true)} className={`px-4 py-3 rounded-xl text-sm ${goldBtnClass}`}>
-                              سجّل دخول علشان تكتب تعليق
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'contact' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-6xl mx-auto">
-              <SectionTitle title="تواصل معنا" desc="كل طرق التواصل الرسمية الخاصة بينا." />
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <a href={settings.contact.telegram || 'https://t.me/CR7_B3'} target="_blank" rel="noreferrer" className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.Telegram size={32} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-2">Telegram</h3>
-                  <p className="text-gray-400 break-all">{settings.contact.telegram || 'https://t.me/CR7_B3'}</p>
-                </a>
-                <a href={settings.contact.whatsapp ? `https://wa.me/${settings.contact.whatsapp.replace(/\D/g, '')}` : '#'} target="_blank" rel="noreferrer" className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.Phone size={32} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-2">WhatsApp</h3>
-                  <p className="text-gray-400 break-all">{settings.contact.whatsapp || 'غير متوفر'}</p>
-                </a>
-                <a href={settings.contact.email ? `mailto:${settings.contact.email}` : '#'} className={`${goldCardClass} p-8 text-center`}>
-                  <Icons.Globe size={32} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-xl font-black mb-2">Email</h3>
-                  <p className="text-gray-400 break-all">{settings.contact.email || 'غير متوفر'}</p>
-                </a>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-6 mt-8">
-                {settings.contact.facebook ? (
-                  <a href={settings.contact.facebook} target="_blank" rel="noreferrer" className={`${goldCardClass} p-6 text-center`}>
-                    <Icons.Facebook className="mx-auto text-[#bf953f] mb-3" />
-                    <div className="font-black">Facebook</div>
-                  </a>
-                ) : null}
-                {settings.contact.instagram ? (
-                  <a href={settings.contact.instagram} target="_blank" rel="noreferrer" className={`${goldCardClass} p-6 text-center`}>
-                    <Icons.Instagram className="mx-auto text-[#bf953f] mb-3" />
-                    <div className="font-black">Instagram</div>
-                  </a>
-                ) : null}
-                {settings.contact.tiktok ? (
-                  <a href={settings.contact.tiktok} target="_blank" rel="noreferrer" className={`${goldCardClass} p-6 text-center`}>
-                    <Icons.TikTok className="mx-auto text-[#bf953f] mb-3" />
-                    <div className="font-black">TikTok</div>
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'faqs' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-4xl mx-auto">
-              <SectionTitle title="الأسئلة الشائعة" desc="إجابات مختصرة على أهم الأسئلة." />
-              <div className="space-y-5">
-                {(settings.faqs || []).length > 0 ? (
-                  settings.faqs.map((faq, i) => (
-                    <div key={i} className={`${goldCardClass} p-6`}>
-                      <div className="flex items-start gap-3 flex-row-reverse">
-                        <Icons.HelpCircle className="text-[#bf953f] shrink-0 mt-1" />
-                        <div className="text-right">
-                          <h4 className="font-black text-lg mb-2">{faq.question}</h4>
-                          <p className="text-gray-400 leading-8">{faq.answer}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className={`${goldCardClass} p-8 text-center text-gray-400`}>
-                    لا يوجد أسئلة شائعة مضافة حالياً.
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'terms' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-5xl mx-auto">
-              <SectionTitle title="الشروط والأحكام" desc="يرجى قراءة البنود بعناية." />
-              <div className={`${goldCardClass} p-8 md:p-10`}>
-                <div className="flex items-start gap-4 flex-row-reverse text-right">
-                  <Icons.FileText className="text-[#bf953f] shrink-0 mt-1" />
-                  <div className="text-gray-300 leading-8 whitespace-pre-wrap">
-                    {settings.terms || 'لا توجد شروط وأحكام مضافة حالياً.'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && currentPage === 'profile' && (
-          <section className="py-20 px-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-5xl mx-auto">
-              <SectionTitle title="الملف الشخصي" desc="بيانات حسابك ونشاطك الأخير." />
-
-              {!user ? (
-                <div className={`${goldCardClass} p-10 text-center`}>
-                  <Icons.User size={34} className="mx-auto text-[#bf953f] mb-4" />
-                  <h3 className="text-2xl font-black mb-3">أنت مش مسجل دخول</h3>
-                  <p className="text-gray-400 mb-6">سجّل دخول بحساب Google علشان تشوف ملفك الشخصي ونشاطك.</p>
-                  <button onClick={() => setShowLoginModal(true)} className={`px-8 py-3 rounded-2xl ${goldBtnClass}`}>
-                    تسجيل الدخول
-                  </button>
-                </div>
-              ) : (
-                <div className="grid lg:grid-cols-3 gap-8">
-                  <div className={`${goldCardClass} p-8 text-center`}>
-                    <img src={user.photoURL || ""} alt={user.displayName || "User"} className="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-[#bf953f]/40" />
-                    <h3 className="text-2xl font-black mb-2">{user.displayName}</h3>
-                    <p className="text-gray-400 break-all mb-6">{user.email}</p>
-                    <button onClick={handleLogout} className="w-full py-3 rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all flex items-center justify-center gap-2">
-                      <Icons.LogOut size={18} />
-                      تسجيل الخروج
-                    </button>
-                  </div>
-
-                  <div className={`${goldCardClass} p-8 lg:col-span-2`}>
-                    <h3 className="text-2xl font-black mb-6 text-right">آخر نشاط</h3>
-                    <div className="space-y-4 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
-                      {userActivity.length > 0 ? (
-                        userActivity.map((activity, index) => (
-                          <div key={index} className="bg-black/40 border border-[#bf953f]/10 rounded-2xl p-4 text-right">
-                            <p className="font-bold">{activity.action}</p>
-                            <p className="text-xs text-gray-500 mt-2">{new Date(activity.date).toLocaleString()}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="bg-black/40 border border-[#bf953f]/10 rounded-2xl p-6 text-center text-gray-400">
-                          لا يوجد نشاط محفوظ حتى الآن.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+        </section>
       </main>
 
-      {selectedTestimonial && (
-        <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedTestimonial(null)}></div>
-          <div className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[22px] overflow-hidden shadow-2xl flex flex-col">
-            <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
-              <div className="text-right">
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Telegram Feedback</p>
-                <p className={`text-2xl ${goldTextClass}`}>{selectedTestimonial.title || selectedTestimonial.customerName || 'رأي عميل'}</p>
-                <p className="text-xs text-gray-500 mt-1">{selectedTestimonial.service || 'CR7 BOT'}{selectedTestimonial.date ? ' • ' + selectedTestimonial.date : ''}</p>
-              </div>
-              <button
-                onClick={() => setSelectedTestimonial(null)}
-                className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#bf953f] hover:text-black transition-all"
-              >
-                <Icons.X size={22} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-auto bg-black flex items-center justify-center">
-              <img
-                src={selectedTestimonial.imageUrl}
-                alt={selectedTestimonial.title || 'testimonial full'}
-                className="w-auto h-auto max-w-full max-h-[78vh] object-contain"
-              />
-            </div>
-
-            <div className="p-4 md:p-5 border-t border-[#bf953f]/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-right">
-              <div>
-                {selectedTestimonial.note ? <p className="text-gray-300 font-bold mb-1">{selectedTestimonial.note}</p> : null}
-                <p className="text-xs text-gray-500">لقطة شاشة من محادثات العملاء على تيليجرام</p>
-              </div>
-              <a
-                href={selectedTestimonial.imageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`px-6 py-3 rounded-2xl text-center ${goldBtnClass}`}
-              >
-                فتح الصورة الأصلية
-              </a>
-            </div>
-          </div>
+      <footer className="afq-footer">
+        <div className="afq-wrap afq-foot-inner">
+          <div><Brand /><p>محتوى عربي للتعرّف على مجالات الاستثمار والأسواق.</p></div>
+          <nav aria-label="روابط أسفل الموقع"><a href="#about">عن المنصة</a><a href="#knowledge">المعرفة</a><a href="#contact">التواصل</a></nav>
         </div>
-      )}
-
-      {selectedResult && (
-
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedResult(null)}></div>
-          <div className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-[#0a0a0a] border border-[#bf953f]/40 rounded-[22px] overflow-hidden shadow-2xl flex flex-col">
-            <div className="p-4 md:p-5 flex items-center justify-between gap-4 border-b border-[#bf953f]/20 flex-row-reverse">
-              <div className="text-right">
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">عرض النتيجة كاملة</p>
-                <p className={`text-2xl ${goldTextClass}`}>+${selectedResult.profitAmount}</p>
-              </div>
-              <button
-                onClick={() => setSelectedResult(null)}
-                className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#bf953f] hover:text-black transition-all"
-              >
-                <Icons.X size={22} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-auto bg-black flex items-center justify-center">
-              {selectedResult.mediaType === 'video' ? (
-                <video
-                  src={selectedResult.mediaUrl}
-                  className="w-full h-auto max-h-[75vh] object-contain"
-                  controls
-                  autoPlay
-                />
-              ) : (
-                <img
-                  src={selectedResult.mediaUrl}
-                  alt="result full"
-                  className="w-auto h-auto max-w-full max-h-[75vh] object-contain"
-                />
-              )}
-            </div>
-
-            <div className="p-4 md:p-5 border-t border-[#bf953f]/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-right">
-              <div>
-                {selectedResult.notes ? <p className="text-gray-300 font-bold mb-1">{selectedResult.notes}</p> : null}
-                <p className="text-xs text-gray-500">{new Date(selectedResult.createdAt).toLocaleString()}</p>
-              </div>
-              <a
-                href={selectedResult.mediaUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`px-6 py-3 rounded-2xl text-center ${goldBtnClass}`}
-              >
-                فتح الصورة الأصلية
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <footer className="py-20 border-t border-[#bf953f]/20 bg-black z-10 text-center">
-        <div className="max-w-6xl mx-auto px-4">
-          <h3 className={`text-2xl italic mb-6 ${goldTextClass}`}>CR7 BOT GOLD TRADING</h3>
-          <div className="flex flex-wrap justify-center gap-4 mb-6 text-sm">
-            <button onClick={() => navigateTo('about')} className="text-gray-400 hover:text-white">من نحن</button>
-            <button onClick={() => navigateTo('results')} className="text-gray-400 hover:text-white">النتائج</button>
-            <button onClick={() => navigateTo('subscribe')} className="text-gray-400 hover:text-white">الاشتراكات</button>
-            <button onClick={() => navigateTo('faqs')} className="text-gray-400 hover:text-white">الأسئلة الشائعة</button>
-            <button onClick={() => navigateTo('terms')} className="text-gray-400 hover:text-white">الشروط</button>
-            <button onClick={() => navigateTo('contact')} className="text-gray-400 hover:text-white">تواصل معنا</button>
-          </div>
-          <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.5em]">© 2026 CR7 TRADING SYSTEMS - ALL RIGHTS RESERVED</p>
-        </div>
+        <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><span>الموقع للمحتوى المعرفي ولا يستقبل مدفوعات.</span></div>
       </footer>
-
-      {checkoutBot && <PaymentCheckout bot={checkoutBot} onClose={() => setCheckoutBot(null)} />}
-
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowLoginModal(false)}></div>
-          <div className="bg-[#0a0a0a] border border-[#bf953f]/40 w-full max-w-md rounded-[40px] p-12 relative z-10 text-center">
-            <h2 className={`text-3xl font-black mb-8 ${goldTextClass}`}>دخول النخبة</h2>
-            <button onClick={handleGoogleLogin} className={`w-full flex items-center justify-center gap-4 py-5 rounded-2xl text-xl ${goldBtnClass}`}>
-              <Icons.Google size={24} />
-              المتابعة بحساب Google
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
+const styles = `
+.afq {
+  --afq-bg:#090e14; --afq-surface:#111a23; --afq-paper:#f8f4ec; --afq-muted:#b6c0c9;
+  --afq-gold:#dfbe82; --afq-dark-gold:#a9854b; --afq-line:rgba(223,190,130,.19);
+  position:relative; isolation:isolate; min-height:100vh; background:var(--afq-bg); color:var(--afq-paper);
+  font-family:"Noto Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif; line-height:1.7; overflow-wrap:break-word;
+}
+.afq *, .afq *::before, .afq *::after {box-sizing:border-box}
+.afq h1,.afq h2,.afq h3,.afq p,.afq ol {margin:0}
+.afq a {color:inherit;text-decoration:none}
+.afq a:focus-visible,.afq summary:focus-visible {outline:2px solid var(--afq-gold);outline-offset:4px}
+.afq section[id], .afq main[id] {scroll-margin-top:9rem}
+.afq-wrap {width:min(1184px, calc(100% - 64px));margin-inline:auto}
+.afq-skip {position:absolute;right:14px;top:14px;transform:translateY(-160%);z-index:9;background:#efcf90;color:#161309!important;padding:10px;border-radius:7px}
+.afq-skip:focus {transform:none}
+.afq-header {position:sticky;top:0;z-index:5;background:rgba(9,14,20,.94);border-bottom:1px solid var(--afq-line);backdrop-filter:blur(14px)}
+.afq-nav {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;min-height:76px}
+.afq-brand {display:inline-flex;align-items:center;gap:11px;width:max-content;max-width:100%}
+.afq-brand strong {display:block;font-size:1.16rem;color:var(--afq-paper);font-weight:800;line-height:1.35}
+.afq-brand small {display:block;direction:ltr;text-align:right;font-size:.57rem;letter-spacing:.15em;color:var(--afq-gold);margin-top:3px}
+.afq-mark {display:grid;place-items:center;flex:none;width:47px;height:47px;border:1px solid rgba(223,190,130,.53);border-radius:14px;background:linear-gradient(145deg,#251d16,#13191f);color:var(--afq-gold)}
+.afq-nav-links {display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,26px);font-size:.85rem;font-weight:650}
+.afq-nav-links a {color:var(--afq-muted);white-space:nowrap}
+.afq-nav-links a:hover,.afq-footer nav a:hover {color:var(--afq-gold)}
+.afq-button {min-height:46px;display:inline-flex;justify-content:center;align-items:center;gap:9px;padding:9px 17px;
+  color:var(--afq-gold)!important;border:1px solid rgba(223,190,130,.42);background:#0f161e;border-radius:10px;
+  font-size:.9rem;font-weight:750;line-height:1.55;text-align:center;transition:background .18s,border-color .18s,transform .18s}
+.afq-button:hover {background:#1b2229;border-color:var(--afq-gold);transform:translateY(-1px)}
+.afq-button-gold {background:linear-gradient(112deg,#f3d8a3,#d9b476);border-color:transparent;color:#211709!important}
+.afq-button-gold:hover {background:#f3d8a3}
+.afq-button-small {min-height:40px;padding:7px 13px;white-space:nowrap;font-size:.82rem}
+.afq-hero {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:clamp(25px,5vw,65px);
+  padding-block:clamp(45px,8vw,105px);min-height:580px}
+.afq-eyebrow {display:inline-flex;align-items:center;gap:10px;color:var(--afq-gold);font-size:.77rem;font-weight:750}
+.afq-eyebrow::before {content:"";width:23px;height:1px;background:var(--afq-gold);opacity:.66}
+.afq-hero h1 {font-size:clamp(3rem,6vw,5.4rem);line-height:1.12;font-weight:900;margin-block:21px;letter-spacing:-.022em}
+.afq-hero h1 em {font-style:normal;color:var(--afq-gold)}
+.afq-hero-text>p {max-width:35ch;font-size:clamp(1rem,1.8vw,1.2rem);color:var(--afq-muted);line-height:1.95}
+.afq-actions {display:flex;flex-wrap:wrap;gap:9px}
+.afq-hero .afq-actions {margin-top:26px}
+.afq-hero-foot {display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:25px;color:var(--afq-muted);font-size:.78rem}
+.afq-hero-foot span {display:inline-flex;align-items:center;gap:7px}
+.afq-hero-foot span::before {content:"";display:inline-block;width:4px;height:4px;transform:rotate(45deg);background:var(--afq-gold)}
+.afq-hero-art {position:relative;overflow:hidden;min-width:0;border:1px solid var(--afq-line);border-radius:26px;
+  background:radial-gradient(ellipse at 56% 46%,#29221c 0%,#111923 58%,#0b131c 100%);
+  box-shadow:0 26px 65px #0005;aspect-ratio:1.15}
+.afq-art-svg {display:block;width:100%;height:100%}
+.afq-art-label {position:absolute;top:17px;right:17px;display:flex;align-items:center;gap:7px;
+  border:1px solid var(--afq-line);padding:5px 10px;border-radius:30px;color:var(--afq-gold);background:#131921db;font-size:.67rem}
+.afq-art-label span {width:6px;height:6px;background:var(--afq-gold);border-radius:50%}
+.afq-art-caption {position:absolute;bottom:0;inset-inline:0;display:flex;justify-content:space-between;gap:8px;
+  padding:9px 17px;background:#101820d9;border-top:1px solid var(--afq-line);font-size:.68rem;color:var(--afq-muted)}
+.afq-section {padding-block:clamp(46px,7vw,85px)}
+.afq-section-band {border-block:1px solid var(--afq-line);background:#0c131b}
+.afq-section-title {margin-bottom:25px}
+.afq-section h2 {font-size:clamp(1.8rem,3.7vw,3rem);font-weight:800;line-height:1.3;margin-block:11px 10px}
+.afq-section-title p,.afq-plans-panel p,.afq-contact-panel p {color:var(--afq-muted);max-width:69ch;line-height:1.9}
+.afq-about,.afq-faq-grid {display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(24px,6vw,76px);align-items:start}
+.afq-about {align-items:center}
+.afq-about .afq-section-title,.afq-faq-grid .afq-section-title {margin-bottom:0}
+.afq-about-card {border-radius:18px;border:1px solid var(--afq-line);padding:clamp(20px,4vw,36px);background:var(--afq-surface)}
+.afq-about-card ol {padding:0;list-style:none;display:grid;gap:14px;margin-top:16px}
+.afq-about-card li {display:flex;gap:11px;align-items:flex-start}
+.afq-about-card li>span {width:30px;height:30px;display:grid;place-items:center;border-radius:7px;flex:none;color:var(--afq-gold);background:#251f1c;font-weight:800}
+.afq-about-card li small {display:block;color:var(--afq-muted);font-size:.82rem;line-height:1.7}
+.afq-grid {display:grid;gap:13px;align-items:start;grid-auto-rows:auto}
+.afq-topic-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
+.afq-article-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
+.afq-topic,.afq-article {border:1px solid var(--afq-line);border-radius:16px;background:linear-gradient(155deg,#141f2a,#0f161e);overflow:hidden}
+.afq-topic:hover,.afq-article:hover,.afq-topic[open],.afq-article[open] {border-color:rgba(223,190,130,.48)}
+.afq-topic>summary,.afq-article>summary {cursor:pointer;list-style:none;display:flex;min-height:228px;flex-direction:column;padding:18px}
+.afq-article>summary {min-height:215px}
+.afq summary::-webkit-details-marker {display:none}
+.afq-card-top {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.afq-card-index {font-size:.69rem;color:#a2adb6;letter-spacing:.09em;direction:ltr;font-variant-numeric:tabular-nums}
+.afq-icon {display:grid;place-items:center;width:43px;height:43px;border:1px solid var(--afq-line);border-radius:11px;color:var(--afq-gold);background:#1c201f}
+.afq-card-tag {color:var(--afq-gold);font-size:.72rem;font-weight:650}
+.afq-card-title {display:block;font-size:1.03rem;font-weight:800;line-height:1.5;margin-block:4px 7px}
+.afq-card-intro,.afq-details-copy {color:var(--afq-muted);font-size:.82rem;line-height:1.9}
+.afq-card-action {display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;margin-top:auto;color:var(--afq-gold);font-size:.76rem}
+.afq-plus {position:relative;width:14px;height:14px;flex:none;color:var(--afq-gold)}
+.afq-plus::before,.afq-plus::after {content:"";position:absolute;top:6px;left:1px;width:12px;height:1px;background:currentColor}
+.afq-plus::after {transform:rotate(90deg);transition:transform .15s}
+.afq details[open]>summary .afq-plus::after {transform:rotate(0)}
+.afq-details-copy,.afq .afq-details-copy {margin:0;padding:14px 18px;border-top:1px solid var(--afq-line)}
+.afq-details-copy p+p {margin-top:9px}
+.afq-plans {padding-block:0}
+.afq-plans-panel,.afq-contact-panel {display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(21px,5vw,46px);
+  border:1px solid var(--afq-line);border-radius:19px;background:radial-gradient(ellipse at top right,#27221b,#121a23 68%)}
+.afq-plans-panel .afq-button {flex-shrink:0}
+.afq-plans-panel h2,.afq-contact-panel h2 {font-size:clamp(1.6rem,3vw,2.45rem)}
+.afq-faq {display:grid;gap:8px}
+.afq-faq details {border:1px solid var(--afq-line);border-radius:12px;background:#121b24;padding:0 16px}
+.afq-faq summary {display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;
+  font-weight:700;font-size:.89rem;padding-block:12px;color:var(--afq-paper)}
+.afq-faq p {color:var(--afq-muted);font-size:.82rem;line-height:1.8;padding:0 0 13px}
+.afq-registration {display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:0}
+.afq-registration .afq-section-title {margin-bottom:0}
+.afq-registration>.afq-button {flex-shrink:0}
+.afq-footer {border-top:1px solid var(--afq-line);background:#0b1118}
+.afq-foot-inner,.afq-foot-bottom {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:17px;padding-block:24px}
+.afq-foot-inner p,.afq-foot-bottom {font-size:.79rem;color:var(--afq-muted)}
+.afq-foot-inner p {margin-top:10px}
+.afq-footer nav {display:flex;flex-wrap:wrap;gap:17px;font-size:.82rem;color:var(--afq-muted)}
+.afq-foot-bottom {border-top:1px solid var(--afq-line);padding-block:14px}
+@media (max-width:930px) {
+  .afq-nav {gap:10px;min-height:auto;padding-top:11px;grid-template-columns:minmax(0,1fr) auto}
+  .afq-nav-links {grid-column:1/-1;grid-row:2;justify-content:flex-start;gap:18px;overflow-x:auto;padding:0 1px 9px}
+  .afq-nav-links a {min-height:30px;display:flex;align-items:center}
+  .afq-nav>.afq-button {grid-column:2;grid-row:1}
+  .afq-topic-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .afq-hero {min-height:0}
+}
+@media (max-width:680px) {
+  .afq-wrap {width:calc(100% - 32px)}
+  .afq-hero,.afq-about,.afq-faq-grid,.afq-article-grid {grid-template-columns:minmax(0,1fr)}
+  .afq-hero {padding-top:30px;gap:22px}
+  .afq-hero h1 {margin-block:15px;font-size:clamp(2.7rem,12vw,4.1rem)}
+  .afq-hero .afq-actions {margin-top:18px}
+  .afq-hero-foot {margin-top:14px}
+  .afq-art-label {top:12px;right:12px}
+  .afq-hero-art {border-radius:17px}
+  .afq-topic>summary,.afq-article>summary {min-height:0;padding:13px}
+  .afq-topic .afq-card-top {margin-bottom:9px}
+  .afq-card-title {font-size:.95rem}
+  .afq-card-intro,.afq-details-copy {font-size:.79rem}
+  .afq-plans-panel,.afq-contact-panel,.afq-registration {flex-direction:column;align-items:flex-start}
+  .afq-foot-bottom {gap:5px}
+}
+@media (max-width:360px) {
+  .afq-wrap {width:calc(100% - 24px)}
+  .afq-topic-grid {grid-template-columns:minmax(0,1fr)}
+  .afq-button {font-size:.8rem;padding-inline:11px}
+}
+@media (prefers-reduced-motion:reduce) {
+  .afq *, .afq *::before,.afq *::after {transition:none!important}
+}
+`;

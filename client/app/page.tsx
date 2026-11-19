@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { articles, guideUrl, icons, topics } from "./guide-content";
 
 const site = {
   name: "صناديق الخليج الذكية",
@@ -15,61 +16,6 @@ export const metadata: Metadata = {
   description: site.description,
   openGraph: { title: `${site.name} | ${site.headline.join(" ")}`, description: site.description, locale: "ar", type: "website" },
 };
-
-const topics = [
-  { title: "الصناديق الاستثمارية", tag: "استثمار جماعي", icon: "funds", intro: "وش الفرق بين الصناديق في الهدف والرسوم وطريقة التداول؟", body: "بعض الصناديق تتبع مؤشر، وبعضها يديره فريق يختار الأصول. راجع مستندات الصندوق عشان تعرف وش يملك، وكيف يُحسب سعر الوحدة، ومتى تقدر تستردها وبأي تكلفة." },
-  { title: "الذهب والمعادن", tag: "الأصول الملموسة", icon: "gold", intro: "تعرّف على الفرق بين شراء الذهب والاستثمار في أداة تتبع سعره.", body: "شراء الذهب مباشرة يختلف عن شراء وحدة في صندوق أو التداول بعقد. قبل تقارن الأسعار، خلك منتبه لطريقة الحفظ والتكاليف وسهولة البيع." },
-  { title: "الأسواق المالية", tag: "حركة السوق", icon: "market", intro: "تعرّف على العوامل اللي تحرّك الأسعار، من الأخبار إلى السيولة.", body: "السعر يتأثر بالأخبار والسيولة وتوقعات المتداولين. لو تبي تفهم سوق معيّن، ابدأ بنوعه وساعات التداول فيه وتكلفة التنفيذ، لأن حركة السعر ما تعطيك الصورة كاملة." },
-  { title: "الأسهم العالمية والخليجية", tag: "ملكية الشركات", icon: "stocks", intro: "تعرّف على الشركة وراء السهم وكيف يؤثر القطاع والعملة على المقارنة.", body: "السهم يمثّل حصة في شركة. إذا تبي تقارن سهمين، اطلع على نتائج كل شركة ومصادر دخلها وديونها، وراجع قواعد السوق والعملة اللي يتسعّر فيها السهم." },
-  { title: "الاستثمار العقاري", tag: "أصول وعقود", icon: "property", intro: "وش يختلف لما تشتري عقار مباشرة أو تستثمر عن طريق صندوق عقاري؟", body: "ملكية العقار مباشرة تختلف عن شراء وحدة في صندوق في طريقة الإدارة والسيولة والتكلفة. قبل تقارن الدخل، شوف عقود الإيجار والمصروفات، واعرف كيف ومتى تقدر تبيع." },
-  { title: "الصكوك وأدوات الدخل", tag: "آجال وتوزيعات", icon: "income", intro: "افهم متى تصير التوزيعات، ومتى يحين موعد الاستحقاق.", body: "راجع طبيعة الأداة، ومن الجهة اللي أصدرتها، وشروط التوزيع والاسترداد. وقبل الاختيار، تأكّد إنك تعرف هل تقدر تبيع قبل الاستحقاق، وكيف تتأثر النتيجة لو بعت مبكر." },
-  { title: "بناء المحافظ", tag: "أهداف وتوزيع", icon: "portfolio", intro: "رتّب أولوياتك قبل ما توزّع الأصول والسيولة.", body: "حدّد هدفك والمدة اللي تناسبك، وكم تحتاج سيولة. التنويع يساعد يخفّف التركّز، لكنه ما يلغي احتمال الخسارة. وقت الأزمات ممكن تتحرك أدوات مختلفة بالطريقة نفسها." },
-  { title: "مقارنة الفرص", tag: "مقارنة أوضح", icon: "compare", intro: "أسئلة بسيطة ترجع لها كل ما تبي تقارن بين خيارين.", body: "اسأل من وين يجي العائد، ومتى تقدر تطلع، وكم عليك رسوم، وش يصير لو مشت الأمور عكس المتوقع. إذا فيه نقطة مؤثرة مو واضحة، افهمها قبل لا تقرّر." },
-] as const;
-
-const icons: Record<(typeof topics)[number]["icon"], string> = {
-  gold: "M3 17h18l-4-8H7l-4 8Zm5-5h8M8 21h8",
-  market: "M3 4v16h18M6 15l5-5 4 3 5-6M17 7h3v3",
-  stocks: "M4 20h16M6 16v-4h3v4m2 0V8h3v8m2 0V5h3v11",
-  funds: "m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5",
-  property: "m3 10 5-4 5 4v10H3V10Zm10-4h8v14h-8m3-11h2m-2 4h2m-11 7v-5h3v5",
-  income: "M6 3h9l3 3v15H6V3Zm9 0v4h3M9 11h6m-6 4h6m-6 3h3",
-  portfolio: "M10 3a8 8 0 1 0 11 11h-9V3h-2ZM14 3v9h9a9 9 0 0 0-9-9Z",
-  compare: "M4 7h16M4 12h16M4 17h16M8 5v4m8 1v4m-5 1v4",
-};
-
-const articles = [
-  {
-    number: "01",
-    label: "أساسيات",
-    title: "كيف تقرأ شروط الفرصة الاستثمارية؟",
-    intro: "النسبة جزء من الصورة. اسأل عن مصدر العائد ومدته والرسوم وموعد الخروج.",
-    paragraphs: [
-      "ابدأ بوصف الأداة ومن يديرها. هل الرقم اللي شفته عائد مستهدف، نتيجة سابقة، أو مجرد مثال؟ إذا بتقارن أكثر من خيار، خلّ المدة وطريقة الحساب نفسها عشان تكون المقارنة عادلة.",
-      "احسب أثر الرسوم، وشيّك على شروط البيع والاسترداد. فكّر كيف تتغيّر النتيجة لو احتجت تطلع بدري أو تغيّرت ظروف السوق.",
-    ],
-  },
-  {
-    number: "02",
-    label: "إدارة المحفظة",
-    title: "التنويع يبدأ من فهم اللي تملكه",
-    intro: "إذا زاد عدد الأصول، مو شرط إن المخاطر تتوزّع.",
-    paragraphs: [
-      "ممكن تملك أكثر من أداة، وكلها مرتبطة بنفس السوق أو العملة. شوف وين يتركّز استثمارك: في قطاع، منطقة، أو نوع أصل معيّن؟",
-      "راجع توزيعك بين فترة وفترة حسب أهدافك واحتياجك للسيولة. وزن كل أصل ممكن يتغيّر حتى لو ما أضفت استثمار جديد، لأن أداء الأصول يختلف.",
-    ],
-  },
-  {
-    number: "03",
-    label: "مصطلحات",
-    title: "وش الفرق بين السيولة والعائد؟",
-    intro: "السيولة توضّح متى تقدر تبيع وبأي تكلفة، والعائد يوضّح نتيجة الاستثمار.",
-    paragraphs: [
-      "إذا فيه سوق نشط للأداة، ممكن تبيعها بسهولة أكثر من أداة لازم تنتظر فيها موعد استرداد أو موافقة. تأكّد إنك تعرف وقت التنفيذ والرسوم قبل البيع.",
-      "قارن العائد بعد التكاليف وعلى مدد متقاربة. حطّ شروط الخروج في بالك، لأن رقم العائد لحاله ما يكفي للمقارنة.",
-    ],
-  },
-] as const;
 
 const links = [
   ["about", "عن المنصة"],
@@ -213,11 +159,10 @@ export default function Page() {
         </section>
 
         <section id="sectors" className="afq-wrap afq-section">
-          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختر المجال اللي يهمك وافتح بطاقته. بتلقى الفرق بين الأدوات والأسئلة اللي تساعدك تبدأ." />
+          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختر المجال اللي يهمك. بتلقى صفحته فيها شرح للأدوات وأسئلة تساعدك تبدأ." />
           <div className="afq-grid afq-topic-grid">
             {topics.map((topic, index) => (
-              <details className="afq-topic" key={topic.icon}>
-                <summary>
+              <a className="afq-topic" key={topic.slug} href={guideUrl(topic.slug)}>
                   <span className="afq-card-top">
                     <span className="afq-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"><path d={icons[topic.icon]} /></svg></span>
                     <span className="afq-card-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -225,10 +170,8 @@ export default function Page() {
                   <span className="afq-card-tag">{topic.tag}</span>
                   <strong className="afq-card-title">{topic.title}</strong>
                   <span className="afq-card-intro">{topic.intro}</span>
-                  <span className="afq-card-action">التفاصيل <span aria-hidden="true" className="afq-plus" /></span>
-                </summary>
-                <p className="afq-details-copy">{topic.body}</p>
-              </details>
+                  <span className="afq-card-action">عرض التفاصيل</span>
+              </a>
             ))}
           </div>
         </section>
@@ -248,15 +191,12 @@ export default function Page() {
           <SectionTitle label="اقرأ وتعرّف" title="مركز المعرفة" text="مقالات قصيرة تجاوب على أسئلة ممكن تمرّ عليك وأنت تقرأ عن الاستثمار." />
           <div className="afq-grid afq-article-grid">
             {articles.map((article) => (
-              <details className="afq-article" key={article.number}>
-                <summary>
+              <a className="afq-article" key={article.slug} href={guideUrl(article.slug)}>
                   <span className="afq-card-top"><span className="afq-card-tag">{article.label}</span><span className="afq-card-index" aria-hidden="true">{article.number}</span></span>
                   <strong className="afq-card-title">{article.title}</strong>
                   <span className="afq-card-intro">{article.intro}</span>
-                  <span className="afq-card-action">اقرأ المقال <span aria-hidden="true" className="afq-plus" /></span>
-                </summary>
-                <div className="afq-details-copy">{article.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
-              </details>
+                  <span className="afq-card-action">اقرأ المقال</span>
+              </a>
             ))}
           </div>
         </section>
@@ -368,26 +308,24 @@ const styles = `
 .afq-about-card li>span {width:30px;height:30px;display:grid;place-items:center;border-radius:7px;flex:none;color:var(--afq-gold);background:#251f1c;font-weight:800}
 .afq-about-card li small {display:block;color:var(--afq-muted);font-size:.82rem;line-height:1.7}
 .afq-grid {display:grid;gap:13px;align-items:start;grid-auto-rows:auto}
-.afq-topic-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
-.afq-article-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
-.afq-topic,.afq-article {border:1px solid var(--afq-line);border-radius:16px;background:linear-gradient(155deg,#141f2a,#0f161e);overflow:hidden}
-.afq-topic:hover,.afq-article:hover,.afq-topic[open],.afq-article[open] {border-color:rgba(223,190,130,.48)}
-.afq-topic>summary,.afq-article>summary {cursor:pointer;list-style:none;display:flex;min-height:228px;flex-direction:column;padding:18px}
-.afq-article>summary {min-height:215px}
+.afq-topic-grid {grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.afq-article-grid {grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+.afq-topic,.afq-article {display:flex;min-height:228px;flex-direction:column;padding:18px;
+  border:1px solid var(--afq-line);border-radius:16px;background:linear-gradient(155deg,#141f2a,#0f161e)}
+.afq-topic:hover,.afq-article:hover {border-color:rgba(223,190,130,.48)}
+.afq-article {min-height:215px}
 .afq summary::-webkit-details-marker {display:none}
 .afq-card-top {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
 .afq-card-index {font-size:.69rem;color:#a2adb6;letter-spacing:.09em;direction:ltr;font-variant-numeric:tabular-nums}
 .afq-icon {display:grid;place-items:center;width:43px;height:43px;border:1px solid var(--afq-line);border-radius:11px;color:var(--afq-gold);background:#1c201f}
 .afq-card-tag {color:var(--afq-gold);font-size:.72rem;font-weight:650}
 .afq-card-title {display:block;font-size:1.03rem;font-weight:800;line-height:1.5;margin-block:4px 7px}
-.afq-card-intro,.afq-details-copy {color:var(--afq-muted);font-size:.82rem;line-height:1.9}
+.afq-card-intro {color:var(--afq-muted);font-size:.82rem;line-height:1.9}
 .afq-card-action {display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;margin-top:auto;color:var(--afq-gold);font-size:.76rem}
 .afq-plus {position:relative;width:14px;height:14px;flex:none;color:var(--afq-gold)}
 .afq-plus::before,.afq-plus::after {content:"";position:absolute;top:6px;left:1px;width:12px;height:1px;background:currentColor}
 .afq-plus::after {transform:rotate(90deg);transition:transform .15s}
 .afq details[open]>summary .afq-plus::after {transform:rotate(0)}
-.afq-details-copy,.afq .afq-details-copy {margin:0;padding:14px 18px;border-top:1px solid var(--afq-line)}
-.afq-details-copy p+p {margin-top:9px}
 .afq-plans {padding-block:0}
 .afq-plans-panel,.afq-contact-panel {display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(21px,5vw,46px);
   border:1px solid var(--afq-line);border-radius:19px;background:radial-gradient(ellipse at top right,#27221b,#121a23 68%)}
@@ -428,10 +366,10 @@ const styles = `
   .afq-hero-foot {margin-top:14px}
   .afq-art-label {top:12px;right:12px}
   .afq-hero-art {border-radius:17px}
-  .afq-topic>summary,.afq-article>summary {min-height:0;padding:13px}
+  .afq-topic,.afq-article {min-height:0;padding:13px}
   .afq-topic .afq-card-top {margin-bottom:9px}
   .afq-card-title {font-size:.95rem}
-  .afq-card-intro,.afq-details-copy {font-size:.79rem}
+  .afq-card-intro {font-size:.79rem}
   .afq-plans-panel,.afq-contact-panel,.afq-registration {flex-direction:column;align-items:flex-start}
   .afq-foot-bottom {gap:5px}
 }

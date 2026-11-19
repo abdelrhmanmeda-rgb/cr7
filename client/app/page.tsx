@@ -1,29 +1,30 @@
 import type { Metadata } from "next";
 
-// إعدادات الصفحة. اترك رابط التسجيل فارغًا لحد ما الحسابات الحقيقية تبقى جاهزة.
+// إعدادات الصفحة. خلّ رابط التسجيل فاضي إلى أن تتفعّل خدمة الحسابات.
 const site = {
-  name: "آفاق الخليج",
-  headline: ["استثمارات", "برؤية أوسع"],
-  description: "محتوى عربي يساعدك تفهم الأسواق، وتقارن بين أدوات الاستثمار، وتبدأ من الأسئلة الصح.",
+  name: "صناديق الخليج الذكية",
+  tagline: "دليلك لفهم الاستثمار",
+  headline: ["الاستثمار", "بصورة أوضح"],
+  description: "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.",
   registrationUrl: "",
   telegramUrl: "https://t.me/CR7_B3",
 };
 
 export const metadata: Metadata = {
-  title: `${site.name} | المعرفة الاستثمارية`,
+  title: `${site.name} | دليلك لفهم الاستثمار`,
   description: site.description,
   openGraph: { title: `${site.name} | ${site.headline.join(" ")}`, description: site.description, locale: "ar", type: "website" },
 };
 
 const topics = [
-  { title: "الذهب والمعادن", tag: "الأصول الملموسة", icon: "gold", intro: "كيف يتحرك الذهب، وما الفرق بين امتلاكه والتعرّض لسعره؟", body: "قد يختلف الأثر بين شراء معدن مادي، وامتلاك وحدة في صندوق يتتبع السعر، والتداول بعقود. قارِن طريقة الحفظ والتكاليف والسيولة قبل المقارنة بين الأسعار." },
-  { title: "الأسواق المالية", tag: "فهم حركة السوق", icon: "market", intro: "تعرّف على دورة السوق والعوامل اللي بتحرّك الأسعار.", body: "الأسعار تتأثر بالأخبار والسيولة وتوقعات المشاركين. ابدأ بفهم نوع السوق وساعات التداول وتكلفة التنفيذ، بدل الاعتماد على حركة السعر وحدها." },
-  { title: "الأسهم العالمية والخليجية", tag: "ملكية الشركات", icon: "stocks", intro: "اقرأ الشركة وراء السهم وافهم أثر القطاع والعملة.", body: "السهم حصة في شركة. من المفيد قراءة نتائجها ومصادر إيراداتها وديونها، وفهم قواعد السوق والعملة التي تُسعّر بها قبل مقارنة سهمين." },
-  { title: "الصناديق الاستثمارية", tag: "استثمار جماعي", icon: "funds", intro: "افهم اختلاف الصناديق من حيث الهدف والرسوم وطريقة التداول.", body: "تتبع بعض الصناديق مؤشرًا، بينما تدار أخرى بنشاط. اقرأ مستند الصندوق لمعرفة ما يملكه وطريقة تسعير وحداته والاسترداد والتكاليف." },
-  { title: "الاستثمار العقاري", tag: "أصول وعقود", icon: "property", intro: "الفرق بين شراء عقار مباشرة والاستثمار عبر صندوق عقاري.", body: "امتلاك عقار مباشرة يختلف عن شراء وحدة في صندوق عقاري في الإدارة والسيولة والتكلفة. ادرس عقود الإيجار والمصروفات والقدرة على البيع قبل تقييم الدخل." },
-  { title: "الصكوك وأدوات الدخل", tag: "هيكل وتدفقات", icon: "income", intro: "تعرّف على آجال الأدوات وطبيعة التدفقات المرتبطة بها.", body: "راجع هيكل الأداة والجهة المصدرة وشروط التوزيع والاسترداد. قارن بين مخاطر المُصدر وتوقيت التوزيعات وإمكانية البيع قبل موعد الاستحقاق." },
-  { title: "بناء المحافظ", tag: "أهداف وتوزيع", icon: "portfolio", intro: "طريقة منظمة للتفكير في توزيع الأصول والسيولة.", body: "تبدأ المحفظة بهدف ومدة واحتياج واضح للسيولة. التنويع يقلّل التركّز، لكنه لا يلغي الخسارة، وقد تتصرف أدوات مختلفة بطريقة متشابهة وقت الأزمات." },
-  { title: "مقارنة الفرص", tag: "قرار أكثر وضوحًا", icon: "compare", intro: "مجموعة أسئلة ثابتة تساعدك تقارن بين خيارات مختلفة.", body: "اعرف مصدر العائد، ووقت الخروج، والرسوم، والسيناريو الأقل ملاءمة. لو معلومة مؤثرة غير واضحة، اشتغل على فهمها قبل اتخاذ القرار." },
+  { title: "الصناديق الاستثمارية", tag: "استثمار جماعي", icon: "funds", intro: "وش الفرق بين الصناديق في الهدف والرسوم وطريقة التداول؟", body: "بعض الصناديق تتبع مؤشر، وبعضها يديره فريق يختار الأصول. راجع مستندات الصندوق عشان تعرف وش يملك، وكيف يُحسب سعر الوحدة، ومتى تقدر تستردها وبأي تكلفة." },
+  { title: "الذهب والمعادن", tag: "الأصول الملموسة", icon: "gold", intro: "تعرّف على الفرق بين شراء الذهب والاستثمار في أداة تتبع سعره.", body: "شراء الذهب مباشرة يختلف عن شراء وحدة في صندوق أو التداول بعقد. قبل تقارن الأسعار، خلك منتبه لطريقة الحفظ والتكاليف وسهولة البيع." },
+  { title: "الأسواق المالية", tag: "حركة السوق", icon: "market", intro: "تعرّف على العوامل اللي تحرّك الأسعار، من الأخبار إلى السيولة.", body: "السعر يتأثر بالأخبار والسيولة وتوقعات المتداولين. لو تبي تفهم سوق معيّن، ابدأ بنوعه وساعات التداول فيه وتكلفة التنفيذ، لأن حركة السعر ما تعطيك الصورة كاملة." },
+  { title: "الأسهم العالمية والخليجية", tag: "ملكية الشركات", icon: "stocks", intro: "تعرّف على الشركة وراء السهم وكيف يؤثر القطاع والعملة على المقارنة.", body: "السهم يمثّل حصة في شركة. إذا تبي تقارن سهمين، اطلع على نتائج كل شركة ومصادر دخلها وديونها، وراجع قواعد السوق والعملة اللي يتسعّر فيها السهم." },
+  { title: "الاستثمار العقاري", tag: "أصول وعقود", icon: "property", intro: "وش يختلف لما تشتري عقار مباشرة أو تستثمر عن طريق صندوق عقاري؟", body: "ملكية العقار مباشرة تختلف عن شراء وحدة في صندوق في طريقة الإدارة والسيولة والتكلفة. قبل تقارن الدخل، شوف عقود الإيجار والمصروفات، واعرف كيف ومتى تقدر تبيع." },
+  { title: "الصكوك وأدوات الدخل", tag: "آجال وتوزيعات", icon: "income", intro: "افهم متى تصير التوزيعات، ومتى يحين موعد الاستحقاق.", body: "راجع طبيعة الأداة، ومن الجهة اللي أصدرتها، وشروط التوزيع والاسترداد. وقبل الاختيار، تأكّد إنك تعرف هل تقدر تبيع قبل الاستحقاق، وكيف تتأثر النتيجة لو بعت مبكر." },
+  { title: "بناء المحافظ", tag: "أهداف وتوزيع", icon: "portfolio", intro: "رتّب أولوياتك قبل ما توزّع الأصول والسيولة.", body: "حدّد هدفك والمدة اللي تناسبك، وكم تحتاج سيولة. التنويع يساعد يخفّف التركّز، لكنه ما يلغي احتمال الخسارة. وقت الأزمات ممكن تتحرك أدوات مختلفة بالطريقة نفسها." },
+  { title: "مقارنة الفرص", tag: "مقارنة أوضح", icon: "compare", intro: "أسئلة بسيطة ترجع لها كل ما تبي تقارن بين خيارين.", body: "اسأل من وين يجي العائد، ومتى تقدر تطلع، وكم عليك رسوم، وش يصير لو مشت الأمور عكس المتوقع. إذا فيه نقطة مؤثرة مو واضحة، افهمها قبل لا تقرّر." },
 ] as const;
 
 const icons: Record<(typeof topics)[number]["icon"], string> = {
@@ -41,31 +42,31 @@ const articles = [
   {
     number: "01",
     label: "أساسيات",
-    title: "إزاي تقرأ شروط أي فرصة استثمارية؟",
-    intro: "قبل ما تسأل عن النسبة، اسأل عن مصدرها، ومدتها، وتكلفتها، وإمكانية الخروج.",
+    title: "كيف تقرأ شروط الفرصة الاستثمارية؟",
+    intro: "النسبة جزء من الصورة. اسأل عن مصدر العائد ومدته والرسوم وموعد الخروج.",
     paragraphs: [
-      "اقرأ وصف الأداة، والجهة التي تديرها، ونوع النسبة المذكورة: هل هي مستهدفة، نتيجة سابقة، أم مثال للتوضيح؟ المقارنة تحتاج نفس المدة ونفس طريقة الحساب.",
-      "احسب أثر الرسوم، وشوف لو فيه قيود على البيع أو الاسترداد. اسأل كيف تتغير النتيجة لو احتجت تخرج مبكرًا أو تغيّرت ظروف السوق.",
+      "ابدأ بوصف الأداة ومن يديرها. هل الرقم اللي شفته عائد مستهدف، نتيجة سابقة، أو مجرد مثال؟ إذا بتقارن أكثر من خيار، خلّ المدة وطريقة الحساب نفسها عشان تكون المقارنة عادلة.",
+      "احسب أثر الرسوم، وشيّك على شروط البيع والاسترداد. فكّر كيف تتغيّر النتيجة لو احتجت تطلع بدري أو تغيّرت ظروف السوق.",
     ],
   },
   {
     number: "02",
     label: "إدارة المحفظة",
-    title: "التنويع يبدأ من فهم اللي عندك",
-    intro: "زيادة عدد الأصول مش دايمًا معناها إن المخاطر اتوزعت.",
+    title: "التنويع يبدأ من فهم اللي تملكه",
+    intro: "إذا زاد عدد الأصول، مو شرط إن المخاطر تتوزّع.",
     paragraphs: [
-      "أحيانًا تمتلك عدة أدوات، لكنها مرتبطة بالسوق نفسه أو العملة نفسها. ابدأ بحصر مصادر التركّز: القطاع، والمنطقة، ونوع الأصل.",
-      "راجع توزيعك على فترات حسب أهدافك واحتياجك للسيولة. ممكن تتغيّر الأوزان حتى من غير ما تضيف أي استثمار، بسبب اختلاف أداء الأصول.",
+      "ممكن تملك أكثر من أداة، وكلها مرتبطة بنفس السوق أو العملة. شوف وين يتركّز استثمارك: في قطاع، منطقة، أو نوع أصل معيّن؟",
+      "راجع توزيعك بين فترة وفترة حسب أهدافك واحتياجك للسيولة. وزن كل أصل ممكن يتغيّر حتى لو ما أضفت استثمار جديد، لأن أداء الأصول يختلف.",
     ],
   },
   {
     number: "03",
     label: "مصطلحات",
-    title: "إيه الفرق بين السيولة والعائد؟",
-    intro: "السيولة بتجاوب عن سؤال إمتى وبأي تكلفة تقدر تخرج، والعائد بيقيس النتيجة.",
+    title: "وش الفرق بين السيولة والعائد؟",
+    intro: "السيولة توضّح متى تقدر تبيع وبأي تكلفة، والعائد يوضّح نتيجة الاستثمار.",
     paragraphs: [
-      "الأداة ذات السوق النشط قد تكون أسهل في البيع من أداة بتتطلب انتظار أو موافقة. اتأكد إنك فاهم وقت التنفيذ والرسوم وقت البيع.",
-      "قارن العائد بعد التكاليف وعلى مدة متقاربة. خُد في اعتبارك ظروف الخروج بدل اختيار أداة على أساس رقم العائد وحده.",
+      "إذا فيه سوق نشط للأداة، ممكن تبيعها بسهولة أكثر من أداة لازم تنتظر فيها موعد استرداد أو موافقة. تأكّد إنك تعرف وقت التنفيذ والرسوم قبل البيع.",
+      "قارن العائد بعد التكاليف وعلى مدد متقاربة. حطّ شروط الخروج في بالك، لأن رقم العائد لحاله ما يكفي للمقارنة.",
     ],
   },
 ] as const;
@@ -97,7 +98,7 @@ function Brand() {
           <path d="M20 3.5v3M32 11h3M5 11h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".65" />
         </svg>
       </span>
-      <span><strong>{site.name}</strong><small lang="en">AFAQ AL KHALEEJ</small></span>
+      <span><strong>{site.name}</strong><small>{site.tagline}</small></span>
     </a>
   );
 }
@@ -150,7 +151,7 @@ function HeroArt() {
         <circle cx="213" cy="265" r="3.5" fill="#f2cb86" />
         <path d="M67 101h13m-6.5-6.5v13m404 233h13m-6.5-6.5v13" stroke="#c5a76f" strokeOpacity=".55" />
       </svg>
-      <div className="afq-art-caption"><span>مفاهيم تُرى بوضوح</span><span>رسم توضيحي</span></div>
+      <div className="afq-art-caption"><span>نظرة أوضح للأسواق</span><span>رسم توضيحي</span></div>
     </div>
   );
 }
@@ -159,10 +160,10 @@ export default function Page() {
   const registrationUrl = safeExternalUrl(site.registrationUrl);
   const telegramUrl = safeExternalUrl(site.telegramUrl);
   const faqs = [
-    ["هل أقدر أستثمر أو أودع من الموقع؟", "الموقع يعرض محتوى معرفي عن الاستثمار. مفيش خدمات إيداع أو سحب أو دفع من الصفحة."],
-    ["إمتى أقدر أعمل حساب؟", registrationUrl ? "زر إنشاء الحساب بينقلك لخدمة التسجيل. اتبع خطوات تأكيد البريد من هناك." : "التسجيل لم يُفتح بعد. هتلاقي رابط التسجيل هنا بعد إطلاق خدمة الحسابات."],
-    ["هل المجالات المعروضة كلها خدمات متاحة؟", "المجالات دي أدلة تعريفية. عرضها هنا بيساعدك تتعلم عنها، ومش معناه إن المنصة بتوفر خدمة في كل مجال."],
-    ["هل المقالات توصيات شراء أو بيع؟", "المقالات بتشرح أدوات ومفاهيم عامة. مفيش فيها توصية شخصية أو وعد بنتيجة استثمارية."],
+    ["هل أقدر أستثمر أو أودع من الموقع؟", "الموقع يقدّم محتوى معرفي عن الاستثمار. ما فيه إيداع أو سحب أو دفع من هالصفحة."],
+    ["متى أقدر أسجّل حساب؟", registrationUrl ? "اضغط على «أنشئ حسابك» واتبع خطوات تأكيد بريدك في صفحة التسجيل." : "التسجيل مو متاح حاليًا. إذا فتح التسجيل، بتلقى رابطه هنا."],
+    ["هل كل المجالات المعروضة خدمات متاحة؟", "المجالات معروضة للتعرّف عليها. وجود مجال في الدليل ما يعني إنك تقدر تستثمر فيه من خلال الموقع."],
+    ["هل المقالات توصيات بالشراء أو البيع؟", "المقالات تشرح مفاهيم وأدوات عامة. ما فيها توصيات شخصية ولا وعود بعائد."],
   ];
 
   return (
@@ -176,22 +177,22 @@ export default function Page() {
           <nav className="afq-nav-links" aria-label="أقسام الموقع">
             {links.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
           </nav>
-          <a className="afq-button afq-button-small" href={registrationUrl ?? "#contact"}>{registrationUrl ? "إنشاء حساب" : "تواصل معنا"}</a>
+          <a className="afq-button afq-button-small" href={registrationUrl ?? "#contact"}>{registrationUrl ? "أنشئ حسابك" : "تواصل معنا"}</a>
         </div>
       </header>
 
       <main id="content">
         <section className="afq-wrap afq-hero" aria-labelledby="afq-main-title">
           <div className="afq-hero-text">
-            <span className="afq-eyebrow">معرفة. أسواق. رؤية.</span>
+            <span className="afq-eyebrow">الصناديق والأسواق</span>
             <h1 id="afq-main-title">{site.headline[0]}<br /><em>{site.headline[1]}</em></h1>
             <p>{site.description}</p>
             <div className="afq-actions">
               <a href="#sectors" className="afq-button afq-button-gold">استكشف مجالات الاستثمار <span aria-hidden="true">←</span></a>
-              <a href={registrationUrl ?? "#registration"} className="afq-button">{registrationUrl ? "إنشاء حساب" : "عن التسجيل"}</a>
+              <a href={registrationUrl ?? "#registration"} className="afq-button">{registrationUrl ? "أنشئ حسابك" : "عن التسجيل"}</a>
             </div>
             <div className="afq-hero-foot">
-              <span>٨ مجالات معرفية</span><span>محتوى عربي مبسّط</span><span>تصفّح من غير حساب</span>
+              <span>٨ مجالات استثمارية</span><span>شرح عربي مبسّط</span><span>تصفّح بدون حساب</span>
             </div>
           </div>
           <HeroArt />
@@ -199,20 +200,20 @@ export default function Page() {
 
         <section id="about" className="afq-section afq-section-band">
           <div className="afq-wrap afq-about">
-            <SectionTitle label="عن آفاق الخليج" title="افهم الفرصة قبل ما تقارن الأرقام" text="بدأنا من فكرة بسيطة: المعلومة الواضحة بتخلي المقارنة أسهل. هنا هتلاقي شرح للأدوات والأسواق، وأسئلة عملية تساعدك تفهم الاختيارات قدامك." />
+            <SectionTitle label={`عن ${site.name}`} title="افهم الفرصة قبل لا تقارن الأرقام" text="فكرتنا بسيطة: إذا وضحت لك المعلومة، سهلت عليك المقارنة. هنا بتلقى شرح للأدوات والأسواق، وأسئلة تساعدك تفهم الخيارات اللي قدّامك." />
             <div className="afq-about-card">
               <span className="afq-eyebrow">طريقتنا</span>
               <ol>
-                <li><span>١</span><div><strong>اعرف الأداة</strong><small>فهم هي بتشتغل إزاي، وإيه اللي ممكن يأثر عليها.</small></div></li>
+                <li><span>١</span><div><strong>اعرف الأداة</strong><small>افهم كيف تشتغل ووش اللي ممكن يأثّر عليها.</small></div></li>
                 <li><span>٢</span><div><strong>اقرأ الشروط</strong><small>راجع المدة والتكاليف والسيولة بكل وضوح.</small></div></li>
-                <li><span>٣</span><div><strong>قارِن على أساس واحد</strong><small>خلي الهدف والمدة أساس المقارنة.</small></div></li>
+                <li><span>٣</span><div><strong>قارن على أساس واحد</strong><small>خلّ الهدف والمدة أساس المقارنة.</small></div></li>
               </ol>
             </div>
           </div>
         </section>
 
         <section id="sectors" className="afq-wrap afq-section">
-          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختار المجال اللي يهمك وافتح البطاقة عشان تعرف الفرق بين الأدوات، وإيه الأسئلة اللي تبدأ بيها." />
+          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختر المجال اللي يهمك وافتح بطاقته. بتلقى الفرق بين الأدوات والأسئلة اللي تساعدك تبدأ." />
           <div className="afq-grid afq-topic-grid">
             {topics.map((topic, index) => (
               <details className="afq-topic" key={topic.icon}>
@@ -235,16 +236,16 @@ export default function Page() {
         <section id="plans" className="afq-wrap afq-section afq-plans">
           <div className="afq-plans-panel">
             <div>
-              <span className="afq-eyebrow">حالة الإتاحة</span>
+              <span className="afq-eyebrow">وش المتاح؟</span>
               <h2>الخطط الاستثمارية</h2>
-              <p>مفيش خطط مفتوحة للاشتراك على الموقع حاليًا. تقدَر تبدأ بدليل المجالات ومركز المعرفة.</p>
+              <p>ما فيه خطط متاحة للاشتراك حاليًا. تقدر تبدأ بدليل المجالات أو تطّلع على مقالات مركز المعرفة.</p>
             </div>
             <a className="afq-button" href="#knowledge">استكشف مركز المعرفة <span aria-hidden="true">←</span></a>
           </div>
         </section>
 
         <section id="knowledge" className="afq-wrap afq-section">
-          <SectionTitle label="اقرأ وتعرّف" title="مركز المعرفة" text="مقالات قصيرة تجاوب عن أسئلة عملية ممكن تقابلك وإنت بتقرأ عن الاستثمار." />
+          <SectionTitle label="اقرأ وتعرّف" title="مركز المعرفة" text="مقالات قصيرة تجاوب على أسئلة ممكن تمرّ عليك وأنت تقرأ عن الاستثمار." />
           <div className="afq-grid afq-article-grid">
             {articles.map((article) => (
               <details className="afq-article" key={article.number}>
@@ -262,7 +263,7 @@ export default function Page() {
 
         <section id="faq" className="afq-section afq-section-band">
           <div className="afq-wrap afq-faq-grid">
-            <SectionTitle label="إجابات واضحة" title="الأسئلة الشائعة" text="اعرف وضع التسجيل والخطط، وإيه المتاح على الموقع حاليًا." />
+            <SectionTitle label="إجابات واضحة" title="الأسئلة الشائعة" text="بتلقى هنا تفاصيل التسجيل والخطط، ووش المتاح لك على الموقع حاليًا." />
             <div className="afq-faq">
               {faqs.map(([question, answer]) => (
                 <details key={question}>
@@ -275,15 +276,15 @@ export default function Page() {
         </section>
 
         <section id="registration" className="afq-wrap afq-section afq-registration">
-          <SectionTitle label="حساب آفاق الخليج" title={registrationUrl ? "إنشاء حساب" : "التسجيل لم يُفتح بعد"} text={registrationUrl ? "أنشئ حسابك واتبع خطوات تأكيد البريد على صفحة التسجيل." : "تقدر تستكشف المحتوى من غير حساب. رابط التسجيل هيظهر هنا لما خدمة الحسابات تبقى متاحة."} />
-          <a className="afq-button afq-button-gold" href={registrationUrl ?? "#knowledge"}>{registrationUrl ? "الانتقال للتسجيل" : "ابدأ بالقراءة"} <span aria-hidden="true">←</span></a>
+          <SectionTitle label="حسابك في المنصة" title={registrationUrl ? "أنشئ حسابك" : "التسجيل مو متاح حاليًا"} text={registrationUrl ? "سجّل بياناتك وأكّد بريدك من صفحة التسجيل." : "تقدر تتصفّح المحتوى بدون حساب. وإذا فتح التسجيل، بتلقى رابط إنشاء الحساب هنا."} />
+          <a className="afq-button afq-button-gold" href={registrationUrl ?? "#knowledge"}>{registrationUrl ? "سجّل حسابك" : "ابدأ القراءة"} <span aria-hidden="true">←</span></a>
         </section>
 
         <section id="contact" className="afq-wrap afq-section afq-contact">
           <div className="afq-contact-panel">
-            <div><span className="afq-eyebrow">التواصل</span><h2>عندك سؤال؟</h2><p>راجع الأسئلة الشائعة، أو افتح قناة CR7 الحالية للمتابعة.</p></div>
+            <div><span className="afq-eyebrow">التواصل</span><h2>عندك استفسار؟</h2><p>تقدر ترجع للأسئلة الشائعة، وإذا تبي تتابع التحديثات، افتح القناة الحالية على تيليجرام.</p></div>
             <div className="afq-actions">
-              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">قناة CR7 على تليجرام <span aria-hidden="true">↗</span></a>}
+              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">تابع القناة على تيليجرام <span aria-hidden="true">↗</span></a>}
               <a href="#faq" className="afq-button">الأسئلة الشائعة</a>
             </div>
           </div>
@@ -292,10 +293,10 @@ export default function Page() {
 
       <footer className="afq-footer">
         <div className="afq-wrap afq-foot-inner">
-          <div><Brand /><p>محتوى عربي للتعرّف على مجالات الاستثمار والأسواق.</p></div>
+          <div><Brand /><p>دليل عربي يقرّب لك الصناديق والأسواق وأدوات الاستثمار.</p></div>
           <nav aria-label="روابط أسفل الموقع"><a href="#about">عن المنصة</a><a href="#knowledge">المعرفة</a><a href="#contact">التواصل</a></nav>
         </div>
-        <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><span>الموقع للمحتوى المعرفي ولا يستقبل مدفوعات.</span></div>
+        <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><span>الموقع للتعرّف على الاستثمار، وما يستقبل أي مدفوعات.</span></div>
       </footer>
     </div>
   );
@@ -320,7 +321,7 @@ const styles = `
 .afq-nav {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;min-height:76px}
 .afq-brand {display:inline-flex;align-items:center;gap:11px;width:max-content;max-width:100%}
 .afq-brand strong {display:block;font-size:1.16rem;color:var(--afq-paper);font-weight:800;line-height:1.35}
-.afq-brand small {display:block;direction:ltr;text-align:right;font-size:.57rem;letter-spacing:.15em;color:var(--afq-gold);margin-top:3px}
+.afq-brand small {display:block;font-size:.68rem;color:var(--afq-gold);margin-top:3px}
 .afq-mark {display:grid;place-items:center;flex:none;width:47px;height:47px;border:1px solid rgba(223,190,130,.53);border-radius:14px;background:linear-gradient(145deg,#251d16,#13191f);color:var(--afq-gold)}
 .afq-nav-links {display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,26px);font-size:.85rem;font-weight:650}
 .afq-nav-links a {color:var(--afq-muted);white-space:nowrap}
@@ -416,6 +417,10 @@ const styles = `
 }
 @media (max-width:680px) {
   .afq-wrap {width:calc(100% - 32px)}
+  .afq-brand {gap:7px}
+  .afq-brand strong {font-size:clamp(.87rem,3.55vw,1.12rem)}
+  .afq-mark {width:40px;height:40px}
+  .afq-mark svg {width:29px;height:29px}
   .afq-hero,.afq-about,.afq-faq-grid,.afq-article-grid {grid-template-columns:minmax(0,1fr)}
   .afq-hero {padding-top:30px;gap:22px}
   .afq-hero h1 {margin-block:15px;font-size:clamp(2.7rem,12vw,4.1rem)}

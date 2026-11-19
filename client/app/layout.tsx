@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 
-const name = "آفاق الخليج";
-const description = "دليل عربي لفهم مجالات الاستثمار، ومقارنة الأدوات، والتعرّف على الأسواق المالية.";
+const name = "صناديق الخليج الذكية";
+const description = "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.";
 const isPreview = process.env.VERCEL_ENV === "preview";
 
 const cairo = Cairo({

@@ -1,0 +1,10 @@
+import { createServer } from 'node:http';
+import {mkdirSync} from 'node:fs';
+import {sqlite} from './lib/store.mjs';
+import {investmentHandler} from './lib/api.mjs';
+if(process.env.NODE_ENV==='production') throw Error('Local SQLite preview cannot run in production');
+mkdirSync('.data',{recursive:true,mode:0o700});
+const route=investmentHandler({store:sqlite('.data/sandbox.sqlite'),secure:false,previewAdmin:process.env.INVESTMENT_PREVIEW_ADMIN_PASSWORD?{email:'admin@example.test',password:process.env.INVESTMENT_PREVIEW_ADMIN_PASSWORD}:null});
+const arg=name=>{const index=process.argv.indexOf(name);return index<0?null:process.argv[index+1];};
+const port=Number(arg('--port')||process.env.PORT||3000),host=arg('--host')||'127.0.0.1';
+createServer((req,res)=>req.url==='/'?(res.writeHead(302,{Location:'/investment/'}),res.end()):route(req,res)).listen(port,host);

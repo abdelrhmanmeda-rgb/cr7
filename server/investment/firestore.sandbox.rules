@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Install in the isolated investment sandbox only.
+    // The server uses the Firebase Admin SDK; no browser connects to Firestore.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"name":"cr7-investment-module","version":"0.1.0","private":true,"type":"module","engines":{"node":">=22.13.0"},"scripts":{"dev":"node dev.mjs","test":"node --test","check":"node --check public/app.js && node --check lib/api.mjs && node --check lib/store.mjs && node --check lib/firebase.mjs"}}

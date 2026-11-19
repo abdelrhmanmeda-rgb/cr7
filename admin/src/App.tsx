@@ -259,12 +259,12 @@ const LoginScreen = ({ setAuthError, authError }: { setAuthError: (err: string) 
   };
 
   return (
-    <div className="min-h-screen bg-[#020408] flex items-center justify-center p-6 font-sans relative overflow-hidden" dir="rtl">
+    <div className="cr7-admin-theme cr7-admin-login min-h-screen bg-[#020408] flex items-center justify-center p-6 font-sans relative overflow-hidden" dir="rtl">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse"></div>
       </div>
       
-      <div className="bg-[#080a0f] border border-white/10 p-10 md:p-14 rounded-[40px] shadow-2xl w-full max-w-lg z-10">
+      <div className="cr7-admin-login-card bg-[#080a0f] border border-white/10 p-10 md:p-14 rounded-[40px] shadow-2xl w-full max-w-lg z-10">
         <div className="text-center mb-10">
           <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl border border-white/10 overflow-hidden bg-white/5">
             <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" alt="CR7 Logo" className="w-full h-full object-contain" />
@@ -2497,14 +2497,14 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  if (authChecking) return <div className="min-h-screen bg-[#020408] text-white flex items-center justify-center font-black animate-pulse tracking-widest uppercase">SECURE CONNECTION...</div>;
+  if (authChecking) return <div className="cr7-admin-theme cr7-admin-loading min-h-screen bg-[#020408] text-white flex items-center justify-center font-black animate-pulse tracking-widest uppercase">SECURE CONNECTION...</div>;
   
   if (!user) return <LoginScreen setAuthError={setAuthError} authError={authError} />;
 
   return (
-    <div className="flex min-h-screen w-full bg-[#020408] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden" dir="rtl">
+    <div className="cr7-admin-theme cr7-admin-shell flex min-h-screen w-full bg-[#020408] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden" dir="rtl">
       
-      <aside className={`fixed lg:sticky top-0 right-0 z-50 h-screen w-[280px] bg-[#05070a] border-l border-white/5 flex flex-col transition-all duration-300 transform shrink-0 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+      <aside id="cr7-admin-navigation" className={`cr7-admin-sidebar fixed lg:sticky top-0 right-0 z-50 h-screen w-[280px] bg-[#05070a] border-l border-white/5 flex flex-col transition-all duration-300 transform shrink-0 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
         <div className="p-8 flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border border-white/5 overflow-hidden bg-white/5">
@@ -2515,30 +2515,30 @@ export default function App() {
               <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1">Admin Panel</p>
             </div>
           </div>
-          <button className="lg:hidden p-3 bg-white/5 rounded-2xl text-white" onClick={() => setIsSidebarOpen(false)}><Icons.X /></button>
+          <button aria-label="إغلاق القائمة" className="lg:hidden p-3 bg-white/5 rounded-2xl text-white" onClick={() => setIsSidebarOpen(false)}><Icons.X /></button>
         </div>
         
         <nav className="flex-1 px-6 space-y-4">
-          <button onClick={() => { setActiveTab('statistics'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'statistics' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'statistics'} onClick={() => { setActiveTab('statistics'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'statistics' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.PieChart /> الإحصائيات
           </button>
-          <button onClick={() => { setActiveTab('bots'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'bots' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'bots'} onClick={() => { setActiveTab('bots'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'bots' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Cpu /> إدارة البوتات
           </button>
-          <button onClick={() => { setActiveTab('subscriptions'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'subscriptions' ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'subscriptions'} onClick={() => { setActiveTab('subscriptions'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'subscriptions' ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.ShieldCheck /> الاشتراكات والإدارة
           </button>
-          <button onClick={() => { setActiveTab('results'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'orders' ? 'طلبات الشراء 💳' : activeTab === 'results' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'results'} onClick={() => { setActiveTab('results'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'orders' ? 'طلبات الشراء 💳' : activeTab === 'results' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Activity /> إدارة نتائج التداول
           </button>
-          <button onClick={() => { setActiveTab('blog'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'blog' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'blog'} onClick={() => { setActiveTab('blog'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'blog' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.BookOpen /> إدارة المدونة
           </button>
-          <button onClick={() => { setActiveTab('testimonials'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'testimonials' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'testimonials'} onClick={() => { setActiveTab('testimonials'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'testimonials' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.MessageCircle /> آراء العملاء
           </button>
-          <button onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} className="w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm text-white hover:bg-blue-600"><Icons.ShieldAlert /> طلبات الشراء</button>
-          <button onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'settings' ? 'bg-gray-700 text-white shadow-2xl border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
+          <button aria-pressed={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} className="w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm text-white hover:bg-blue-600"><Icons.ShieldAlert /> طلبات الشراء</button>
+          <button aria-pressed={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'settings' ? 'bg-gray-700 text-white shadow-2xl border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.Settings /> الإعدادات العامة
           </button>
         </nav>
@@ -2550,15 +2550,16 @@ export default function App() {
         </div>
       </aside>
 
+      {isSidebarOpen && <button type="button" className="cr7-admin-mask" aria-label="إغلاق القائمة" onClick={() => setIsSidebarOpen(false)} />}
       <div className="flex-1 flex flex-col w-full min-w-0 relative">
-        <header className="lg:hidden flex items-center justify-between p-6 bg-[#05070a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
+        <header className="cr7-admin-topbar lg:hidden flex items-center justify-between p-6 bg-[#05070a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
            <div className="font-black text-xl tracking-tight text-blue-500">CR7 ADMIN V2</div>
-           <button onClick={() => setIsSidebarOpen(true)} className="p-3 bg-white/5 rounded-2xl active:bg-white/10 transition-colors"><Icons.Menu /></button>
+           <button aria-label="القائمة" aria-controls="cr7-admin-navigation" aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen(true)} className="p-3 bg-white/5 rounded-2xl active:bg-white/10 transition-colors"><Icons.Menu /></button>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8 xl:p-10 relative w-full h-full">
+        <main className="cr7-admin-main flex-1 p-4 md:p-6 lg:p-8 xl:p-10 relative w-full h-full">
           <div className="w-full pb-20">
-            <div className="mb-10 lg:mb-12 flex flex-col items-center justify-center text-center mx-auto">
+            <div className="cr7-admin-heading mb-10 lg:mb-12 flex flex-col items-center justify-center text-center mx-auto">
               <h2 className="text-3xl lg:text-5xl font-black mb-3 tracking-tighter">
                 {activeTab === 'results' ? 'النتائج والأرباح 📈' : activeTab === 'subscriptions' ? 'الاشتراكات والإدارة 🤝' : activeTab === 'settings' ? 'الإعدادات العامة ⚙️' : activeTab === 'statistics' ? 'الإحصائيات والتحليلات 📊' : activeTab === 'testimonials' ? 'آراء العملاء 💬' : activeTab === 'blog' ? 'إدارة المدونة 📝' : 'منظومة البوتات 🤖'}
               </h2>

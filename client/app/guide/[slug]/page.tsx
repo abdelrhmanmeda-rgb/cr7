@@ -71,7 +71,7 @@ export default async function GuidePage({ params }: Props) {
       </header>
 
       <main className="sgf-guide-wrap">
-        <nav className="sgf-guide-crumb" aria-label="أنت هنا">
+        <nav className="sgf-guide-crumb" aria-label="مكانك في الموقع">
           <a href="/">الرئيسية</a><span aria-hidden="true">/</span>
           <a href={sectionLink}>{entry.sectionTitle}</a>
         </nav>
@@ -99,7 +99,7 @@ export default async function GuidePage({ params }: Props) {
           <div className="sgf-guide-body">
             <aside className="sgf-guide-jump">
               <nav aria-label="محاور الصفحة">
-                <p className="sgf-guide-label">في هذه الصفحة</p>
+                <p className="sgf-guide-label">وش في الصفحة</p>
                 <ul>
                   {entry.sections.map((section, index) => <li key={section.title}><a href={`#${sectionId(index)}`}>{section.title}</a></li>)}
                   <li><a href="#guide-example">مثال توضيحي</a></li>
@@ -118,13 +118,12 @@ export default async function GuidePage({ params }: Props) {
                 <h2 id="guide-example-title">{entry.example.title}</h2>
                 <p>{entry.example.text}</p>
               </section>
-              <p className="sgf-guide-source">للقراءة المتعمقة: <a href={entry.reference.href} target="_blank" rel="noreferrer">{entry.reference.label}</a></p>
             </div>
           </div>
         </article>
 
         <section className="sgf-guide-related" aria-labelledby="guide-related">
-          <h2 id="guide-related">تابع القراءة</h2>
+          <h2 id="guide-related">كمّل القراءة</h2>
           <div>
             {related.map((item) => (
               <a key={item.slug} href={guideUrl(item.slug)}>
@@ -138,7 +137,7 @@ export default async function GuidePage({ params }: Props) {
             ))}
           </div>
         </section>
-        <footer className="sgf-guide-footer"><a href={sectionLink}>ارجع إلى {entry.sectionTitle}</a></footer>
+        <footer className="sgf-guide-footer"><a href={sectionLink}>ارجع لـ{entry.sectionTitle}</a></footer>
       </main>
     </div>
   );

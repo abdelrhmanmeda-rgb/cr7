@@ -3,16 +3,16 @@ import { articles, guideUrl, icons, topics } from "./guide-content";
 
 const site = {
   name: "صناديق الخليج الذكية",
-  tagline: "دليلك لفهم الاستثمار",
-  headline: ["الاستثمار", "بصورة أوضح"],
-  description: "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.",
+  tagline: "الصناديق والأسواق والأصول",
+  headline: ["استثمارات", "برؤية أوسع"],
+  description: "تعرّف على فئات الأصول واستراتيجياتها، واكتشف كيف تؤثر المدة والسيولة والتكلفة في قراءة الخيارات الاستثمارية.",
   registrationUrl: (process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED ?? "1") === "1" &&
     (process.env.NEXT_PUBLIC_SGF_SIGNUP_VISIBLE ?? "1") === "1" ? "/register" : "",
-  telegramUrl: "https://t.me/CR7_B3",
+  telegramUrl: "https://t.me/Khaled_AlAlya",
 };
 
 export const metadata: Metadata = {
-  title: `${site.name} | دليلك لفهم الاستثمار`,
+  title: `${site.name} | الصناديق والأسواق والأصول`,
   description: site.description,
   openGraph: { title: `${site.name} | ${site.headline.join(" ")}`, description: site.description, locale: "ar", type: "website" },
 };
@@ -106,10 +106,11 @@ export default function Page() {
   const registrationUrl = site.registrationUrl || null;
   const telegramUrl = safeExternalUrl(site.telegramUrl);
   const faqs = [
-    ["هل أقدر أستثمر أو أودع من الموقع؟", "الموقع يقدّم محتوى معرفي عن الاستثمار. ما فيه إيداع أو سحب أو دفع من هالصفحة."],
-    ["متى أقدر أسجّل حساب؟", registrationUrl ? "اضغط على «أنشئ حسابك» واتبع خطوات تأكيد بريدك في صفحة التسجيل." : "التسجيل مو متاح حاليًا. إذا فتح التسجيل، بتلقى رابطه هنا."],
-    ["هل كل المجالات المعروضة خدمات متاحة؟", "المجالات معروضة للتعرّف عليها. وجود مجال في الدليل ما يعني إنك تقدر تستثمر فيه من خلال الموقع."],
-    ["هل المقالات توصيات بالشراء أو البيع؟", "المقالات تشرح مفاهيم وأدوات عامة. ما فيها توصيات شخصية ولا وعود بعائد."],
+    ["كيف أنشئ حسابًا؟", registrationUrl ? "اختر «أنشئ حسابك»، ثم أدخل اسمك وبريدك الإلكتروني وكلمة المرور. افتح رسالة التأكيد لإكمال إعداد الحساب." : "إنشاء الحساب غير متاح حاليًا. سيظهر رابط إنشاء الحساب في هذه الصفحة عند إتاحته."],
+    ["كيف أستعيد كلمة المرور؟", "اختر «استرجع كلمة المرور» في صفحة الدخول، وأدخل بريد حسابك. ستتمكن من تعيين كلمة مرور جديدة باستخدام رابط الاستعادة."],
+    ["أين أجد تفاصيل مجال استثماري معيّن؟", "اختر المجال من بطاقات مجالات الاستثمار. ستجد شرحًا لطريقة عمله، والفرق بين أدواته، ومثالًا يساعدك على فهمه."],
+    ["أين أجد مراجع المقالات؟", "ستجد رابط القراءة المتعمقة في نهاية كل مقال، مع روابط لموضوعات مرتبطة به داخل مركز المعرفة."],
+    ["كيف أتواصل بشأن بيانات حسابي؟", "افتح «شروط التسجيل والخصوصية» في صفحة الحساب، واستخدم رابط تليجرام للتواصل مع إدارة صناديق الخليج الذكية."],
   ];
 
   return (
@@ -138,7 +139,7 @@ export default function Page() {
               <a href={registrationUrl ?? "#registration"} className="afq-button">{registrationUrl ? "أنشئ حسابك" : "عن التسجيل"}</a>
             </div>
             <div className="afq-hero-foot">
-              <span>٨ مجالات استثمارية</span><span>شرح عربي مبسّط</span><span>تصفّح بدون حساب</span>
+              <span>فئات الأصول</span><span>تحليل الخيارات</span><span>مركز المعرفة</span>
             </div>
           </div>
           <HeroArt />
@@ -146,20 +147,20 @@ export default function Page() {
 
         <section id="about" className="afq-section afq-section-band">
           <div className="afq-wrap afq-about">
-            <SectionTitle label={`عن ${site.name}`} title="افهم الفرصة قبل لا تقارن الأرقام" text="فكرتنا بسيطة: إذا وضحت لك المعلومة، سهلت عليك المقارنة. هنا بتلقى شرح للأدوات والأسواق، وأسئلة تساعدك تفهم الخيارات اللي قدّامك." />
+            <SectionTitle label={`عن ${site.name}`} title="صورة متكاملة عن الاستثمار" text="نجمع قراءة فئات الأصول مع شرح أساليب إدارتها وعناصر المقارنة بينها. هدفنا تقديم تجربة رقمية ترتكز على وضوح المعلومات وتنوع الموضوعات وسهولة الوصول إليها." />
             <div className="afq-about-card">
-              <span className="afq-eyebrow">طريقتنا</span>
+              <span className="afq-eyebrow">منهجية العرض</span>
               <ol>
-                <li><span>١</span><div><strong>اعرف الأداة</strong><small>افهم كيف تشتغل ووش اللي ممكن يأثّر عليها.</small></div></li>
-                <li><span>٢</span><div><strong>اقرأ الشروط</strong><small>راجع المدة والتكاليف والسيولة بكل وضوح.</small></div></li>
-                <li><span>٣</span><div><strong>قارن على أساس واحد</strong><small>خلّ الهدف والمدة أساس المقارنة.</small></div></li>
+                <li><span>١</span><div><strong>فهم هيكل الأداة</strong><small>تحديد الأصل وطريقة إدارة الاستثمار.</small></div></li>
+                <li><span>٢</span><div><strong>قراءة الشروط</strong><small>توضيح المدة والتكاليف والسيولة.</small></div></li>
+                <li><span>٣</span><div><strong>المقارنة بمعايير واضحة</strong><small>استخدام الفترة والعملة وطريقة الحساب نفسها.</small></div></li>
               </ol>
             </div>
           </div>
         </section>
 
         <section id="sectors" className="afq-wrap afq-section">
-          <SectionTitle label="دليل المجالات" title="مجالات الاستثمار" text="اختر المجال اللي يهمك. بتلقى صفحته فيها شرح للأدوات وأسئلة تساعدك تبدأ." />
+          <SectionTitle label="الأسواق والأصول" title="مجالات الاستثمار" text="تعرّف على طرق الاستثمار في كل فئة، واطّلع على هيكل الأدوات ومصادر الدخل والعوامل التي تؤثر في نتائجها." />
           <div className="afq-grid afq-topic-grid">
             {topics.map((topic, index) => (
               <a className="afq-topic" key={topic.slug} href={guideUrl(topic.slug)}>
@@ -176,19 +177,27 @@ export default function Page() {
           </div>
         </section>
 
-        <section id="plans" className="afq-wrap afq-section afq-plans">
+        <section id="plans" className="afq-wrap afq-section afq-plans" aria-labelledby="afq-plans-title">
           <div className="afq-plans-panel">
-            <div>
-              <span className="afq-eyebrow">وش المتاح؟</span>
-              <h2>الخطط الاستثمارية</h2>
-              <p>ما فيه خطط متاحة للاشتراك حاليًا. تقدر تبدأ بدليل المجالات أو تطّلع على مقالات مركز المعرفة.</p>
+            <div className="afq-plans-head">
+              <div>
+                <span className="afq-eyebrow">تفاصيل الاشتراك</span>
+                <h2 id="afq-plans-title">الخطط الاستثمارية</h2>
+              </div>
+              <span className="afq-plan-status">لا توجد خطط مفتوحة للاشتراك حاليًا</span>
             </div>
-            <a className="afq-button" href="#knowledge">استكشف مركز المعرفة <span aria-hidden="true">←</span></a>
+            <p>عند الاطّلاع على تفاصيل أي خطة، هذه المعايير تساعدك على مقارنة شروطها وما تعنيه لك.</p>
+            <dl className="afq-plan-criteria">
+              <div><dt>الاستراتيجية ورأس المال</dt><dd>نوع الأصول، هدف الخطة، والحد الأدنى والأقصى للاشتراك.</dd></div>
+              <div><dt>المدة والسيولة</dt><dd>فترة الاستثمار، مواعيد الاسترداد، وشروط الخروج المبكر.</dd></div>
+              <div><dt>النتائج والتكاليف</dt><dd>طريقة احتساب العائد، الرسوم، والفصل بين الأهداف والنتائج المحققة.</dd></div>
+            </dl>
+            <a className="afq-button" href={guideUrl("read-investment-terms")}>اقرأ دليل شروط الاستثمار</a>
           </div>
         </section>
 
         <section id="knowledge" className="afq-wrap afq-section">
-          <SectionTitle label="اقرأ وتعرّف" title="مركز المعرفة" text="مقالات قصيرة تجاوب على أسئلة ممكن تمرّ عليك وأنت تقرأ عن الاستثمار." />
+          <SectionTitle label="مقالات وأدلة" title="مركز المعرفة" text="أدلة لقراءة مستندات الصناديق، وفهم رسوم الاستثمار وسيولته، وتحليل إفصاحات الشركات." />
           <div className="afq-grid afq-article-grid">
             {articles.map((article) => (
               <a className="afq-article" key={article.slug} href={guideUrl(article.slug)}>
@@ -203,7 +212,7 @@ export default function Page() {
 
         <section id="faq" className="afq-section afq-section-band">
           <div className="afq-wrap afq-faq-grid">
-            <SectionTitle label="إجابات واضحة" title="الأسئلة الشائعة" text="بتلقى هنا تفاصيل التسجيل والخطط، ووش المتاح لك على الموقع حاليًا." />
+            <SectionTitle label="مساعدة الزوّار" title="الأسئلة الشائعة" text="إجابات سريعة عن حسابك، واستعادة كلمة المرور، والوصول إلى صفحات المجالات والمقالات." />
             <div className="afq-faq">
               {faqs.map(([question, answer]) => (
                 <details key={question}>
@@ -216,15 +225,15 @@ export default function Page() {
         </section>
 
         <section id="registration" className="afq-wrap afq-section afq-registration">
-          <SectionTitle label="حسابك في المنصة" title={registrationUrl ? "أنشئ حسابك" : "التسجيل مو متاح حاليًا"} text={registrationUrl ? "سجّل بياناتك وأكّد بريدك من صفحة التسجيل." : "تقدر تتصفّح المحتوى بدون حساب. وإذا فتح التسجيل، بتلقى رابط إنشاء الحساب هنا."} />
-          <a className="afq-button afq-button-gold" href={registrationUrl ?? "#knowledge"}>{registrationUrl ? "سجّل حسابك" : "ابدأ القراءة"} <span aria-hidden="true">←</span></a>
+          <SectionTitle label="حسابك في المنصة" title={registrationUrl ? "أنشئ حسابك" : "التسجيل غير متاح حاليًا"} text={registrationUrl ? "أكمل إنشاء حسابك بتأكيد بريدك الإلكتروني. إذا كان عندك حساب، تقدر تسجّل الدخول من الصفحة نفسها." : "يمكنك الاطّلاع على مقالات مركز المعرفة أثناء انتظار إتاحة التسجيل."} />
+          <a className="afq-button afq-button-gold" href={registrationUrl ?? "#knowledge"}>{registrationUrl ? "انتقل إلى صفحة الحساب" : "ابدأ القراءة"}</a>
         </section>
 
         <section id="contact" className="afq-wrap afq-section afq-contact">
           <div className="afq-contact-panel">
-            <div><span className="afq-eyebrow">التواصل</span><h2>عندك استفسار؟</h2><p>تقدر ترجع للأسئلة الشائعة، وإذا تبي تتابع التحديثات، افتح القناة الحالية على تيليجرام.</p></div>
+            <div><span className="afq-eyebrow">التواصل</span><h2>مساعدة الحساب</h2><p>تواصل مع إدارة صناديق الخليج الذكية إذا احتجت مساعدة في تسجيل الدخول أو إدارة بيانات حسابك.</p></div>
             <div className="afq-actions">
-              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">تابع القناة على تيليجرام <span aria-hidden="true">↗</span></a>}
+              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">تواصل عبر تليجرام</a>}
               <a href="#faq" className="afq-button">الأسئلة الشائعة</a>
             </div>
           </div>
@@ -233,10 +242,10 @@ export default function Page() {
 
       <footer className="afq-footer">
         <div className="afq-wrap afq-foot-inner">
-          <div><Brand /><p>دليل عربي يقرّب لك الصناديق والأسواق وأدوات الاستثمار.</p></div>
+          <div><Brand /><p>قراءة متكاملة للصناديق والأسواق وفئات الأصول.</p></div>
           <nav aria-label="روابط أسفل الموقع"><a href="#about">عن المنصة</a><a href="#knowledge">المعرفة</a><a href="#contact">التواصل</a></nav>
         </div>
-        <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><span>الموقع للتعرّف على الاستثمار، وما يستقبل أي مدفوعات.</span></div>
+        <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><a href="#plans">حالة الاشتراك في الخطط</a></div>
       </footer>
     </div>
   );
@@ -327,9 +336,17 @@ const styles = `
 .afq-plus::after {transform:rotate(90deg);transition:transform .15s}
 .afq details[open]>summary .afq-plus::after {transform:rotate(0)}
 .afq-plans {padding-block:0}
-.afq-plans-panel,.afq-contact-panel {display:flex;align-items:center;justify-content:space-between;gap:20px;padding:clamp(21px,5vw,46px);
+.afq-plans-panel,.afq-contact-panel {padding:clamp(21px,5vw,46px);
   border:1px solid var(--afq-line);border-radius:19px;background:radial-gradient(ellipse at top right,#27221b,#121a23 68%)}
-.afq-plans-panel .afq-button {flex-shrink:0}
+.afq-contact-panel {display:flex;align-items:center;justify-content:space-between;gap:20px}
+.afq-plans-panel {display:grid;gap:16px}
+.afq-plans-head {display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:11px 24px}
+.afq-plan-status {border:1px solid var(--afq-line);border-radius:7px;padding:6px 10px;font-size:.87rem;color:var(--afq-gold);background:#181b20}
+.afq-plan-criteria {margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.afq-plan-criteria>div {padding:15px;border:1px solid var(--afq-line);border-radius:12px;background:#121b24}
+.afq-plan-criteria dt {margin-bottom:4px;font-size:1rem;font-weight:800}
+.afq-plan-criteria dd {margin:0;color:var(--afq-muted);line-height:1.8;font-size:.9rem}
+.afq-plans-panel .afq-button {justify-self:start}
 .afq-plans-panel h2,.afq-contact-panel h2 {font-size:clamp(1.6rem,3vw,2.45rem)}
 .afq-faq {display:grid;gap:8px}
 .afq-faq details {border:1px solid var(--afq-line);border-radius:12px;background:#121b24;padding:0 16px}
@@ -370,7 +387,8 @@ const styles = `
   .afq-topic .afq-card-top {margin-bottom:9px}
   .afq-card-title {font-size:.95rem}
   .afq-card-intro {font-size:.79rem}
-  .afq-plans-panel,.afq-contact-panel,.afq-registration {flex-direction:column;align-items:flex-start}
+  .afq-contact-panel,.afq-registration {flex-direction:column;align-items:flex-start}
+  .afq-plan-criteria {grid-template-columns:minmax(0,1fr)}
   .afq-foot-bottom {gap:5px}
 }
 @media (max-width:360px) {

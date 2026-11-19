@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
-// إعدادات الصفحة. خلّ رابط التسجيل فاضي إلى أن تتفعّل خدمة الحسابات.
+// إظهار رابط التسجيل خطوة منفصلة عن تشغيل Firebase، عشان نختبره قبل فتحه من الرئيسية.
 const site = {
   name: "صناديق الخليج الذكية",
   tagline: "دليلك لفهم الاستثمار",
   headline: ["الاستثمار", "بصورة أوضح"],
   description: "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.",
-  registrationUrl: "",
+  registrationUrl: process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED === "1" &&
+    process.env.NEXT_PUBLIC_SGF_SIGNUP_VISIBLE === "1" ? "/register" : "",
   telegramUrl: "https://t.me/CR7_B3",
 };
 
@@ -157,7 +158,7 @@ function HeroArt() {
 }
 
 export default function Page() {
-  const registrationUrl = safeExternalUrl(site.registrationUrl);
+  const registrationUrl = site.registrationUrl || null;
   const telegramUrl = safeExternalUrl(site.telegramUrl);
   const faqs = [
     ["هل أقدر أستثمر أو أودع من الموقع؟", "الموقع يقدّم محتوى معرفي عن الاستثمار. ما فيه إيداع أو سحب أو دفع من هالصفحة."],

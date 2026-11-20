@@ -17,6 +17,7 @@ const statisticsRoutes = require('./routes/statisticsRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const testimonialsRoutes = require('./routes/testimonialsRoutes');
 const ordersRoutes = require('./routes/ordersRoutes');
+app.use('/api/universe',require('./universe/routes'));
 app.use('/api/results',resultsRoutes);
 app.use('/api/bots',botsRoutes);
 app.use('/api/subscriptions',subscriptionsRoutes);

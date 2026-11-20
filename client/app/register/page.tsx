@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { LuxuryPhoto } from "../luxury-photo";
+import { AccountScreen, type AccountView as View, type AccountPhase as Phase, type AccountProfile as Profile, type AccountNotice as Notice } from "./account-screen";
+import {parseLedger,type LedgerState} from "./account-ledger";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getApps, initializeApp } from "firebase/app";
 import {
@@ -42,17 +42,6 @@ const enabled = (process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED ?? "1") === "1" &&
 const actions = { url: officialOrigin + "/register", handleCodeInApp: false };
 let sharedAuth: Auth | undefined;
 
-type View = "create" | "login" | "reset";
-type Phase = "checking" | "available" | "closed" | "unavailable";
-type Profile = { email: string; name: string; verified: boolean };
-type Notice = { text: string; kind: "success" | "error" };
-
-const titles: Record<View, string> = {
-  create: "أنشئ حسابك",
-  login: "سجّل دخولك",
-  reset: "استرجع كلمة المرور",
-};
-
 function authForSite() {
   if (!enabled || window.location.origin !== officialOrigin) throw Error("registration disabled");
   if (!sharedAuth) {
@@ -67,7 +56,7 @@ function authForSite() {
 }
 
 function profileOf(user: User | null): Profile | null {
-  return user ? { email: user.email ?? "", name: user.displayName?.trim() ?? "", verified: user.emailVerified } : null;
+  return user ? { uid: user.uid, email: user.email ?? "", name: user.displayName?.trim() ?? "", verified: user.emailVerified } : null;
 }
 
 function codeOf(error: unknown): string {
@@ -115,6 +104,7 @@ export default function AccountPage() {
       }
       try {
         unsubscribe = onAuthStateChanged(authForSite(), (user) => {
+          setBook(previous=>user?.emailVerified && previous?.owner===user.uid ? previous : null);
           setProfile(profileOf(user));
           setPhase("available");
         }, () => setPhase("unavailable"));
@@ -127,6 +117,34 @@ export default function AccountPage() {
       unsubscribe?.();
     };
   }, []);
+
+  const owner = phase === "available" && profile?.verified ? profile.uid : "";
+  const [book, setBook] = useState<{owner:string;version:number;state:LedgerState} | null>(null);
+  const [version, refreshVersion] = useState(0);
+  useEffect(() => {
+    if (!owner) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    let mounted = true;
+    const current = () => authForSite().currentUser;
+    const load = async () => {
+      const user = current();
+      if (!user?.emailVerified || user.uid !== owner) return;
+      const base=(process.env.NEXT_PUBLIC_SGF_LEDGER_API || "https://cr7-kappa.vercel.app").replace(/\/+$/,"");
+      const request=async (fresh:boolean) => {
+        const token=await user.getIdToken(fresh);
+        if(current()?.uid!==owner||!mounted) throw Error();
+        return fetch(base+"/api/universe/me",{headers:{Authorization:"Bearer "+token},cache:"no-store",redirect:"error",signal:controller.signal});
+      };
+      let response=await request(false);
+      if(response.status===401||response.status===403) response=await request(true);
+      if(!response.ok) throw Error();
+      const data=parseLedger(await response.json());
+      if (mounted && current()?.uid===owner) setBook({owner,version,state:{status:"ready",data}});
+    };
+    load().catch(()=>{if(mounted && current()?.uid===owner) setBook({owner,version,state:{status:"failed"}});}).finally(()=>window.clearTimeout(timer));
+    return () => {mounted=false;controller.abort();window.clearTimeout(timer);};
+  },[owner,version]);
 
   async function run(operation: () => Promise<void>) {
     if (inProgress.current || phase !== "available") return;
@@ -210,82 +228,17 @@ export default function AccountPage() {
     });
   }
 
-  return (
-    <main className="sgf-account sgf-account-lux" dir="rtl" lang="ar">
-      <header className="sgf-account-shell sgf-account-head">
-        <Link href="/" className="sgf-account-brand">
-          <span aria-hidden="true"><svg width="25" height="25" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.25"><path d="M3 21 14 4l11 17H3Zm6 0 5-8 5 8m-5-8v8M7 25h14" strokeLinejoin="round" /></svg></span>
-          {brand}
-        </Link>
-        <Link href="/" className="sgf-account-back">الرئيسية</Link>
-      </header>
-
-      <div className="sgf-account-shell sgf-account-grid">
-        <aside className="sgf-account-intro">
-          <LuxuryPhoto asset="hero" />
-          <span className="sgf-account-eyebrow">صناديق الخليج الذكية</span>
-          <h1>حسابك في المنصة</h1>
-          <p>افتح حسابك ببريدك الإلكتروني، أو سجّل دخولك إذا عندك حساب من قبل.</p>
-          <div className="sgf-account-note">أكّد بريدك عند التسجيل، واسترجع كلمة المرور إذا احتجت.</div>
-        </aside>
-
-        <section className="sgf-account-panel" aria-label="إدارة الحساب" aria-busy={busy}>
-          {phase === "checking" ? <><h2>انتظر شوي</h2><p>قاعدين نتأكّد من حالة حسابك…</p></> :
-           phase !== "available" ? (
-             <>
-               <span className="sgf-account-eyebrow">حالة التسجيل</span>
-               <h2>{phase === "closed" ? "التسجيل مو متاح الحين" : "خدمة الحسابات مو متوفّرة الحين"}</h2>
-               <p>تقدر ترجع للرئيسية أو تكمّل القراءة في مركز المعرفة.</p>
-               <Link href="/#knowledge" className="sgf-account-button">تصفّح مركز المعرفة</Link>
-             </>
-           ) : profile?.verified ? (
-             <><span className="sgf-account-eyebrow">البريد مؤكّد</span>
-               <h2>{profile.name ? `يا هلا، ${profile.name}` : "يا هلا في حسابك"}</h2>
-               <p>تأكّد بريدك الإلكتروني بنجاح.</p>
-               <p><bdi>{profile.email}</bdi></p>
-               <Link href="/#knowledge" className="sgf-account-button">روح لمركز المعرفة</Link>
-             </>
-           ) : profile ? (
-             <>
-               <span className="sgf-account-eyebrow">خطوة التأكيد</span>
-               <h2>أكّد بريدك الإلكتروني</h2>
-               <p>افتح رابط التأكيد اللي أرسلناه إلى <bdi>{profile.email}</bdi>، وبعدها اضغط «تأكدت من بريدي».</p>
-               <div className="sgf-account-actions">
-                 <button type="button" disabled={busy} onClick={checkEmail} className="sgf-account-button">تأكدت من بريدي</button>
-                 <button type="button" disabled={busy} onClick={() => run(async () => {
-                   const user = authForSite().currentUser;
-                   if (user && !user.emailVerified) await verify(user);
-                 })}>أرسل الرابط مرة ثانية</button>
-               </div>
-             </>
-           ) : (
-             <>
-               <span className="sgf-account-eyebrow">حساب {brand}</span>
-               <h2>{titles[view]}</h2>
-               <p>{view === "create" ? "بنرسل لك رابط تأكيد الحساب على بريدك." : "استخدم نفس البريد اللي سجّلت به."}</p>
-               <form method="post" onSubmit={submit} key={view}>
-                 {view === "create" && <label>اسمك<input name="name" autoComplete="name" required minLength={2} maxLength={90} /></label>}
-                 <label>البريد الإلكتروني<input type="email" name="email" autoComplete="email" dir="ltr" required maxLength={200} /></label>
-                 {view !== "reset" && <label>كلمة المرور<input type="password" name="password" autoComplete={view === "create" ? "new-password" : "current-password"} required minLength={view === "create" ? 12 : undefined} maxLength={128} dir="ltr" /></label>}
-                 {view === "create" && <>
-                   <small>خلّها ١٢ حرف على الأقل، ولا تستخدم كلمة مرور حساب ثاني.</small>
-                   <label className="sgf-account-consent"><input name="terms" type="checkbox" value="yes" required /> قريت شروط التسجيل والخصوصية وأوافق عليها.</label>
-                 </>}
-                 <button type="submit" className="sgf-account-button" disabled={busy}>{busy ? "لحظة، نكمّل طلبك…" : titles[view]}</button>
-               </form>
-               <div className="sgf-account-actions">
-                 {(["login","create","reset"] as const).filter((mode) => mode !== view).map((mode) => <button key={mode} type="button" disabled={busy} onClick={() => { setView(mode); setNotice(null); }}>{titles[mode]}</button>)}
-               </div>
-             </>
-           )}
-          {phase === "available" && profile && <div className="sgf-account-actions"><button type="button" disabled={busy} onClick={() => run(async () => { await signOut(authForSite()); setProfile(null); setView("login"); })}>سجّل خروجك</button></div>}
-          {notice && <p className="sgf-account-message" data-kind={notice.kind} role="status">{notice.text}</p>}
-          {phase === "available" && hasPrivacyContact && <details className="sgf-account-privacy"><summary>شروط التسجيل والخصوصية</summary>
-            <p>فتح الحساب يخلّيك تسجّل دخولك وتدير بياناتك. فتح الحساب ما يعني اشتراك في أي منتج استثماري.</p>
-            <p>نستخدم اسمك وبريدك لإدارة حسابك، وبيانات الدخول تُدار في Firebase. إذا عندك استفسار عن بياناتك أو تبي تطلب حذف حسابك، هذي بيانات {operator}: <a href={`https://t.me/${telegramHandle}`} target="_blank" rel="noopener noreferrer">تليجرام <bdi>@{telegramHandle}</bdi></a>.</p>
-          </details>}
-        </section>
-      </div>
-    </main>
-  );
+  return <AccountScreen ledger={owner && book?.owner===owner && book.version===version ? book.state : {status:"loading"}} refreshLedger={()=>refreshVersion(v=>v+1)} brand={brand} operator={operator}
+    telegram={hasPrivacyContact ? `https://t.me/${telegramHandle}` : null}
+    phase={phase} profile={profile} notice={notice} busy={busy} view={view}
+    changeView={(mode) => { setView(mode); setNotice(null); }}
+    submit={submit} checkEmail={checkEmail}
+    resend={() => run(async () => {
+      const user = authForSite().currentUser;
+      if (user && !user.emailVerified) await verify(user);
+    })}
+    signOut={() => run(async () => {
+      await signOut(authForSite()); setBook(null); setProfile(null); setView("login");
+    })}
+  />;
 }

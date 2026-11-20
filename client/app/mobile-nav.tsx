@@ -37,7 +37,7 @@ export default function MobileNav({ links, brand, action }: Props) {
             </button>
           </div>
           <nav aria-label="أقسام الموقع">
-            {links.map(([id, label]) => <a key={id} href={`#${id}`} onClick={close}>{label}</a>)}
+            {links.map(([id, label]) => <a key={id} href={id.startsWith("/") ? id : `#${id}`} onClick={close}>{label}</a>)}
           </nav>
           <a className="afq-button afq-button-gold" href={action.href} onClick={close}>{action.text}</a>
         </div>

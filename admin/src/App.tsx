@@ -1,5 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import UniverseEditor from './UniverseEditor';
+import UniverseLedger from './UniverseLedger';
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
 // ==========================================
@@ -267,10 +269,10 @@ const LoginScreen = ({ setAuthError, authError }: { setAuthError: (err: string) 
       <div className="cr7-admin-login-card bg-[#080a0f] border border-white/10 p-10 md:p-14 rounded-[40px] shadow-2xl w-full max-w-lg z-10">
         <div className="text-center mb-10">
           <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl border border-white/10 overflow-hidden bg-white/5">
-            <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" alt="CR7 Logo" className="w-full h-full object-contain" />
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" width="36" height="36" className="un-brand-mark"><path d="m5 34 19-27 19 27H5Zm9 0 10-17 10 17m-10-17v17M8 39h32"/></svg>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">CR7 ADMIN V2</h1>
-          <p className="text-gray-500 text-sm mt-2 font-bold uppercase tracking-widest">بوابة الإدارة المشفرة</p>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">إدارة صناديق الخليج الذكية</h1>
+          <p className="text-gray-500 text-sm mt-2 font-bold uppercase tracking-widest">بوابة فريق الإدارة</p>
         </div>
 
         {authError && (
@@ -282,11 +284,11 @@ const LoginScreen = ({ setAuthError, authError }: { setAuthError: (err: string) 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest pr-1">البريد الإلكتروني</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-700" placeholder="admin@cr7.com" />
+            <input aria-label="البريد الإلكتروني" autoComplete="username" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-700" placeholder="name@example.com" />
           </div>
           <div className="space-y-2">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest pr-1">كلمة المرور</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-700" placeholder="••••••••" />
+            <input aria-label="كلمة المرور" autoComplete="current-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-700" placeholder="••••••••" />
           </div>
           <button disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-50">
             {loading ? 'جاري التحقق...' : 'تسجيل الدخول'}
@@ -2472,7 +2474,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [authError, setAuthError] = useState('');
-  const [activeTab, setActiveTab] = useState('blog'); 
+  const [activeTab, setActiveTab] = useState('universe');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -2487,17 +2489,11 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
-    if (!document.getElementById('tailwind-cdn')) {
-      const script = document.createElement('script');
-      script.id = 'tailwind-cdn';
-      script.src = "https://cdn.tailwindcss.com";
-      document.head.appendChild(script);
-    }
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthChecking(false); });
-    return () => unsub();
+    return () => {unsub();style.remove();};
   }, []);
 
-  if (authChecking) return <div className="cr7-admin-theme cr7-admin-loading min-h-screen bg-[#020408] text-white flex items-center justify-center font-black animate-pulse tracking-widest uppercase">SECURE CONNECTION...</div>;
+  if (authChecking) return <div className="cr7-admin-theme cr7-admin-loading min-h-screen bg-[#020408] text-white flex items-center justify-center font-black animate-pulse tracking-widest uppercase">جاري التحقق من الجلسة…</div>;
   
   if (!user) return <LoginScreen setAuthError={setAuthError} authError={authError} />;
 
@@ -2508,17 +2504,19 @@ export default function App() {
         <div className="p-8 flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border border-white/5 overflow-hidden bg-white/5">
-              <img src="https://res.cloudinary.com/dazvddyzm/image/upload/v1776084289/IMG-20260313-WA0015.jpg_koyn4d.jpg" alt="CR7 Logo" className="w-full h-full object-contain" />
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" width="36" height="36" className="un-brand-mark"><path d="m5 34 19-27 19 27H5Zm9 0 10-17 10 17m-10-17v17M8 39h32"/></svg>
             </div>
             <div>
-              <h1 className="font-black text-2xl tracking-tighter uppercase leading-none text-white">CR7</h1>
-              <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1">Admin Panel</p>
+              <h1 className="font-black text-2xl tracking-tighter uppercase leading-none text-white">صناديق الخليج الذكية</h1>
+              <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1">مكتب الإدارة</p>
             </div>
           </div>
           <button aria-label="إغلاق القائمة" className="lg:hidden p-3 bg-white/5 rounded-2xl text-white" onClick={() => setIsSidebarOpen(false)}><Icons.X /></button>
         </div>
         
         <nav className="flex-1 px-6 space-y-4">
+          <button aria-pressed={activeTab==='universe'} onClick={()=>{setActiveTab('universe');setIsSidebarOpen(false);}} className="w-full flex items-center gap-4 p-4 font-black"><Icons.Star/> إدارة الواجهة</button>
+          <button aria-pressed={activeTab==='ledger'} onClick={()=>{setActiveTab('ledger');setIsSidebarOpen(false);}} className="w-full flex items-center gap-4 p-4 font-black"><Icons.Activity/> سجل المستثمرين</button>
           <button aria-pressed={activeTab === 'statistics'} onClick={() => { setActiveTab('statistics'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-[28px] font-black text-sm transition-all ${activeTab === 'statistics' ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 border border-white/10' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}>
             <Icons.PieChart /> الإحصائيات
           </button>
@@ -2553,7 +2551,7 @@ export default function App() {
       {isSidebarOpen && <button type="button" className="cr7-admin-mask" aria-label="إغلاق القائمة" onClick={() => setIsSidebarOpen(false)} />}
       <div className="flex-1 flex flex-col w-full min-w-0 relative">
         <header className="cr7-admin-topbar lg:hidden flex items-center justify-between p-6 bg-[#05070a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40">
-           <div className="font-black text-xl tracking-tight text-blue-500">CR7 ADMIN V2</div>
+           <div className="font-black text-xl tracking-tight text-blue-500">إدارة صناديق الخليج الذكية</div>
            <button aria-label="القائمة" aria-controls="cr7-admin-navigation" aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen(true)} className="p-3 bg-white/5 rounded-2xl active:bg-white/10 transition-colors"><Icons.Menu /></button>
         </header>
 
@@ -2561,7 +2559,7 @@ export default function App() {
           <div className="w-full pb-20">
             <div className="cr7-admin-heading mb-10 lg:mb-12 flex flex-col items-center justify-center text-center mx-auto">
               <h2 className="text-3xl lg:text-5xl font-black mb-3 tracking-tighter">
-                {activeTab === 'results' ? 'النتائج والأرباح 📈' : activeTab === 'subscriptions' ? 'الاشتراكات والإدارة 🤝' : activeTab === 'settings' ? 'الإعدادات العامة ⚙️' : activeTab === 'statistics' ? 'الإحصائيات والتحليلات 📊' : activeTab === 'testimonials' ? 'آراء العملاء 💬' : activeTab === 'blog' ? 'إدارة المدونة 📝' : 'منظومة البوتات 🤖'}
+                {activeTab === 'universe' ? 'إدارة واجهة المنصة' : activeTab === 'ledger' ? 'سجل المستثمرين' : activeTab === 'orders' ? 'طلبات الشراء' : activeTab === 'results' ? 'النتائج والأرباح' : activeTab === 'subscriptions' ? 'الاشتراكات والإدارة 🤝' : activeTab === 'settings' ? 'الإعدادات العامة ⚙️' : activeTab === 'statistics' ? 'الإحصائيات والتحليلات 📊' : activeTab === 'testimonials' ? 'آراء العملاء 💬' : activeTab === 'blog' ? 'إدارة المدونة 📝' : 'منظومة البوتات 🤖'}
               </h2>
               <p className="text-gray-500 text-base lg:text-lg max-w-2xl leading-relaxed text-center mx-auto">
                 تحكم في محتوى الموقع المباشر وقم بتحديث البيانات فوراً.
@@ -2569,7 +2567,7 @@ export default function App() {
             </div>
             
             <div className="w-full">
-              {activeTab === 'orders' ? <OrdersManager /> : activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'testimonials' ? <TestimonialsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
+              {activeTab === 'ledger' ? <UniverseLedger getToken={async()=>{if(!auth.currentUser)throw Error('سجّل دخولك من جديد.');return auth.currentUser.getIdToken();}}/> : activeTab === 'universe' ? <UniverseEditor getToken={async()=>auth.currentUser?.getIdToken()} /> : activeTab === 'orders' ? <OrdersManager /> : activeTab === 'results' ? <ResultsManager /> : activeTab === 'subscriptions' ? <SubscriptionsManager /> : activeTab === 'settings' ? <SettingsManager /> : activeTab === 'statistics' ? <StatisticsManager /> : activeTab === 'testimonials' ? <TestimonialsManager /> : activeTab === 'blog' ? <BlogManager /> : <BotsManager />}
             </div>
           </div>
         </main>

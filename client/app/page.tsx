@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { articles, guideUrl, icons, topics } from "./guide-content";
 import { articlePhoto, LuxuryPhoto } from "./luxury-photo";
 import MobileNav from "./mobile-nav";
+import AssetObservatory from "./asset-observatory";
 
 const site = {
   name: "صناديق الخليج الذكية",
@@ -18,10 +19,15 @@ export const metadata: Metadata = {
   openGraph: { title: `${site.name} | ${site.headline.join(" ")}`, description: site.description, locale: "ar", type: "website" },
 };
 
+const telegramHandle = (process.env.NEXT_PUBLIC_SGF_PRIVACY_TELEGRAM?.trim() || "Khaled_AlAlya")
+  .replace(/^(?:https:\/\/)?t\.me\//i, "").replace(/^@|\/$/g, "");
+const telegramUrl = /^[a-zA-Z0-9_]{3,32}$/.test(telegramHandle) ? `https://t.me/${telegramHandle}` : "";
+
 const links = [
   ["about", "عن المنصة"],
   ["sectors", "المجالات"],
   ["plans", "الخطط"],
+  ["disclosures", "الإفصاحات"],
   ["knowledge", "مركز المعرفة"],
   ["faq", "الأسئلة الشائعة"],
 ] as const;
@@ -51,28 +57,30 @@ function SectionTitle({ label, title, text }: { label: string; title: string; te
   );
 }
 
-function HeroArt() {
+function Disclosures() {
   return (
-    <div className="afq-hero-art" aria-hidden="true">
-      <LuxuryPhoto asset="hero" leading />
-      <span className="afq-art-label">رؤية خليجية للاستثمار</span>
-      <div className="sgf-orbit-art">
-        <i className="sgf-orbit sgf-orbit-outer" />
-        <i className="sgf-orbit sgf-orbit-middle" />
-        <i className="sgf-orbit sgf-orbit-inner" />
-        <svg className="sgf-orbit-mark" viewBox="0 0 88 88" fill="none">
-          <defs>
-            <linearGradient id="sgf-orbit-metal" x1="7" y1="15" x2="81" y2="80" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#785122" /><stop offset=".34" stopColor="#fff1c4" />
-              <stop offset=".72" stopColor="#b58a50" /><stop offset="1" stopColor="#f5ce8b" />
-            </linearGradient>
-          </defs>
-          <path d="M44 12 77 65H11L44 12Z" stroke="url(#sgf-orbit-metal)" strokeWidth="3" strokeLinejoin="round" />
-          <path d="M24 65 44 33l20 32M44 33v32M15 75h58" stroke="url(#sgf-orbit-metal)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
+    <section id="disclosures" className="afq-section afq-wrap sgf-disclosures">
+      <SectionTitle label="وثائق وبيانات" title="مركز الإفصاحات" text="مكان واحد يوضّح حالة الطرح وش المستندات المتوفرة." />
+      <div className="sgf-disclosure-grid">
+        <article>
+          <span className="sgf-disclosure-label">حالة الطرح</span>
+          <h3>ما فيه اشتراك حاليًا</h3>
+          <p>حساب المنصة لتسجيل الدخول وإدارة بياناتك. فتح الحساب ما ينشئ استثمار أو إيداع.</p>
+          <a href="#plans">شوف حالة الخطط</a>
+        </article>
+        <article>
+          <span className="sgf-disclosure-label">بيانات الكيان والترخيص</span>
+          <h3>ما فيه بيانات ترخيص منشورة</h3>
+          <p>الموقع ما يعرض رقم ترخيص مالي أو موافقة طرح. إذا توثقت البيانات للنشر، تُعرض باسم الكيان القانوني والنشاط المرخّص له.</p>
+        </article>
+        <article>
+          <span className="sgf-disclosure-label">مستندات الاستثمار</span>
+          <h3>ما فيه مستندات طرح أو أداء منشورة</h3>
+          <p>شروط الاشتراك والاسترداد والرسوم والمخاطر، وسعر الوحدة وتاريخ التقييم عند توفر منتج وصافي قيمة أصول موثق.</p>
+          <a href={guideUrl("read-fund-documents")}>تعرّف على مستندات الصندوق</a>
+        </article>
       </div>
-      <div className="afq-art-caption"><span>صناديق الخليج الذكية</span><span>نظرة أوسع للأصول</span></div>
-    </div>
+    </section>
   );
 }
 
@@ -80,7 +88,7 @@ export default function Page() {
   const registrationUrl = site.registrationUrl || null;
   const faqs = [
     ["وش تقدّم صناديق الخليج الذكية؟", "المنصة تجمع لك مجالات الاستثمار في مكان واحد، من الأسهم والصناديق إلى العقار والذهب والصكوك. نوضّح فايدة كل فئة والدور اللي ممكن تؤديه داخل المحفظة، وكيف تُقاس النتيجة بعد الرسوم. ما فيه خطط مفتوحة للاشتراك حاليًا، وفتح الحساب يخلّيك تستخدم صفحة الحساب من غير ما تدفع أو تشترك في منتج."],
-    ["مين يختار الأصول داخل الصندوق؟", "إذا طُرح صندوق، تتولى إدارته اختيار الأصول ومتابعة أوزانها بحسب سياسة الصندوق ومدّته وهدفه. تقدر الإدارة توازن بين أصول تخدم النمو، وأصول تضيف دخل، وجزء يوفّر سيولة. الاختيار يخدم هدف المحفظة ككل، ويختلف حسب الخطة؛ ما هو توصية استثمار شخصية لكل زائر."],
+    ["على أي أساس يتم اختيار الأصول؟", "في أي صندوق مطروح، سياسة الصندوق هي اللي تحدد الأصول المسموح فيها وتوزيعها والحدود اللي تنطبق عليها. الاختيار يراعي هدف المحفظة ومدّتها واحتياجها للسيولة، من دون توصية شخصية لكل زائر."],
     ["وش المقصود بتراكم العائد؟", "إذا تحقّق عائد وبقي مستثمر بدل ما يطلع من المحفظة، يصير جزء من المبلغ اللي يشارك في أداء الفترات الجاية. بعض الخطط تعيد استثمار التوزيعات، وبعضها يصرفها نقدًا إذا أُقرّت. التراكم يشرح طريقة الحساب، والنتيجة الفعلية تعتمد على أداء الأصول والتكاليف، وقد ترتفع أو تنخفض."],
     ["هل أقدر أشترك في خطة الحين؟", "الحين ما فيه خطط مفتوحة للاشتراك. إذا توفرت خطة، تفاصيلها تبين نوع الأصول، المدة، الرسوم، طريقة التعامل مع العائد وشروط الاسترداد. التسجيل في الموقع يفتح لك حساب فقط؛ ما يفتح خطة ولا ينشئ إيداع أو التزام مالي."],
     ["كيف أفتح حسابي في المنصة؟", registrationUrl ? "اضغط «أنشئ حسابك»، واكتب اسمك وبريد تقدر تفتحه، واختر كلمة مرور من ١٢ حرف على الأقل. بعد الموافقة على شروط التسجيل، شيّك على البريد وافتح رابط التأكيد، ثم ارجع لصفحة الحساب. إذا ما حصلت الرسالة في الوارد، شيّك على البريد غير المرغوب فيه." : "فتح حساب جديد مو متاح حاليًا. إذا تفعّل التسجيل، بيظهر رابط صفحة الحساب هنا. لين يفتح التسجيل، تقدر تقرأ كل المجالات والمقالات بدون حساب."],
@@ -117,16 +125,17 @@ export default function Page() {
               <a href={registrationUrl ?? "#registration"} className="afq-button">{registrationUrl ? "أنشئ حسابك" : "عن التسجيل"}</a>
             </div>
             <div className="afq-hero-foot">
-              <span>فئات الأصول</span><span>اختيار الأصول</span><span>مركز المعرفة</span>
+              <a href="#disclosures">مركز الإفصاحات</a>
+              {telegramUrl && <a href={telegramUrl} target="_blank" rel="noopener noreferrer">تواصل على تليجرام</a>}
             </div>
           </div>
-          <HeroArt />
+          <AssetObservatory />
         </section>
         </div>
 
         <section id="about" className="afq-section afq-section-band">
           <div className="afq-wrap afq-about">
-            <SectionTitle label={`عن ${site.name}`} title="كل استثمار له دور في المحفظة" text="في صناديق الخليج الذكية نركّز على فايدة كل استثمار، وش يضيف للمحفظة، وكيف تكون اختيارات إدارة الصندوق مبنية على هدف ومدّة وسيولة واضحة." />
+            <SectionTitle label={`عن ${site.name}`} title="كل استثمار له دور في المحفظة" text="في صناديق الخليج الذكية نركّز على فايدة كل استثمار، وش يضيف للمحفظة، وكيف تحدد سياسة الاستثمار اختيار الأصول بحسب الهدف والمدّة والسيولة." />
             <div className="afq-about-visual" aria-hidden="true"><LuxuryPhoto asset="property" /></div>
             <div className="afq-about-card">
               <span className="afq-eyebrow">طريقتنا في عرض الاستثمار</span>
@@ -177,8 +186,10 @@ export default function Page() {
           </div>
         </section>
 
+        <Disclosures />
+
         <section id="knowledge" className="afq-wrap afq-section">
-          <SectionTitle label="مقالات وأدلة" title="مركز المعرفة" text="مقالات توضّح لك فايدة التنويع، ودور مدير الصندوق، وشلون التكاليف وإعادة الاستثمار تأثر على النتيجة." />
+          <SectionTitle label="مقالات وأدلة" title="مركز المعرفة" text="مقالات توضّح لك فايدة التنويع، وسياسة اختيار الأصول، وشلون التكاليف وإعادة الاستثمار تأثر على النتيجة." />
           <div className="afq-grid afq-article-grid">
             {articles.map((article) => (
               <a className="afq-article" key={article.slug} href={guideUrl(article.slug)}>
@@ -215,9 +226,9 @@ export default function Page() {
 
         <section id="contact" className="afq-wrap afq-section afq-contact">
           <div className="afq-contact-panel">
-            <div><span className="afq-eyebrow">الدعم</span><h2>مساعدة الحساب</h2><p>إذا احتجت مساعدة بالدخول أو ببيانات حسابك، تلقى الخطوات هنا. وبيانات إدارة المنصة مكتوبة في قسم الخصوصية بصفحة الحساب.</p></div>
+            <div><span className="afq-eyebrow">الدعم والشكاوى</span><h2>تواصل معنا</h2><p>إذا عندك استفسار أو شكوى عن الموقع أو حسابك، راسلنا على تليجرام. لا ترسل كلمة المرور أو رمز التحقق أو بيانات الدفع.</p></div>
             <div className="afq-actions">
-              {registrationUrl && <a className="afq-button afq-button-gold" href={registrationUrl}>افتح صفحة الحساب</a>}
+              {telegramUrl && <a className="afq-button afq-button-gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">تواصل على تليجرام</a>}
               <a href="#faq" className="afq-button">الأسئلة الشائعة</a>
             </div>
           </div>
@@ -227,7 +238,7 @@ export default function Page() {
       <footer className="afq-footer">
         <div className="afq-wrap afq-foot-inner">
           <div><Brand /><p>نظرة أوضح على الصناديق والأسواق ودور كل أصل.</p></div>
-          <nav aria-label="روابط أسفل الموقع"><a href="#about">عن المنصة</a><a href="#knowledge">المعرفة</a><a href="#contact">مساعدة الحساب</a></nav>
+          <nav aria-label="روابط أسفل الموقع"><a href="#about">عن المنصة</a><a href="#disclosures">الإفصاحات</a><a href="#contact">التواصل</a></nav>
         </div>
         <div className="afq-wrap afq-foot-bottom"><span>© {site.name}</span><a href="#plans">حالة الاشتراك في الخطط</a></div>
       </footer>

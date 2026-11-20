@@ -282,7 +282,7 @@ export default function AccountPage() {
           {notice && <p className="sgf-account-message" data-kind={notice.kind} role="status">{notice.text}</p>}
           {phase === "available" && hasPrivacyContact && <details className="sgf-account-privacy"><summary>شروط التسجيل والخصوصية</summary>
             <p>فتح الحساب يخلّيك تسجّل دخولك وتدير بياناتك. فتح الحساب ما يعني اشتراك في أي منتج استثماري.</p>
-            <p>نستخدم اسمك وبريدك لإدارة حسابك، وبيانات الدخول تُدار في Firebase. إذا عندك استفسار عن بياناتك أو تبي تطلب حذف حسابك، هذي بيانات {operator}: <span>تليجرام <bdi>@{telegramHandle}</bdi></span>.</p>
+            <p>نستخدم اسمك وبريدك لإدارة حسابك، وبيانات الدخول تُدار في Firebase. إذا عندك استفسار عن بياناتك أو تبي تطلب حذف حسابك، هذي بيانات {operator}: <a href={`https://t.me/${telegramHandle}`} target="_blank" rel="noopener noreferrer">تليجرام <bdi>@{telegramHandle}</bdi></a>.</p>
           </details>}
         </section>
       </div>

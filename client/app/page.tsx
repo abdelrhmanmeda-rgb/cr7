@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { articles, guideUrl, icons, topics } from "./guide-content";
 import { articlePhoto, LuxuryPhoto } from "./luxury-photo";
 import MobileNav from "./mobile-nav";
-import AssetObservatory from "./asset-observatory";
+import AssetObservatory from "./observatory";
 
 const site = {
   name: "صناديق الخليج الذكية",

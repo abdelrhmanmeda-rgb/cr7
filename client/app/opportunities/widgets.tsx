@@ -1,0 +1,71 @@
+"use client";
+import { useEffect, useId, useRef, useState } from "react";
+import type { Metric, Opportunity, Sector } from "../universe-data";
+
+const labels:Record<Sector,string>={property:"العقارات",gold:"الذهب والمعادن",market:"الأسواق المالية",energy:"الطاقة والمشروعات",funds:"الصناديق",income:"أدوات الدخل",stocks:"الأسهم",portfolio:"المحافظ",compare:"فرص متنوعة"};
+const photo=(s:Sector)=>s==="energy"?"/energy.svg":"/"+s+".webp";
+const fmt=(v:number)=>new Intl.NumberFormat("ar",{maximumFractionDigits:4}).format(v);
+const stamp=(s:string)=>new Intl.DateTimeFormat("ar",{calendar:"gregory",dateStyle:"medium",timeZone:"UTC"}).format(new Date(s+"T00:00:00Z"));
+function SymbolMark({type="dial"}:{type?:"dial"|"orbit"|"folio"}){
+  return <svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">{type==="dial"?<><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="11" strokeDasharray="1 4"/><path d="m19 29 9-14-3 12-6 2Z"/></>:type==="orbit"?<><circle cx="24" cy="24" r="13"/><ellipse cx="24" cy="24" rx="23" ry="8" transform="rotate(-28 24 24)"/><circle cx="39" cy="12" r="2" fill="currentColor"/></>:<><path d="m7 17 17-9 17 9-17 10-17-10Zm0 8 17 10 17-10M7 32l17 9 17-9"/></>}</svg>;
+}
+function Counter({value}:{value:number}){
+  const ref=useRef<HTMLSpanElement>(null);
+  useEffect(()=>{
+    const el=ref.current;if(!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.IntersectionObserver)return;
+    let raf=0;
+    const obs=new IntersectionObserver(entries=>{
+      if(!entries.some(e=>e.isIntersecting))return;
+      obs.disconnect();
+      const start=performance.now(),d=680,integer=Number.isInteger(value);
+      const step=(now:number)=>{const t=Math.min(1,(now-start)/d),n=value*(1-Math.pow(1-t,3));el.textContent=fmt(t===1?value:integer?Math.round(n):Number(n.toFixed(2)));if(t<1)raf=requestAnimationFrame(step);};
+      raf=requestAnimationFrame(step);
+    },{threshold:.55});obs.observe(el);return()=>{obs.disconnect();cancelAnimationFrame(raf);};
+  },[value]);
+  return <><span ref={ref} aria-hidden="true">{fmt(value)}</span><span className="uv-sr">{fmt(value)}</span></>;
+}
+export function MetricBand({metrics}:{metrics:Metric[]}){
+  return <section dir="rtl" id="trust-numbers" className="uv-pub uv-band">
+    <style>{css}</style><div className="uv-band-head"><i><SymbolMark/></i><div><small>مؤشرات المنصة</small><h2>أرقام تعكس قوة وثقة استثماراتنا</h2></div></div>
+    {metrics.length?<dl className="uv-metrics">{metrics.map(m=><div key={m.id}><dt>{m.label}</dt><dd><strong><Counter value={m.value}/></strong> {m.unit}</dd><small>{m.source} · <time dateTime={m.asOf}>{stamp(m.asOf)}</time></small></div>)}</dl>:
+    <div className="uv-quiet"><span>نشر المؤشرات</span><p>بتلقى هنا المؤشرات بعد توثيق مصدرها وتاريخها.</p><a href="/#disclosures">شوف مركز الإفصاحات</a></div>}
+  </section>;
+}
+export function OpportunityBrowser({records,featured=false,sector,available=true}:{records:Opportunity[];featured?:boolean;sector?:string;available?:boolean}){
+  const [pick,setPick]=useState("all"),[edges,setEdges]=useState({start:true,end:true});
+  const list=useRef<HTMLDivElement>(null),items=records.filter(o=>pick==="all"||o.sector===pick);
+  const sectors=Array.from(new Set(records.map(o=>o.sector))),head=useId();
+  useEffect(()=>{const el=list.current;if(!featured||!el)return;
+    function check(){if(!el)return;const offset=Math.abs(el.scrollLeft);setEdges({start:offset<2,end:offset>=el.scrollWidth-el.clientWidth-2});}
+    check();const ro=new ResizeObserver(check);ro.observe(el);el.addEventListener("scroll",check,{passive:true});
+    return()=>{ro.disconnect();el.removeEventListener("scroll",check);};
+  },[featured,items.length]);
+  const move=(step:number)=>{const el=list.current,first=el?.firstElementChild;if(!el||!first)return;
+    el.scrollBy({left:-step*(first.getBoundingClientRect().width+15),behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"instant":"smooth"});};
+  return <section dir="rtl" className="uv-pub uv-list" aria-labelledby={head}>
+    <style>{css}</style><div className="uv-list-head"><div><small>دليل الفرص</small><h2 id={head}>{featured?"فرص استثمارية مختارة":sector?"الفرص المنشورة في هالمجال":"الفرص المنشورة"}</h2></div>
+    {featured&&<a href="/opportunities">كل الفرص</a>}</div>
+    {!featured&&sectors.length>1&&<div className="uv-filter" aria-label="تصفية حسب المجال"><button aria-pressed={pick==="all"} onClick={()=>{setPick("all");}}>كل المجالات</button>{sectors.map(s=><button key={s} aria-pressed={pick===s} onClick={()=>{setPick(s);}}>{labels[s]}</button>)}</div>}
+    {items.length?<><div ref={list} className={featured?"uv-strip":"uv-cards"}>{items.map(o=><a href={"/opportunities/"+o.id} className="uv-card" key={o.id}><div className="uv-image" style={{backgroundImage:'url("'+photo(o.sector)+'")'}}/><div><small>{labels[o.sector]}{o.location?" · "+o.location:""}</small><h3>{o.name}</h3><p>{o.intro}</p><b>عرض التفاصيل</b></div></a>)}</div>{featured&&items.length>1&&(!edges.start||!edges.end)&&<div className="uv-filter"><button disabled={edges.start} onClick={()=>move(-1)}>السابق</button><button disabled={edges.end} onClick={()=>move(1)}>التالي</button></div>}</>:
+    <div className="uv-empty"><div className="uv-empty-symbol"><SymbolMark type="orbit"/></div><div><h3>{available?"ما فيه فرص منشورة هنا حاليًا":"دليل الفرص مو متاح الحين"}</h3><p>{available?"تقدر تتعرّف على المجالات وتشوف خصائص كل أصل لين تُنشر تفاصيل الفرص.":"جرّب تفتح الدليل بعد شوي، وتقدر تكمّل في عالم الاستثمارات."}</p></div><a href="/#sectors">استكشف المجالات</a></div>}
+  </section>;
+}
+export function OpportunityProfile({opportunity:o}:{opportunity:Opportunity}){
+  const [choice,setChoice]=useState(0),parts=[["الاستراتيجية",o.strategy],["المخاطر",o.risks],["السيولة",o.liquidity],["المصدر والتاريخ",o.source+" · "+stamp(o.asOf)]];
+  const buttons=useRef<(HTMLButtonElement|null)[]>([]),gallery=useRef<HTMLDialogElement>(null);
+  function key(e:React.KeyboardEvent,i:number){const next=e.key==="Home"?0:e.key==="End"?3:e.key==="ArrowLeft"?(i+1)%4:e.key==="ArrowRight"?(i+3)%4:-1;if(next!==-1){e.preventDefault();setChoice(next);buttons.current[next]?.focus();}}
+  return <main dir="rtl" className="uv-pub uv-profile"><style>{css}</style>
+    <nav aria-label="مسار الصفحة" className="uv-breadcrumb"><a href="/">الرئيسية</a><span>/</span><a href="/opportunities">دليل الفرص</a></nav>
+    <div className="uv-p-grid"><section><small>ملف الفرصة · {labels[o.sector]}</small><h1>{o.name}</h1><p>{o.intro}</p><dl><div><dt>المجال</dt><dd>{labels[o.sector]}</dd></div>{o.location&&<div><dt>الموقع</dt><dd>{o.location}</dd></div>}<div><dt>آخر توثيق</dt><dd>{stamp(o.asOf)}</dd></div></dl><a href="#op-documents">اقرأ التفاصيل</a></section><button type="button" className="uv-profile-art" aria-label="تكبير صورة المجال" onClick={()=>gallery.current?.showModal()} style={{backgroundImage:'linear-gradient(0deg,#04152299,transparent),url("'+photo(o.sector)+'")'}}><span>تكبير صورة المجال</span></button></div>
+    <dialog ref={gallery} className="uv-lightbox" aria-label="معرض صور المجال" onClick={e=>{if(e.target===e.currentTarget)gallery.current?.close();}}><div><img src={photo(o.sector)} alt={"صورة توضيحية لمجال "+labels[o.sector]} /><p>صورة توضيحية للمجال</p><button type="button" onClick={()=>gallery.current?.close()}>إغلاق المعرض</button></div></dialog>
+    <section id="op-documents" className="uv-doc"><small>معلومات الفرصة</small><h2>كل التفاصيل في مكان واحد</h2><div role="tablist" aria-label="تفاصيل الفرصة" className="uv-filter">{parts.map(([tag],i)=><button key={tag} id={"op-tab-"+i} role="tab" aria-controls={"op-panel-"+i} aria-selected={choice===i} tabIndex={choice===i?0:-1} ref={el=>{buttons.current[i]=el;}} onKeyDown={e=>key(e,i)} onClick={()=>setChoice(i)}>{tag}</button>)}</div>{parts.map(([tag,value],i)=><div key={tag} role="tabpanel" tabIndex={0} aria-labelledby={"op-tab-"+i} id={"op-panel-"+i} hidden={choice!==i}><h3>{tag}</h3><p>{value}</p></div>)}</section>
+    <footer><a href="/opportunities">الرجوع لدليل الفرص</a><a href="/#disclosures">مركز الإفصاحات</a></footer>
+  </main>;
+}
+const css=`
+.uv-pub{--uv-ink:#061522;--uv-panel:#102534;--uv-line:#bc9e623e;--uv-gold:#f3d795;--uv-text:#f8f5ee;color:var(--uv-text);font-family:var(--afaq-arabic),Tahoma,Arial,sans-serif;line-height:1.75;text-align:start;box-sizing:border-box}.uv-pub *{box-sizing:border-box}.uv-pub a{color:var(--uv-gold);font-weight:700}.uv-pub small,.uv-pub dt{display:block;color:#d2bb83;font-size:.86rem}.uv-pub :is(h1,h2,h3,p,dl,dd){margin:0}.uv-pub h2{font-size:clamp(1.35rem,2.6vw,2.15rem);line-height:1.45;color:var(--uv-text)}.uv-pub p{color:#c1d0d9;line-height:1.85}.uv-pub b,.uv-pub strong{color:var(--uv-gold)}.uv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.uv-band,.uv-list{margin:clamp(20px,4vw,58px) auto;width:min(1240px,calc(100% - 40px))}.uv-band{display:flex;align-items:center;gap:clamp(20px,4vw,52px);padding:clamp(22px,3vw,42px);border:1px solid var(--uv-line);border-radius:22px;background:linear-gradient(117deg,#0a192b,#112b3a 62%,#102230);box-shadow:0 15px 42px #0003}.uv-band-head,.uv-list-head{display:flex;align-items:center;gap:18px}.uv-band-head h2{max-width:18ch}.uv-band-head i,.uv-empty-symbol{display:grid;place-items:center;flex:none;width:60px;height:60px;border:1px solid var(--uv-line);border-radius:50%;color:var(--uv-gold)}.uv-metrics{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:18px}.uv-metrics>div,.uv-quiet{border-inline-start:1px solid var(--uv-line);padding-inline-start:clamp(18px,2.5vw,36px)}.uv-metrics dd strong{font-size:clamp(1.55rem,2.6vw,2.5rem);font-variant-numeric:tabular-nums}.uv-metrics small{color:#abbdc7}.uv-quiet span,.uv-list-head small,.uv-profile small{color:var(--uv-gold)}.uv-list-head{justify-content:space-between;margin-bottom:16px}.uv-empty,.uv-card,.uv-doc{border:1px solid var(--uv-line);background:linear-gradient(130deg,#122b39,#0a1a29);border-radius:18px}.uv-empty{padding:clamp(19px,3vw,32px);display:flex;align-items:center;gap:22px}.uv-empty a{margin-inline-start:auto;white-space:nowrap}.uv-empty h3,.uv-card h3{font-size:1.22rem;color:var(--uv-text)}.uv-strip,.uv-cards{display:grid;gap:15px}.uv-strip{grid-auto-flow:column;grid-auto-columns:min(82%,355px);overflow:auto;scroll-snap-type:inline mandatory;padding:6px 1px 14px}.uv-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr))}.uv-card{overflow:hidden;color:var(--uv-text)!important;text-decoration:none;scroll-snap-align:start;transition:transform .22s,border-color .22s}.uv-card:hover{transform:translateY(-4px);border-color:#d7bc7d}.uv-card>div:last-child{padding:18px}.uv-card p{font-weight:400}.uv-image,.uv-profile-art{background-size:cover;background-position:center;background-color:#102c3a}.uv-image{aspect-ratio:2.25}.uv-filter{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.uv-filter button{color:#dae3e8;background:#122a39;border:1px solid #8497a650;border-radius:30px;min-height:44px;padding:6px 18px;font:inherit;cursor:pointer}.uv-filter button:is([aria-pressed=true],[aria-selected=true]){background:#e8ca8d;color:#0b2030}.uv-filter button:disabled{opacity:.45;cursor:default}
+.uv-profile{background:radial-gradient(ellipse at 9% 8%,#143544,transparent 44%),var(--uv-ink);min-height:100vh;padding:0 max(22px,calc((100vw - 1180px) / 2)) 55px}.uv-profile>header,.uv-profile footer,.uv-profile nav{display:flex;align-items:center;gap:20px}.uv-breadcrumb{min-height:56px}.uv-profile>header{justify-content:space-between;min-height:74px;border-bottom:1px solid var(--uv-line)}.uv-profile header>a{font-size:1.08rem}.uv-profile footer{padding-top:24px}.uv-p-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:28px;padding:clamp(32px,6vw,80px) 0}.uv-p-grid section{padding:clamp(12px,3vw,36px) 0}.uv-profile h1{font-size:clamp(2.15rem,5vw,4.6rem);line-height:1.22;margin:.38em 0}.uv-profile dl{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:20px 0}.uv-profile dl div{padding:10px 16px;background:#132b39;border-radius:10px;border:1px solid var(--uv-line)}.uv-profile-art{border-radius:24px;min-height:270px;position:relative;overflow:hidden;border:1px solid var(--uv-line)}.uv-profile-art{cursor:zoom-in}.uv-lightbox{max-width:min(850px,94vw);max-height:90dvh;overflow:auto;margin:auto;padding:12px;border:1px solid #ad976b;border-radius:18px;background:#0c2030;color:#f8edda}.uv-lightbox::backdrop{background:#020b13d9}.uv-lightbox img{width:100%;max-height:68dvh;object-fit:contain}.uv-lightbox button{cursor:pointer;font:inherit;padding:7px 18px;min-height:44px;background:#e9cf99;color:#0b2131;border-radius:9px}.uv-profile-art span{position:absolute;bottom:16px;left:16px;background:#0a1c2ae6;border:1px solid var(--uv-line);border-radius:22px;color:var(--uv-gold);padding:5px 18px}.uv-doc{padding:clamp(18px,3vw,34px)}.uv-doc [role=tabpanel]{border-top:1px solid var(--uv-line);padding-top:18px}.uv-doc p{white-space:pre-line}.uv-pub :focus-visible{outline:2px solid var(--uv-gold);outline-offset:3px}
+@media(max-width:750px){.uv-band{align-items:stretch;flex-direction:column}.uv-band-head h2{max-width:none}.uv-metrics>div,.uv-quiet{border-inline-start:0;border-top:1px solid var(--uv-line);padding:12px 0 0}.uv-p-grid{grid-template-columns:1fr}.uv-profile-art{min-height:200px}.uv-empty{flex-wrap:wrap}.uv-empty-symbol{display:none}.uv-empty a{margin:0}.uv-profile>header{flex-wrap:wrap;gap:6px 15px}.uv-band,.uv-list{width:calc(100% - 28px)}.uv-list .uv-list-head{align-items:start}.uv-filter button{font-size:.92rem}}
+@media(prefers-reduced-motion:reduce){.uv-pub *{transition:none!important;scroll-behavior:auto!important}.uv-card:hover{transform:none}}
+`;

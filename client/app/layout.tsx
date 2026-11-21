@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import "./universe.css";
 
 const name = "صناديق الخليج الذكية";
 const description = "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.";

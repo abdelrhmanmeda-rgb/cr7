@@ -18,7 +18,7 @@ export function LuxuryPhoto({ asset, leading = false }: { asset: string; leading
   return (
     <picture className="sgf-photo" aria-hidden="true">
       {mobileHero && <source media="(max-width: 700px)" srcSet="/hero-mobile.webp" />}
-      <Image src={`/${asset}.webp`} alt="" fill unoptimized
+      <Image src={asset === "energy" ? "/energy.svg" : `/${asset}.webp`} alt="" fill unoptimized
         loading={leading ? "eager" : "lazy"} fetchPriority={leading ? "high" : undefined} />
     </picture>
   );

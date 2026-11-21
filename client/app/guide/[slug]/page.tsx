@@ -1,3 +1,7 @@
+import {UHeader,UFooter} from "../../universe-shell";
+import UniverseScene from "../../universe-scene";
+import Visual from "../../universe-visual";
+import {OpportunityList} from "../../universe-public";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { articles, guideUrl, icons, topics } from "../../guide-content";
@@ -60,36 +64,17 @@ export default async function GuidePage({ params }: Props) {
   });
   const sectionId = (index: number) => `guide-part-${index + 1}`;
 
+  const kind=slug==="property"?"city":slug==="market"?"market":slug==="energy"?"energy":slug==="gold"?"gold":null;
   return (
-    <div className="sgf-guide sgf-editorial-lux">
-      <header className="sgf-guide-wrap sgf-guide-top">
-        <a className="sgf-guide-brand" href="/">{siteName}</a>
-        <nav aria-label="أقسام الموقع">
-          <a href="/#sectors">مجالات الاستثمار</a>
-          <a href="/#knowledge">مركز المعرفة</a>
-        </nav>
-      </header>
-
-      <main className="sgf-guide-wrap">
-        <nav className="sgf-guide-crumb" aria-label="مكانك في الموقع">
-          <a href="/">الرئيسية</a><span aria-hidden="true">/</span>
-          <a href={sectionLink}>{entry.sectionTitle}</a>
-        </nav>
+    <div className="uv sgf-universe sgf-editorial-lux">
+      <UHeader/>
+      <main className="u-container">
+        <nav className="u-crumb"><a href="/">الرئيسية</a><span>/</span><a href={entry.section==="knowledge"?"/knowledge":"/world"}>{entry.sectionTitle}</a></nav>
         <article aria-labelledby="guide-title">
-          <div className="sgf-guide-hero" data-art={entry.art}>
-            <LuxuryPhoto asset={entry.art} leading />
-            <div>
-              <p className="sgf-guide-label">{entry.sectionTitle} · {entry.label}</p>
-              <h1 id="guide-title">{entry.title}</h1>
-              <p className="sgf-guide-intro">{entry.intro}</p>
-            </div>
-            <div className="sgf-guide-art" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round">
-                <path d={entry.icon} />
-              </svg>
-            </div>
+          <div className="u-inner-hero">
+            <div><span className="u-kicker">{entry.sectionTitle} · {entry.label}</span><h1 id="guide-title">{entry.title}</h1><p>{entry.intro}</p><a className="u-btn gold" href="#guide-part-1">اقرأ التفاصيل</a></div>
+            {kind?<UniverseScene kind={kind} label={entry.title}/>:<Visual art={entry.art} title={entry.title}/>}
           </div>
-
           {entry.facts.length > 0 && (
             <dl className="sgf-guide-facts" aria-label="ملامح المجال">
               {entry.facts.map(({ label, value }) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
@@ -122,6 +107,7 @@ export default async function GuidePage({ params }: Props) {
           </div>
         </article>
 
+        {entry.section==="sectors"&&<section className="u-block"><OpportunityList sector={slug}/></section>}
         <section className="sgf-guide-related" aria-labelledby="guide-related">
           <h2 id="guide-related">كمّل القراءة</h2>
           <div>
@@ -138,7 +124,7 @@ export default async function GuidePage({ params }: Props) {
           </div>
         </section>
         <footer className="sgf-guide-footer"><a href={sectionLink}>ارجع لـ{entry.sectionTitle}</a></footer>
-      </main>
+      </main><UFooter/>
     </div>
   );
 }

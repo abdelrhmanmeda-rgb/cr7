@@ -1,35 +1,12 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import type { Metric, Opportunity, Sector } from "../universe-data";
+import type { Opportunity, Sector } from "../universe-data";
 
 const labels:Record<Sector,string>={property:"العقارات",gold:"الذهب والمعادن",market:"الأسواق المالية",energy:"الطاقة والمشروعات",funds:"الصناديق",income:"أدوات الدخل",stocks:"الأسهم",portfolio:"المحافظ",compare:"فرص متنوعة"};
 const photo=(s:Sector)=>s==="energy"?"/energy.svg":"/"+s+".webp";
-const fmt=(v:number)=>new Intl.NumberFormat("ar",{maximumFractionDigits:4}).format(v);
 const stamp=(s:string)=>new Intl.DateTimeFormat("ar",{calendar:"gregory",dateStyle:"medium",timeZone:"UTC"}).format(new Date(s+"T00:00:00Z"));
 function SymbolMark({type="dial"}:{type?:"dial"|"orbit"|"folio"}){
   return <svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">{type==="dial"?<><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="11" strokeDasharray="1 4"/><path d="m19 29 9-14-3 12-6 2Z"/></>:type==="orbit"?<><circle cx="24" cy="24" r="13"/><ellipse cx="24" cy="24" rx="23" ry="8" transform="rotate(-28 24 24)"/><circle cx="39" cy="12" r="2" fill="currentColor"/></>:<><path d="m7 17 17-9 17 9-17 10-17-10Zm0 8 17 10 17-10M7 32l17 9 17-9"/></>}</svg>;
-}
-function Counter({value}:{value:number}){
-  const ref=useRef<HTMLSpanElement>(null);
-  useEffect(()=>{
-    const el=ref.current;if(!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.IntersectionObserver)return;
-    let raf=0;
-    const obs=new IntersectionObserver(entries=>{
-      if(!entries.some(e=>e.isIntersecting))return;
-      obs.disconnect();
-      const start=performance.now(),d=680,integer=Number.isInteger(value);
-      const step=(now:number)=>{const t=Math.min(1,(now-start)/d),n=value*(1-Math.pow(1-t,3));el.textContent=fmt(t===1?value:integer?Math.round(n):Number(n.toFixed(2)));if(t<1)raf=requestAnimationFrame(step);};
-      raf=requestAnimationFrame(step);
-    },{threshold:.55});obs.observe(el);return()=>{obs.disconnect();cancelAnimationFrame(raf);};
-  },[value]);
-  return <><span ref={ref} aria-hidden="true">{fmt(value)}</span><span className="uv-sr">{fmt(value)}</span></>;
-}
-export function MetricBand({metrics}:{metrics:Metric[]}){
-  return <section dir="rtl" id="trust-numbers" className="uv-pub uv-band">
-    <style>{css}</style><div className="uv-band-head"><i><SymbolMark/></i><div><small>مؤشرات المنصة</small><h2>أرقام تعكس قوة وثقة استثماراتنا</h2></div></div>
-    {metrics.length?<dl className="uv-metrics">{metrics.map(m=><div key={m.id}><dt>{m.label}</dt><dd><strong><Counter value={m.value}/></strong> {m.unit}</dd><small>{m.source} · <time dateTime={m.asOf}>{stamp(m.asOf)}</time></small></div>)}</dl>:
-    <div className="uv-quiet"><span>نشر المؤشرات</span><p>بتلقى هنا المؤشرات بعد توثيق مصدرها وتاريخها.</p><a href="/#disclosures">شوف مركز الإفصاحات</a></div>}
-  </section>;
 }
 export function OpportunityBrowser({records,featured=false,sector,available=true}:{records:Opportunity[];featured?:boolean;sector?:string;available?:boolean}){
   const [pick,setPick]=useState("all"),[edges,setEdges]=useState({start:true,end:true});

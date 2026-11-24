@@ -1,9 +1,13 @@
+import { isDesignPreview } from "./design-config";
 import { getPublication } from "./universe-data";
-import { MetricBand, OpportunityBrowser } from "./opportunities/widgets";
+import { OpportunityBrowser } from "./opportunities/widgets";
 
-export async function TrustNumbers(){
+import { HomeMetrics, PreviewHomeMetric } from "./home-metrics";
+
+export async function TrustNumbers({cinematic = false}: {cinematic?: boolean}){
+  if (isDesignPreview) return <PreviewHomeMetric cinematic={cinematic}/>;
   const {metrics}=await getPublication();
-  return <MetricBand metrics={metrics}/>;
+  return <HomeMetrics metrics={metrics} cinematic={cinematic}/>;
 }
 export async function OpportunityList({featured=false,sector}:{featured?:boolean;sector?:string}={}){
   const {opportunities,available}=await getPublication();

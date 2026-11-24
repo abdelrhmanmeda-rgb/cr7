@@ -2,11 +2,12 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import { isDesignPreview } from "./design-config";
 import "./universe.css";
 
 const name = "صناديق الخليج الذكية";
 const description = "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.";
-const isPreview = process.env.VERCEL_ENV === "preview";
+const isPreview = process.env.VERCEL_ENV === "preview" || isDesignPreview;
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -15,16 +16,10 @@ const cairo = Cairo({
   fallback: ["Tahoma", "Arial", "sans-serif"],
 });
 
-const logo = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect x=".5" y=".5" width="47" height="47" rx="12" fill="#111820" stroke="#dfbe82"/><g fill="none" stroke="#dfbe82" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M9 32 24 10l15 22H9Z"/><path d="m15 32 9-14 9 14M24 18v14M12 38h24"/></g></svg>';
-const tabIcon = "data:image/svg+xml," + encodeURIComponent(logo);
-
 export const metadata: Metadata = {
   title: { default: name, template: "%s · " + name },
   description,
   applicationName: name,
-  icons: {
-    icon: { url: tabIcon, type: "image/svg+xml", sizes: "any" },
-  },
   openGraph: {
     title: name,
     description,
@@ -71,6 +66,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             outline-offset: 4px;
           }
         `}</style>
+        {isDesignPreview && <div className="u-preview-banner">معاينة خاصة للتصميم · الموقع الحالي كما هو · الاشتراك هنا للتجربة</div>}
         {children}
       </body>
     </html>

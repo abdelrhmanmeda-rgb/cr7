@@ -5,6 +5,7 @@ import "./globals.css";
 import { isDesignPreview } from "./design-config";
 import "./universe.css";
 import "./fund-catalog.css";
+import "./light-palette.css";
 import { InvestorSession } from "./investor-actions";
 
 const name = "صناديق الخليج الذكية";
@@ -41,8 +42,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  colorScheme: "dark",
-  themeColor: "#090e14",
+  colorScheme: "light",
+  themeColor: "#f2f3f3",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -53,9 +54,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           .afaq-root, .afaq-root body {
             margin: 0;
             min-height: 100%;
-            background: #090e14;
-            color: #f8f4ec;
-            color-scheme: dark;
+            background: #f2f3f3;
+            color: #18252d;
+            color-scheme: light;
             font-family: var(--afaq-arabic), Tahoma, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
           }

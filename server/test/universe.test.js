@@ -34,7 +34,7 @@ test('content saves without the ledger and only a signed reviewed snapshot goes 
  const db=store(),signingKey='publication-test-key-for-local-fixtures-only';
  const old=process.env.SGF_UNIVERSE_ADMIN_UIDS;
  const auth={verifyIdToken:async token=>({uid:token==='admin'?'owner':'visitor'})};
- const app=express();app.use(express.json());app.use(makeRouter(()=>{throw new Error('ledger is disabled');},()=>auth,()=>({db,signingKey})));
+ const app=express();app.use(express.json());app.use(makeRouter(()=>{throw new Error('ledger is disabled');},()=>auth,()=>({db,signingKey}),null));
  const server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const req=(path,token,body)=>fetch('http://127.0.0.1:'+server.address().port+path,{method:body?'PUT':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
  const draft={version:1,revision:0,metrics:[],opportunities:[],content:{
@@ -64,4 +64,35 @@ test('content saves without the ledger and only a signed reviewed snapshot goes 
   assert.equal((await req('/public')).status,503);
   assert.equal((await req('/admin/publication','admin',{...draft,revision:100})).status,503);
  }finally{await new Promise(resolve=>server.close(resolve));if(old===undefined)delete process.env.SGF_UNIVERSE_ADMIN_UIDS;else process.env.SGF_UNIVERSE_ADMIN_UIDS=old;}
+});
+
+test('configured fallback grants publication only to the exact authenticated account',async()=>{
+ const {createServer}=require('node:http'),express=require('express'),{createHash}=require('node:crypto');
+ const {makeRouter}=require('../src/universe/routes');
+ const key='SGF_UNIVERSE_ADMIN_UIDS',prior=process.env[key];delete process.env[key];
+ const db=store();
+ const auth={verifyIdToken:async(token,check)=>{assert.equal(check,true);if(token==='invalid')throw Error();return {uid:token};}};
+ const expected=createHash('sha256').update('fixtureOwner').digest('hex');
+ const app=express();app.use(express.json());
+ app.use(makeRouter(()=>{throw Error('ledger should not be reached');},()=>auth,()=>({db}),expected));
+ const server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const request=(path,token,method='GET')=>fetch('http://127.0.0.1:'+server.address().port+path,{
+  method,headers:{...(token?{authorization:'Bearer '+token}:{}),'content-type':'application/json'},
+  ...(method==='PUT'?{body:JSON.stringify({version:1,revision:0,metrics:[],opportunities:[]})}:{})
+ });
+ try{
+  assert.equal((await request('/admin/publication')).status,401);
+  assert.equal((await request('/admin/publication','invalid')).status,401);
+  assert.equal((await request('/admin/publication','fixtureOwneR','PUT')).status,403);
+  assert.equal((await request('/admin/account','fixtureOwner')).status,503);
+  assert.equal((await request('/admin/entries','fixtureOwner','POST')).status,503);
+  assert.equal((await request('/admin/publication','fixtureOwner')).status,200);
+  assert.equal((await request('/admin/publication','fixtureOwner','PUT')).status,200);
+  process.env[key]='configuredAdmin';
+  assert.equal((await request('/admin/publication','fixtureOwner')).status,403);
+  assert.equal((await request('/admin/publication','configuredAdmin')).status,200);
+ }finally{
+  await new Promise(resolve=>server.close(resolve));
+  if(prior===undefined)delete process.env[key];else process.env[key]=prior;
+ }
 });

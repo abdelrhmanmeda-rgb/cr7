@@ -1,5 +1,6 @@
 'use strict';
 const express=require('express');
+const {createHash}=require('node:crypto');
 const {initializeApp,cert,getApps}=require('firebase-admin/app');
 const {getAuth}=require('firebase-admin/auth');
 const {getFirestore}=require('firebase-admin/firestore');
@@ -26,7 +27,10 @@ function publicationStore(configure){
  if(!signingKey||signingKey.length<32)fail(503,'مفتاح توقيع محتوى الموقع ناقص.');
  return {db:require('../config/firebase').db,signingKey};
 }
-function makeRouter(configure=config, legacy=()=>require('../config/firebase').auth, publicDb=()=>publicationStore(configure)){
+// A server-side account fingerprint, limited to publication. Explicit env configuration overrides it.
+const defaultPublisherFingerprint='e4faa4497c770da159fb73be321e320f63276f15c1c119bbebbe3ad15436d918';
+const fingerprint=uid=>createHash('sha256').update(uid,'utf8').digest('hex');
+function makeRouter(configure=config, legacy=()=>require('../config/firebase').auth, publicDb=()=>publicationStore(configure), publisherFingerprint=defaultPublisherFingerprint){
 
 const router=express.Router();
 async function identity(req,admin){
@@ -34,7 +38,12 @@ async function identity(req,admin){
  if(typeof raw!=='string'||!/^Bearer [^\s]+$/.test(raw)||raw.length>12000)fail(401,'سجّل دخولك.');
  const auth=admin?legacy():configure().ownerAuth;
  let token;try{token=await auth.verifyIdToken(raw.slice(7),true)}catch{fail(401,'انتهت جلسة الدخول.');}
- if(admin){const allowed=(process.env.SGF_UNIVERSE_ADMIN_UIDS||'').split(',').map(x=>x.trim()).filter(Boolean);if(!allowed.length)fail(503,'قائمة حسابات الإدارة المصرّح لها بالنشر لسه مش متضبطة.');if(!allowed.includes(token.uid))fail(403,'ما عندك صلاحية الإدارة.');}
+ if(admin){
+  const allowed=(process.env.SGF_UNIVERSE_ADMIN_UIDS||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const fallback=admin==='publication'&&!allowed.length?publisherFingerprint:null;
+  if(!allowed.length&&!fallback)fail(503,admin==='publication'?'قائمة حسابات الإدارة المصرّح لها بالنشر لسه مش متضبطة.':'قائمة حسابات إدارة السجل لسه مش متضبطة.');
+  if(typeof token.uid!=='string'||!(allowed.includes(token.uid)||(fallback&&fingerprint(token.uid)===fallback)))fail(403,'ما عندك صلاحية الإدارة.');
+ }
  else if(token.email_verified!==true)fail(403,'أكّد بريدك الإلكتروني.');
  return token.uid;
 }
@@ -56,12 +65,12 @@ router.get('/public',handler(async(req,res)=>{
  res.set('Cache-Control','public, max-age=0, s-maxage=30').json({success:true,data});
 }));
 router.get('/admin/publication',handler(async(req,res)=>{
- await identity(req,true);
+ await identity(req,'publication');
  const {db,signingKey}=publicDb();
  res.json({success:true,data:published(await pub(db,signingKey).get(),signingKey)});
 }));
 router.put('/admin/publication',handler(async(req,res)=>{
- const actor=await identity(req,true),next=publication(req.body),{db,signingKey}=publicDb(),ref=pub(db,signingKey);
+ const actor=await identity(req,'publication'),next=publication(req.body),{db,signingKey}=publicDb(),ref=pub(db,signingKey);
  const data=await db.runTransaction(async tx=>{
   const old=published(await tx.get(ref),signingKey);
   if(old.revision!==next.revision)fail(409,'فيه نسخة أحدث.');

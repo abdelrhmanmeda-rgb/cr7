@@ -4,8 +4,8 @@ export const fields = [
   {id:"market", name:"صندوق الأسواق المالية والتداول", category:"أسواق مالية", icon:"growth", aliases:"سوق أسواق تداول متاجرة الأسهم سهم بورصة فوركس", intro:"يركّز الصندوق على الأصول المتداولة في الأسواق المالية، ويبحث عن فرص النمو مع مراعاة السيولة وحدود المخاطر."},
   {id:"energy", name:"صندوق الطاقة والمشروعات", category:"بنية تحتية", icon:"energy", aliases:"طاقة مشاريع مشروع مشروعات شمس رياح متجددة موارد", intro:"يركّز الصندوق على مشاريع الطاقة والبنية التحتية، ويستهدف فرص الدخل على مدى أطول من تشغيل المشاريع وبيع إنتاجها."},
 ] as const;
-export type Field = (typeof fields)[number];
-export type FieldId = Field["id"];
+export type FieldId = (typeof fields)[number]["id"];
+export type Field = {id:FieldId;name:string;intro:string;aliases:string;category:string;icon:(typeof fields)[number]["icon"];photo?:string};
 export type FieldValues = {rate?:number; minimum?:number; source:string; asOf:string};
 export type FieldSettings = Partial<Record<FieldId,FieldValues>>;
 export const fieldOf = (id:string) => fields.find(item=>item.id===id);
@@ -20,20 +20,20 @@ export function fieldQuery(text:string) {
   return normalized.replace(/(?:^|\s)ال(?=\S)/g," ").trim().replace(/\s+/g," ");
 }
 
-export function findFields(query:string, settings:FieldSettings, mode:"all"|"atLeast") {
+export function findFields(query:string, settings:FieldSettings, mode:"all"|"atLeast", items:readonly Field[]=fields, byRate=true) {
   const q=query.trim();
-  if(!q) return [...fields];
+  if(!q) return [...items];
   const piece=q.match(/[٠-٩۰-۹0-9]+(?:[.٫][٠-٩۰-۹0-9]{1,2})?/);
-  if(piece){
+  if(piece&&byRate){
     const rate=numberInput(piece[0]);
     const above=mode==="atLeast" || /(?:على الأقل|فوق|أعلى من|>=|≥)/.test(q);
     const tail=fieldQuery(q.replace(piece[0]," ").replace(/[%٪≥>=]/g," ").replace(/في المية|في المئة|بالمئة|أعلى من|على الأقل|فوق|(?:ال)?عائد|(?:ال)?مستهدف|(?:ال)?أسبوعي(?:ًا|ا)?/g," "));
-    return fields.filter(f=>{
+    return items.filter(f=>{
       const value=settings[f.id]?.rate;
       if(value===undefined)return false;
       return (above?value>=rate:Math.abs(value-rate)<0.00001) && (!tail||tail.split(" ").every(token=>fieldQuery(f.name+" "+f.aliases).includes(token)));
     });
   }
   const term=fieldQuery(q);
-  return fields.filter(f=>term.split(" ").every(token=>fieldQuery(f.name+" "+f.aliases).includes(token)));
+  return items.filter(f=>term.split(" ").every(token=>fieldQuery(f.name+" "+f.aliases).includes(token)));
 }

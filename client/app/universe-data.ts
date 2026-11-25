@@ -1,11 +1,12 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
+import { readContent,type PublishedContent } from "./published-content";
 
 export const sectorNames = { property:"العقارات", gold:"الذهب والمعادن", market:"الأسواق المالية", energy:"الطاقة والمشروعات", funds:"الصناديق", income:"أدوات الدخل", stocks:"الأسهم", portfolio:"المحافظ", compare:"فرص متنوعة" } as const;
 export type Sector = keyof typeof sectorNames;
 export type Metric = { id:string; label:string; value:number; unit:string; source:string; asOf:string };
 export type Opportunity = { id:string; name:string; sector:Sector; location:string; intro:string; strategy:string; risks:string; liquidity:string; source:string; asOf:string; featured:boolean };
-type Catalog = {metrics:Metric[]; opportunities:Opportunity[]; available:boolean};
+type Catalog = {metrics:Metric[]; opportunities:Opportunity[]; content:PublishedContent; available:boolean};
 const obj = (x:unknown):Record<string,unknown> => x && typeof x==="object" && !Array.isArray(x) ? x as Record<string,unknown> : {};
 const str = (x:unknown,n:number) => typeof x==="string" && x.trim().length<=n ? x.trim() : "";
 const rows = (x:unknown) => Array.isArray(x) ? x.slice(0,60).map(obj) : [];
@@ -14,7 +15,7 @@ const dateOf = (x:unknown) => { if(typeof x!=="string" || !/^\d{4}-\d{2}-\d{2}$/
 /** Only explicit public fields may leave the server. Ignore internal fields even if returned by a future adapter. */
 export function readPublication(input:unknown):Catalog {
   const data=obj(input), metrics:Metric[]=[], opportunities:Opportunity[]=[];
-  if(data.version!==1) return {metrics,opportunities,available:true};
+  if(data.version!==1) return {metrics,opportunities,content:readContent(data.version===1?data.content:null),available:true};
   for (const v of rows(data.metrics)) {
     const id=idOf(v.id),label=str(v.label,80),unit=str(v.unit,28),source=str(v.source,140),asOf=dateOf(v.asOf);
     if(v.published!==true || v.verified!==true || !id || !label || !source || !asOf || typeof v.value!=="number" || !Number.isFinite(v.value) || Math.abs(v.value)>Number.MAX_SAFE_INTEGER || metrics.some(x=>x.id===id))continue;
@@ -25,17 +26,18 @@ export function readPublication(input:unknown):Catalog {
     if(v.published!==true || v.verified!==true || !id || !name || !Object.hasOwn(sectorNames,sec) || !intro || !strategy || !risks || !liquidity || !source || !asOf || opportunities.some(o=>o.id===id))continue;
     opportunities.push({id,name,sector:sec as Sector,location,intro,strategy,risks,liquidity,source,asOf,featured:v.featured===true});
   }
-  return {metrics,opportunities,available:true};
+  return {metrics,opportunities,content:readContent(data.version===1?data.content:null),available:true};
 }
+const publicationOrigin=process.env.SGF_UNIVERSE_API?.replace(/\/+$/,"") || "https://cr7-kappa.vercel.app";
 const loadProjection = unstable_cache(async ():Promise<Catalog> => {
   try {
-    const r=await fetch((process.env.SGF_UNIVERSE_API?.replace(/\/+$/,"") || "https://cr7-kappa.vercel.app")+"/api/universe/public",{cache:"no-store",signal:AbortSignal.timeout(2400),redirect:"error"});
+    const r=await fetch(publicationOrigin+"/api/universe/public",{cache:"no-store",signal:AbortSignal.timeout(2400),redirect:"error"});
     if(!r.ok)throw Error("public information unavailable");
     const body=await r.json();
     if(body?.success!==true)throw Error("public information unavailable");
     return readPublication(body.data);
-  } catch { return {available:false,metrics:[],opportunities:[]}; }
-},["smart-gulf-public-universe-v1"],{revalidate:60});
+  } catch { return {available:false,metrics:[],opportunities:[],content:readContent(null)}; }
+},["smart-gulf-public-universe-presentation-v1",publicationOrigin],{revalidate:60});
 export const getPublication=cache(loadProjection);
 
 // The explorer only needs an index; long descriptions and disclosures stay on the detail page.

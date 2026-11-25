@@ -2,7 +2,7 @@ import { getPublication } from "./universe-data";
 import { OpportunityBrowser } from "./opportunities/widgets";
 import { HomeMetrics } from "./home-metrics";
 import { SectorCatalog,SectorTerms } from "./sector-catalog";
-import { readFundSettings } from "./fund-publication";
+import { publishedFundSettings } from "./published-content";
 import { fieldOf,type FieldId } from "./four-sectors";
 
 export async function TrustNumbers(_props?:{cinematic?:boolean}){
@@ -11,13 +11,13 @@ export async function TrustNumbers(_props?:{cinematic?:boolean}){
 }
 
 export async function FundCatalog({search,heading,compact}:{search?:boolean;heading?:string;compact?:boolean}){
-  const {opportunities}=await getPublication();
-  return <SectorCatalog search={search} heading={heading} compact={compact} settings={readFundSettings(opportunities)}/>;
+  const {opportunities,content}=await getPublication();
+  return <SectorCatalog search={search} heading={heading} compact={compact} settings={publishedFundSettings(content,opportunities)} content={content}/>;
 }
 
 export async function FundTerms({id}:{id:FieldId}){
-  const {opportunities}=await getPublication();
-  return <SectorTerms id={id} settings={readFundSettings(opportunities)}/>;
+  const {opportunities,content}=await getPublication();
+  return <SectorTerms id={id} settings={publishedFundSettings(content,opportunities)}/>;
 }
 
 export async function OpportunityList({featured=false,sector}:{featured?:boolean;sector?:string}={}){

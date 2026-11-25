@@ -1,128 +1,93 @@
-import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
-const endpoint=(import.meta.env.VITE_SGF_UNIVERSE_API?.replace(/\/+$/,"") || "https://cr7-kappa.vercel.app")+"/api/universe/admin/publication";
-type Base={id:string;source:string;asOf:string;published:boolean;verified:boolean};
-type Indicator=Base&{label:string;value:string;unit:string};
-type Offer=Base&{name:string;sector:string;location:string;intro:string;strategy:string;liquidity:string;risks:string;featured:boolean;weeklyTarget:string;minimumUsd:string};
-type State={metrics:Indicator[];opportunities:Offer[]};
-const names:Record<string,string>={property:"العقارات",gold:"الذهب والمعادن",market:"الأسواق المالية",energy:"الطاقة والمشروعات",funds:"الصناديق",stocks:"الأسهم",income:"أدوات الدخل",portfolio:"المحافظ",compare:"فرص متنوعة"};
-const fundSectors=new Set(["property","gold","market","energy"]);
-const rateLine=/^العائد الأسبوعي المستهدف: ([0-9]{1,3}(?:\.[0-9]{1,2})?)%$/u;
-const minLine=/^الحد الأدنى للاشتراك: ([0-9]{1,10}(?:\.[0-9]{1,2})?) دولار أمريكي$/u;
-function splitPublished(value:string,pattern:RegExp):[string,string]{
-  const lines=value.split(/\r?\n/u), matches=lines.flatMap(line=>pattern.exec(line.trim())?.[1]??[]);
-  return matches.length===1?[lines.filter(line=>!pattern.test(line.trim())).join("\n").trim(),matches[0]]:[value,""];
+import {useEffect,useRef,useState,type FormEvent} from 'react';
+import {PublicationContent,parseContent,serializeContent,type ContentTab} from './PublicationContent';
+const endpoint=(import.meta.env.VITE_SGF_UNIVERSE_API?.replace(/\/+$/,'')||'https://cr7-kappa.vercel.app')+'/api/universe/admin/publication';
+type Indicator={id:string;label:string;value:string;unit:string;asOf:string;source:string;published:boolean;verified:boolean};
+type Feed={version:1;revision:number;metrics:Array<Omit<Indicator,'value'>&{value:number}>;opportunities:unknown[];content?:unknown};
+type Tab=ContentTab|'metrics';
+const tabs:ReadonlyArray<[Tab,string]>=[['funds','الصناديق'],['explorer','المستكشف'],['metrics','مؤشرات المنصة'],['contact','التواصل وتيليجرام'],['home','الصفحة الرئيسية']];
+const date=()=>new Date().toISOString().slice(0,10);
+const list=(f:Feed)=>f.metrics.map(m=>({...m,value:String(m.value)}));
+const numberInput=(input:string)=>input.trim().replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)&15)).replace(/٫/g,'.');
+async function api(token:string, init:RequestInit={}):Promise<Feed>{
+  const r=await fetch(endpoint,{...init,cache:'no-store',headers:{Authorization:'Bearer '+token,...(init.body?{'Content-Type':'application/json'}:{})}});
+  const res=await r.json().catch(()=>null);
+  if(r.status===401)throw Error('جلسة الدخول انتهت. سجّل خروج وادخل من جديد.');
+  if(r.status===403)throw Error('الحساب ده مسجّل دخول، لكن مش ضمن الحسابات المصرّح لها بالنشر.');
+  if(r.status===409)throw Error('فيه نسخة أحدث. تعديلاتك الحالية لسه موجودة. راجع النسخة المنشورة قبل ما تعيد الحفظ.');
+  if(!r.ok||res?.success!==true)throw Error(r.status===503?'خدمة النشر غير متاحة: '+(res?.message||'راجع اتصال خادم النشر.'):res?.message||'تعذّر الاتصال بخدمة النشر.');
+  const f=res.data as Feed;
+  if(f?.version!==1||!Number.isSafeInteger(f.revision)||!Array.isArray(f.metrics)||!Array.isArray(f.opportunities))throw Error('خدمة النشر رجّعت بيانات غير صالحة.');
+  return f;
 }
-function decimalValue(value:string,cap:number):number|null{
-  const normalized=value.trim().replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)&15)).replace(/٫/g,".");
-  if(!/^\d{1,10}(?:\.\d{1,2})?$/u.test(normalized))return null;
-  const n=Number(normalized);
-  return n<=cap?n:null;
-}
-function toPublication(o:Offer){
-  const {weeklyTarget,minimumUsd,...data}=o;
-  return {...data,
-    strategy:o.strategy.trim()+(weeklyTarget.trim()?'\nالعائد الأسبوعي المستهدف: '+decimalValue(weeklyTarget,100)+'%':''),
-    liquidity:o.liquidity.trim()+(minimumUsd.trim()?'\nالحد الأدنى للاشتراك: '+decimalValue(minimumUsd,1e9)+' دولار أمريكي':''),
-  };
-}
-const empty:State={metrics:[],opportunities:[]};
-const base=():Base=>({id:crypto.randomUUID(),source:"",asOf:"",published:false,verified:false});
-const today=()=>new Date().toISOString().slice(0,10);
-const validDate=(v:string)=>{const d=new Date(v+"T00:00:00Z");return /^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(+d)&&d.toISOString().slice(0,10)===v&&v<=today();};
-const text=(x:unknown)=>typeof x==="string"?x:"";
-function parse(data:any):State{
-  if(!data || data.version!==1)return empty;
-  const common=(v:any):Base=>({id:text(v.id),source:text(v.source),asOf:text(v.asOf),published:v.published===true,verified:v.verified===true});
-  const list=(x:any):any[]=>Array.isArray(x)?x.filter(v=>v && typeof v==="object").slice(0,60):[];
-  return {metrics:list(data.metrics).map(v=>({...common(v),label:text(v.label),value:typeof v.value==="number"?String(v.value):"",unit:text(v.unit)})),opportunities:list(data.opportunities).map(v=>{
-    const [strategy,weeklyTarget]=splitPublished(text(v.strategy),rateLine);
-    const [liquidity,minimumUsd]=splitPublished(text(v.liquidity),minLine);
-    return {...common(v),name:text(v.name),sector:text(v.sector),location:text(v.location),intro:text(v.intro),strategy,liquidity,risks:text(v.risks),featured:v.featured===true,weeklyTarget,minimumUsd};
-  })};
-}
-function Field({label,children}:{label:string;children:ReactNode}){return <label className="un-field"><span>{label}</span>{children}</label>;}
-function Move({i,n,fn}:{i:number;n:number;fn:(to:number)=>void}){return <div className="un-move"><button type="button" disabled={!i} onClick={()=>fn(i-1)}>تقديم</button><button type="button" disabled={i===n-1} onClick={()=>fn(i+1)}>تأخير</button></div>;}
-export default function UniverseEditor({getToken}:{getToken:()=>Promise<string|undefined>}){
-  const [state,setState]=useState<State>(empty),[tab,setTab]=useState<'metrics'|'opportunities'>('metrics'),[phase,setPhase]=useState<'loading'|'ready'|'saving'|'failed'>('loading'),[msg,note]=useState(''),[version,retry]=useState(0),[dirty,setDirty]=useState(false);
-  const lock=useRef(false), revision=useRef(0);
-  const tokenRef=useRef(getToken);useEffect(()=>{tokenRef.current=getToken;},[getToken]);
-  useEffect(()=>{const ctr=new AbortController();let alive=true;setPhase('loading');
-    tokenRef.current().then(token=>{if(!token)throw Error();return fetch(endpoint,{headers:{Authorization:"Bearer "+token},cache:"no-store",signal:ctr.signal});}).then(async r=>{if(!r.ok)throw Error();const b=await r.json();if(!b.success||!b.data)throw Error();const feed=b.data;
-      if(feed && feed.version!==1)throw Error();if(alive){setState(parse(feed));if(!Number.isSafeInteger(feed?.revision))throw Error();revision.current=feed.revision;setDirty(false);note("");setPhase("ready");}
-    }).catch(()=>{if(alive){setPhase("failed");note("ما قدرنا نحمّل النسخة المنشورة. ما حفظنا أي تغيير.");}});
-    return()=>{alive=false;ctr.abort();};
-  },[version]);
-  useEffect(()=>{if(!dirty)return;const fn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue="";};window.addEventListener("beforeunload",fn);return()=>window.removeEventListener("beforeunload",fn);},[dirty]);
-  function change(next:State){setState(next);setDirty(true);note("");}
-  function patch(section:keyof State,index:number,p:Partial<Indicator&Offer>){change({...state,[section]:state[section].map((x,i)=>i===index?{...x,...p}:x)});}
-  function move(section:keyof State,from:number,to:number){const records=[...state[section]];[records[from],records[to]]=[records[to],records[from]];change({...state,[section]:records});}
-  async function save(event:FormEvent){
-    event.preventDefault();if(phase!=="ready"||lock.current||!dirty)return;
-    const metrics=state.metrics.filter(x=>x.published),opportunities=state.opportunities.filter(x=>x.published);
-    if(metrics.length>4){note("اختر أربعة مؤشرات للنشر كحد أقصى.");return;}
-    const required=(v:Base)=>v.verified&&v.source.trim()&&validDate(v.asOf)&&/^[a-z0-9][a-z0-9-]{1,64}$/.test(v.id);
-    if(metrics.some(m=>!required(m)||!m.label.trim()||m.value.trim()===""||!Number.isFinite(Number(m.value))||Math.abs(Number(m.value))>Number.MAX_SAFE_INTEGER)){
-      setTab("metrics");note("كل مؤشر منشور يحتاج اسم، قيمة رقمية صالحة، مصدر علني، تاريخ صحيح وتأكيد المراجعة.");return;}
-    if(opportunities.some(o=>!required(o)||!Object.hasOwn(names,o.sector)||![o.name,o.intro,o.strategy,o.risks,o.liquidity].every(s=>s.trim()))){
-      setTab("opportunities");note("كمّل الاسم والملخّص والاستراتيجية والمخاطر والسيولة والمصدر والتاريخ وأكّد المراجعة لكل فرصة منشورة.");return;}
-    const withTerms=opportunities.filter(o=>o.weeklyTarget.trim()||o.minimumUsd.trim());
-    if(withTerms.some(o=>!fundSectors.has(o.sector)||(o.weeklyTarget.trim()&&decimalValue(o.weeklyTarget,100)===null)||(o.minimumUsd.trim()&&decimalValue(o.minimumUsd,1e9)===null))){
-      setTab("opportunities");note("العائد المستهدف بين ٠ و١٠٠٪، والحد الأدنى مبلغ بالدولار. هالحقول للصناديق الأربعة فقط.");return;
-    }
-    if(new Set(withTerms.map(o=>o.sector)).size!==withTerms.length){
-      setTab("opportunities");note("انشر العائد والحد الأدنى في سجل واحد فقط لكل صندوق.");return;
-    }
-    const publicOpportunities=opportunities.map(toPublication);
-    if(publicOpportunities.some(o=>o.strategy.length>2000||o.liquidity.length>1000)){
-      setTab("opportunities");note("اختصر وصف الاستراتيجية أو السيولة عشان يتّسع لبيانات الصندوق.");return;
-    }
-    lock.current=true;setPhase("saving");note("");
+export default function UniverseEditor({getToken,uid}:{getToken:()=>Promise<string|undefined>;uid:string}){
+  const [tab,setTab]=useState<Tab>('funds'), [feed,setFeed]=useState<Feed|null>(null),[metrics,setMetrics]=useState<Indicator[]>([]);
+  const [draft,setDraft]=useState(()=>parseContent(null,[])),[reload,setReload]=useState(0),[busy,setBusy]=useState(true),[dirty,setDirty]=useState(false);
+  const [status,setStatus]=useState('');
+  const get=useRef(getToken),saving=useRef(false);
+  useEffect(()=>{get.current=getToken;},[getToken]);
+  useEffect(()=>{
+    const controller=new AbortController();
+    (async()=>{
+      try{
+        const token=await get.current();if(!token)throw Error('سجّل الدخول بحساب الإدارة.');
+        const current=await api(token,{signal:controller.signal});
+        if(controller.signal.aborted)return;
+        setFeed(current);setDraft(parseContent(current.content,current.opportunities));setMetrics(list(current));setStatus('');
+      }catch(e){if(!controller.signal.aborted)setStatus(e instanceof Error?e.message:'تعذّر تحميل النسخة المنشورة.');}
+      finally{if(!controller.signal.aborted)setBusy(false);}
+    })();
+    return ()=>controller.abort();
+  },[reload]);
+  useEffect(()=>{
+    if(!dirty)return;
+    const warn=(e:BeforeUnloadEvent)=>e.preventDefault();
+    window.addEventListener('beforeunload',warn);return ()=>window.removeEventListener('beforeunload',warn);
+  },[dirty]);
+  function editMetrics(items:Indicator[]){setMetrics(items);setDirty(true);setStatus('');}
+  function patch(id:string,p:Partial<Indicator>){editMetrics(metrics.map(m=>m.id===id?{...m,...p}:m));}
+  async function save(e:FormEvent){
+    e.preventDefault();
+    if(!feed||!dirty||busy||saving.current)return;
+    saving.current=true;setBusy(true);setStatus('');
     try{
-      const token=await getToken();if(!token)throw Error("سجّل دخولك من جديد.");
-      const check=await fetch(endpoint,{cache:"no-store",headers:{Authorization:"Bearer "+token}});if(!check.ok)throw Error("تعذّر التأكّد من آخر تحديث.");
-      const existing=await check.json();if(!existing?.success || !existing?.data)throw Error("تعذّرت قراءة النسخة المنشورة.");
-      const current=existing.data;if((current&&current.version!==1)||current?.revision!==revision.current)throw Error("فيه نسخة أحدث. حدّث الصفحة وراجع تعديلاتك قبل النشر.");
-      const previous=revision.current;
-      const publication={version:1,revision:previous,metrics:metrics.map(m=>({...m,value:Number(m.value)})),opportunities:publicOpportunities};
-      const r=await fetch(endpoint,{method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(publication)});
-      if(r.status===409)throw Error("فيه نسخة أحدث. حدّث الصفحة وراجع تعديلاتك قبل النشر.");
-      if(!r.ok)throw Error("ما تم النشر. تأكد من صلاحية الحساب.");
-      const b=await r.json();if(!b.success||!Number.isSafeInteger(b.data?.revision)||b.data.revision<=previous)throw Error("تعذّر تأكيد الحفظ. حدّث الصفحة قبل المحاولة مرة ثانية.");
-      revision.current=b.data.revision;setDirty(false);note("تم حفظ بيانات العرض. قد تحتاج الواجهة نحو دقيقة لعرض آخر تحديث.");
-    }catch(err){note(err instanceof Error?err.message:"ما قدرنا نحفظ التعديلات.");}finally{lock.current=false;setPhase("ready");}
+      const items=metrics.filter(m=>m.published).map(m=>{
+        const normalized=numberInput(m.value),value=Number(normalized);
+        if(!normalized||!Number.isFinite(value)||!m.label.trim()||!m.source.trim()||!m.asOf||!m.verified)throw Error('كمّل قيمة المؤشر واسمه ومصدره وتاريخ المراجعة، وبعدها أكّد المراجعة.');
+        return {...m,value};
+      });
+      const content=serializeContent(draft);
+      const token=await get.current();if(!token)throw Error('سجّل دخولك من جديد.');
+      const saved=await api(token,{method:'PUT',body:JSON.stringify({...feed,metrics:items,content})});
+      setFeed(saved);setDraft(parseContent(saved.content,saved.opportunities));setMetrics(list(saved));setDirty(false);
+      setStatus('اتحفظ المحتوى. ظهور التعديل للزوّار ممكن ياخد حوالي دقيقة.');
+    }catch(err){setStatus(err instanceof Error?err.message:'ما تمش الحفظ.');}
+    finally{saving.current=false;setBusy(false);}
   }
-  function common(section:keyof State,i:number,v:Base){
-    return <><Field label="اسم المصدر العلني"><input maxLength={140} value={v.source} onChange={e=>patch(section,i,{source:e.target.value})}/></Field>
-      <Field label="تاريخ توثيق البيانات"><input type="date" dir="ltr" max={today()} value={v.asOf} onChange={e=>patch(section,i,{asOf:e.target.value})}/></Field>
-      <label className="un-check"><input type="checkbox" checked={v.verified} onChange={e=>patch(section,i,{verified:e.target.checked})}/>راجعت المصدر والبيانات</label>
-      <label className="un-check"><input type="checkbox" checked={v.published} onChange={e=>patch(section,i,{published:e.target.checked})}/>عرض للزوّار بعد الحفظ</label></>;
-  }
-  return <form className="un-editor" onSubmit={save}>
-    <div className="un-banner"><div><small>مكتب النشر</small><h3>المحتوى المرئي</h3><p>تحكّم بالأرقام والفرص اللي تظهر للزوّار، من غير تعديل أي خطة أو حساب.</p></div><span className="un-seal" aria-hidden="true">◇</span></div>
-    <div className="un-tabs" aria-label="نوع المحتوى"><button type="button" aria-pressed={tab==="metrics"} onClick={()=>setTab("metrics")}>مؤشرات الثقة</button><button type="button" aria-pressed={tab==="opportunities"} onClick={()=>setTab("opportunities")}>دليل الفرص</button></div>
-    {phase==="loading"?<p role="status">قاعدين نحمّل بيانات العرض…</p>:phase==="failed"?<button type="button" onClick={()=>retry(v=>v+1)}>إعادة المحاولة</button>:<fieldset disabled={phase==="saving"}>
-      <legend>{tab==="metrics"?"أرقام تعكس قوة وثقة استثماراتنا":"بطاقات الفرص وتفاصيلها"}</legend>
-      <p>أدخل معلومات صالحة للنشر فقط. اسم المصدر والتاريخ يطلعان للزوّار. العناصر غير المحددة للعرض ما تنحفظ في الخدمة العامة.</p>
-      {(tab==="metrics"?state.metrics:state.opportunities).length===0&&<div className="un-blank">ما أضفت محتوى لهالقسم للحين.</div>}
-      {tab==="metrics"?state.metrics.map((m,i)=><article className="un-row" key={m.id}><header><strong>{m.label||"مؤشر جديد"}</strong><Move i={i} n={state.metrics.length} fn={to=>move('metrics',i,to)}/></header><div className="un-grid">
-        <Field label="اسم المؤشر"><input maxLength={80} value={m.label} onChange={e=>patch("metrics",i,{label:e.target.value})}/></Field>
-        <Field label="القيمة المعتمدة"><input type="number" step="any" dir="ltr" value={m.value} onChange={e=>patch("metrics",i,{value:e.target.value})}/></Field>
-        <Field label="الوحدة"><input maxLength={28} value={m.unit} onChange={e=>patch("metrics",i,{unit:e.target.value})}/></Field>{common("metrics",i,m)}</div>
-        <button type="button" onClick={()=>change({...state,metrics:state.metrics.filter(x=>x.id!==m.id)})}>إزالة من القائمة</button></article>):
-       state.opportunities.map((o,i)=><article className="un-row" key={o.id}><header><strong>{o.name||"فرصة جديدة"}</strong><Move i={i} n={state.opportunities.length} fn={to=>move("opportunities",i,to)}/></header><div className="un-grid">
-       <Field label="اسم الفرصة"><input maxLength={100} value={o.name} onChange={e=>patch("opportunities",i,{name:e.target.value})}/></Field>
-       <Field label="المجال"><select value={o.sector} onChange={e=>patch("opportunities",i,{sector:e.target.value})}>{Object.entries(names).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select></Field>
-       <Field label="الموقع (اختياري)"><input maxLength={90} value={o.location} onChange={e=>patch("opportunities",i,{location:e.target.value})}/></Field>
-       {([["intro","ملخّص الفرصة",380],["strategy","الاستراتيجية",2000],["risks","المخاطر",1500],["liquidity","شروط السيولة",1000]] as const).map(([k,title,length])=><Field key={k} label={title}><textarea maxLength={length} value={o[k]} onChange={e=>patch("opportunities",i,{[k]:e.target.value})}/></Field>)}
-       {(fundSectors.has(o.sector)||!!o.weeklyTarget||!!o.minimumUsd)&&<>
-         <Field label="العائد الأسبوعي المستهدف (٪، اختياري)"><input inputMode="decimal" dir="ltr" maxLength={12} value={o.weeklyTarget} onChange={e=>patch("opportunities",i,{weeklyTarget:e.target.value})}/></Field>
-         <Field label="الحد الأدنى بالدولار الأمريكي (اختياري)"><input inputMode="decimal" dir="ltr" maxLength={15} value={o.minimumUsd} onChange={e=>patch("opportunities",i,{minimumUsd:e.target.value})}/></Field>
-       </>}
-       {common("opportunities",i,o)}<label className="un-check"><input type="checkbox" checked={o.featured} onChange={e=>patch("opportunities",i,{featured:e.target.checked})}/>ضمّها للفرص المختارة في الرئيسية</label></div>
-       <button type="button" onClick={()=>change({...state,opportunities:state.opportunities.filter(x=>x.id!==o.id)})}>إزالة من القائمة</button></article>)}
-       <aside className="un-preview" aria-label="معاينة قبل الحفظ"><small>معاينة قبل الحفظ</small><div>{tab==="metrics" ? state.metrics.filter(m=>m.published&&m.verified&&m.label&&m.value.trim()&&m.source&&validDate(m.asOf)).map(m=><article key={m.id}><span>{m.label}</span><strong>{Number(m.value).toLocaleString("ar")} {m.unit}</strong><small>{m.source} · {m.asOf}</small></article>):state.opportunities.filter(o=>o.published&&o.verified&&o.name&&o.source&&validDate(o.asOf)).map(o=><article key={o.id}><span>{names[o.sector]}</span><strong>{o.name}</strong><small>{o.intro}</small></article>)}</div><p>المعاينة تعرض اختياراتك للنشر. الحفظ يتأكد من اكتمال كل البيانات.</p></aside>
-       <div className="un-foot"><button type="button" disabled={tab==="metrics"?state.metrics.length>=4:state.opportunities.length>=60} onClick={()=>tab==="metrics"?change({...state,metrics:[...state.metrics,{...base(),label:"",value:"",unit:""}]}):change({...state,opportunities:[...state.opportunities,{...base(),name:"",sector:"property",location:"",intro:"",strategy:"",liquidity:"",risks:"",featured:false,weeklyTarget:"",minimumUsd:""}]})}>{tab==="metrics"?"إضافة مؤشر":"إضافة فرصة"}</button><button type="submit" disabled={!dirty||phase==="saving"}>{phase==="saving"?"جاري الحفظ…":"حفظ المحتوى المنشور"}</button></div>
-    </fieldset>}{msg&&<p role="status" className="un-notice">{msg}</p>}
+  return <form className="un-editor" onSubmit={save} dir="rtl">
+    <div className="un-banner"><div><small>صناديق الخليج الذكية</small><h3>مكتب نشر المحتوى</h3><p>عدّل اللي بيظهر للزوّار على الموقع. التغييرات تتنشر بعد الحفظ.</p></div></div>
+    {!feed?<div className="un-row">{busy?<p role="status">جاري تحميل المحتوى المنشور…</p>:<>
+      <p role="alert">{status}</p><p>ما اتحفظش أي تغيير. لو المشكلة في صلاحية النشر، المعرّف الخاص بحسابك الحالي:</p>
+      <code dir="ltr" style={{overflowWrap:'anywhere'}}>{uid}</code>
+      <div className="un-actions"><button type="button" onClick={()=>{setBusy(true);setReload(n=>n+1);}}>إعادة المحاولة</button></div>
+    </>}</div>:<>
+      <div className="un-tabs" aria-label="محتوى الموقع">{tabs.map(([key,label])=><button key={key} type="button" aria-pressed={tab===key} onClick={()=>setTab(key)}>{label}</button>)}</div>
+      <fieldset disabled={busy}><legend>{tabs.find(([key])=>key===tab)?.[1]}</legend>
+        {tab==='metrics'?<>
+          <p>انشر لحد أربعة مؤشرات موثّقة. لما تزيل مؤشر أو توقف عرضه، يختفي من الموقع بعد الحفظ.</p>
+          {metrics.map(m=><section className="un-row un-grid" key={m.id}>
+            <label className="un-field"><span>اسم المؤشر</span><input value={m.label} maxLength={80} onChange={e=>patch(m.id,{label:e.target.value})}/></label>
+            <label className="un-field"><span>القيمة</span><input dir="ltr" inputMode="decimal" value={m.value} onChange={e=>patch(m.id,{value:e.target.value})}/></label>
+            <label className="un-field"><span>الوحدة</span><input value={m.unit} maxLength={28} onChange={e=>patch(m.id,{unit:e.target.value})}/></label>
+            <label className="un-field"><span>المصدر العلني</span><input value={m.source} maxLength={140} onChange={e=>patch(m.id,{source:e.target.value})}/></label>
+            <label className="un-field"><span>تاريخ مراجعة المؤشر</span><input dir="ltr" type="date" max={date()} value={m.asOf} onChange={e=>patch(m.id,{asOf:e.target.value})}/></label>
+            <label className="un-check"><input type="checkbox" checked={m.verified} onChange={e=>patch(m.id,{verified:e.target.checked})}/>راجعت الرقم والمصدر</label>
+            <label className="un-check"><input type="checkbox" checked={m.published} onChange={e=>patch(m.id,{published:e.target.checked})}/>عرض المؤشر</label>
+            <div><button type="button" onClick={()=>editMetrics(metrics.filter(x=>x.id!==m.id))}>إزالة المؤشر من العرض</button></div>
+          </section>)}
+          <button type="button" disabled={metrics.length>=4} onClick={()=>editMetrics([...metrics,{id:crypto.randomUUID(),label:'',value:'',unit:'',source:'',asOf:'',published:false,verified:false}])}>إضافة مؤشر</button>
+        </>:<PublicationContent tab={tab} draft={draft} onChange={d=>{setDraft(d);setDirty(true);setStatus('');}}/>}
+        <div className="un-foot"><span>{dirty?'فيه تغييرات لسه ما اتحفظتش.':'أنت بتشوف آخر نسخة حمّلتها.'}</span><button type="submit" disabled={!dirty||busy}>{busy?'جاري الحفظ…':'حفظ ونشر التعديلات'}</button></div>
+      </fieldset>{status&&<p className="un-notice" role="status">{status}</p>}
+    </>}
   </form>;
 }

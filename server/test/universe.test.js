@@ -27,3 +27,41 @@ test('HTTP contract: owner identity, admin allowlist, publication revision, post
  const pub=await(await req('/public')).json();assert.deepEqual(Object.keys(pub.data).sort(),['metrics','opportunities','revision','version']);assert(!JSON.stringify(pub).includes('person-A'));
  }finally{await new Promise(r=>server.close(r));for(const [i,k] of ['SGF_UNIVERSE_ENABLED','SGF_UNIVERSE_ADMIN_UIDS'].entries()){if(prev[i]===undefined)delete process.env[k];else process.env[k]=prev[i];}}
 });
+
+test('content saves without the ledger and only a signed reviewed snapshot goes public',async()=>{
+ const express=require('express'),{createServer}=require('node:http'),{makeRouter}=require('../src/universe/routes');
+ const {open}=require('../src/universe/publication-seal');
+ const db=store(),signingKey='publication-test-key-for-local-fixtures-only';
+ const old=process.env.SGF_UNIVERSE_ADMIN_UIDS;
+ const auth={verifyIdToken:async token=>({uid:token==='admin'?'owner':'visitor'})};
+ const app=express();app.use(express.json());app.use(makeRouter(()=>{throw new Error('ledger is disabled');},()=>auth,()=>({db,signingKey})));
+ const server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const req=(path,token,body)=>fetch('http://127.0.0.1:'+server.address().port+path,{method:body?'PUT':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
+ const draft={version:1,revision:0,metrics:[],opportunities:[],content:{
+  funds:{gold:{name:'صندوق الذهب',intro:'تنويع الأصول',photo:'gold',keywords:'سبائك',inExplorer:false,rate:5.25,minimum:300,publishTerms:true,source:'وثيقة معلنة',asOf:'2025-01-01',actor:'never publish'}},
+  home:{headline:'صناديق الخليج'},
+  contact:{telegramChat:'@ExampleSupport',telegramChannel:'https://t.me/+ExampleGroup42',message:'تواصل معنا',privateEmail:'never publish'},
+  explorer:{quickSearch:'ذهب،معادن',byRate:false},
+ }};
+ try{
+  delete process.env.SGF_UNIVERSE_ADMIN_UIDS;assert.equal((await req('/admin/publication','admin')).status,503);
+  process.env.SGF_UNIVERSE_ADMIN_UIDS='owner';
+  assert.equal((await req('/admin/publication')).status,401);
+  assert.equal((await req('/admin/publication','visitor',draft)).status,403);
+  assert.equal((await req('/admin/publication','admin',{...draft,content:{...draft.content,contact:{telegramChat:'https://t.me.example.test/Support'}}})).status,400);
+  assert.equal((await req('/admin/publication','admin',{...draft,content:{...draft.content,funds:{gold:{rate:8,publishTerms:true}}}})).status,400);
+  assert.equal((await req('/admin/publication','admin',draft)).status,200);
+  assert.equal((await req('/admin/publication','admin',draft)).status,409);
+  assert.equal((await req('/admin/publication','admin',{version:1,revision:1,metrics:[],opportunities:[]})).status,200);
+  const {data}=await(await req('/public')).json();
+  assert.equal(data.content.funds.gold.rate,5.25);assert.equal(data.content.funds.gold.inExplorer,false);
+  assert.equal(data.content.explorer.quickSearch,'ذهب،معادن');assert.equal(data.content.explorer.byRate,false);
+  assert.equal(data.content.contact.telegramChat,'https://t.me/ExampleSupport');assert.equal(data.content.contact.telegramChannel,'https://t.me/+ExampleGroup42');
+  assert(!JSON.stringify(data).includes('never publish'));
+  const ref=db.collection('sgf_publication').doc('approved'), envelope=(await ref.get()).data();
+  assert.deepEqual(open(envelope,signingKey),data);
+  await db.runTransaction(tx=>tx.set(ref,{...envelope,data:{...envelope.data,revision:100}}));
+  assert.equal((await req('/public')).status,503);
+  assert.equal((await req('/admin/publication','admin',{...draft,revision:100})).status,503);
+ }finally{await new Promise(resolve=>server.close(resolve));if(old===undefined)delete process.env.SGF_UNIVERSE_ADMIN_UIDS;else process.env.SGF_UNIVERSE_ADMIN_UIDS=old;}
+});

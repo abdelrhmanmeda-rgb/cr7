@@ -1,5 +1,6 @@
 'use strict';
 const {createHash}=require('node:crypto');
+const {content}=require('./presentation');
 class Problem extends Error{constructor(status,message){super(message);this.status=status}}
 const fail=(s,m)=>{throw new Problem(s,m)};
 function textField(x,n,optional=false){if(typeof x!=='string'||x.trim().length>n||(!optional&&!x.trim())||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(x))fail(400,'راجع الحقول المدخلة.');return x.trim()}
@@ -39,14 +40,15 @@ async function statement(db,uid){
 const sectors=['property','gold','market','energy','funds','income','stocks','portfolio','compare'];
 function publication(b){
  if(!b||b.version!==1||!Number.isSafeInteger(b.revision)||b.revision<0||!Array.isArray(b.metrics)||b.metrics.length>4||!Array.isArray(b.opportunities)||b.opportunities.length>60)fail(400,'البيانات غير صالحة.');
+ function dateField(v){const day=textField(v,10),dt=new Date(day+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(+dt)||dt.toISOString().slice(0,10)!==day||+dt>Date.now())fail(400,'راجع تاريخ التوثيق.');return day;}
  const seen=new Set();
  function common(v){if(!v||v.published!==true||v.verified!==true||typeof v.id!=='string'||!/^[a-z0-9][a-z0-9-]{1,64}$/.test(v.id)||seen.has(v.id))fail(400,'حدد بيانات موثقة ومعرّف فريد.');seen.add(v.id);
- const asOf=textField(v.asOf,10),dt=new Date(asOf+'T00:00:00Z');if(!/^\d{4}-\d{2}-\d{2}$/.test(asOf)||!Number.isFinite(+dt)||dt.toISOString().slice(0,10)!==asOf||+dt>Date.now())fail(400,'راجع تاريخ التوثيق.');
+ const asOf=dateField(v.asOf);
  return {id:v.id,source:textField(v.source,140),asOf,published:true,verified:true};}
  const metrics=b.metrics.map(m=>{const base=common(m);if(typeof m.value!=='number'||!Number.isFinite(m.value)||Math.abs(m.value)>Number.MAX_SAFE_INTEGER)fail(400,'راجع قيمة المؤشر.');return {...base,label:textField(m.label,80),value:m.value,unit:textField(m.unit??'',28,true)}});
  const opportunities=b.opportunities.map(m=>{const base=common(m);if(!sectors.includes(m.sector))fail(400,'راجع المجال.');
  return {...base,sector:m.sector,name:textField(m.name,100),location:textField(m.location??'',90,true),intro:textField(m.intro,380),strategy:textField(m.strategy,2000),risks:textField(m.risks,1500),liquidity:textField(m.liquidity,1000),featured:m.featured===true};});
- const result={version:1,revision:b.revision,metrics,opportunities};
+ const result={version:1,revision:b.revision,metrics,opportunities,...(b.content===undefined?{}:{content:content(b.content,{fail,textField,dateField})})};
  if(Buffer.byteLength(JSON.stringify(result))>700000)fail(400,'حجم المحتوى أكبر من الحد المتاح.');
  return result;
 }

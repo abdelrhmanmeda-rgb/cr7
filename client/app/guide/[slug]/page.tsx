@@ -2,6 +2,7 @@ import {UHeader,UFooter} from "../../universe-shell";
 import {AmbientHero} from "../../ambient-hero";
 import { FundTerms } from "../../universe-public";
 import { fieldOf } from "../../four-sectors";
+import { getPublication } from "../../universe-data";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { articles, guideUrl, icons, topics } from "../../guide-content";
@@ -32,6 +33,14 @@ const entries = [
   })),
 ];
 
+async function lookup(slug:string){
+  const entry=entries.find(item=>item.slug===slug);
+  if(!entry||!fieldOf(slug))return entry;
+  const {content}=await getPublication();
+  const id=fieldOf(slug)!.id, config=content.funds[id];
+  return config?{...entry,title:config.name||entry.title,intro:config.intro||entry.intro,art:config.photo||entry.art}:entry;
+}
+
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -40,7 +49,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const entry = entries.find((item) => item.slug === slug);
+  const entry = await lookup(slug);
   if (!entry) notFound();
   return {
     title: entry.title,
@@ -57,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const entry = entries.find((item) => item.slug === slug);
+  const entry = await lookup(slug);
   if (!entry) notFound();
   const field = fieldOf(slug);
   const sectionLink = entry.section === "sectors" ? "/world" : "/#knowledge";

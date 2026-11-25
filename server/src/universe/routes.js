@@ -5,6 +5,7 @@ const {getAuth}=require('firebase-admin/auth');
 const {getFirestore}=require('firebase-admin/firestore');
 
 const {Problem,fail,entryInput,post,statement,publication}=require('./book');
+const {seal,open}=require('./publication-seal');
 const initial={version:1,revision:0,metrics:[],opportunities:[]};
 let ctx;
 function config(){
@@ -16,13 +17,24 @@ function config(){
  ctx={db:getFirestore(app,'sgf-universe'),ownerAuth:getAuth(app)};return ctx;
  }catch{fail(503,'إعداد الخدمة غير مكتمل.');}
 }
-function makeRouter(configure=config, legacy=()=>require('../config/firebase').auth){
+function publicationStore(configure){
+ const store=process.env.SGF_PUBLICATION_STORE;
+ // Existing ledger deployments keep their publication collection unless explicitly migrated.
+ if(store==='ledger'||(!store&&process.env.SGF_UNIVERSE_ENABLED==='1'))return {db:configure().db};
+ if(store&&store!=='legacy')fail(503,'مصدر نشر المحتوى غير صالح.');
+ const signingKey=process.env.SGF_PUBLICATION_SIGNING_KEY?.trim()||process.env.FIREBASE_PRIVATE_KEY?.trim();
+ if(!signingKey||signingKey.length<32)fail(503,'مفتاح توقيع محتوى الموقع ناقص.');
+ return {db:require('../config/firebase').db,signingKey};
+}
+function makeRouter(configure=config, legacy=()=>require('../config/firebase').auth, publicDb=()=>publicationStore(configure)){
+
 const router=express.Router();
 async function identity(req,admin){
- const ctx=configure(), auth=admin?legacy():ctx.ownerAuth, raw=req.headers.authorization||'';
+ const raw=req.headers.authorization||'';
  if(typeof raw!=='string'||!/^Bearer [^\s]+$/.test(raw)||raw.length>12000)fail(401,'سجّل دخولك.');
+ const auth=admin?legacy():configure().ownerAuth;
  let token;try{token=await auth.verifyIdToken(raw.slice(7),true)}catch{fail(401,'انتهت جلسة الدخول.');}
- if(admin){const allowed=(process.env.SGF_UNIVERSE_ADMIN_UIDS||'').split(',').map(x=>x.trim()).filter(Boolean);if(!allowed.includes(token.uid))fail(403,'ما عندك صلاحية الإدارة.');}
+ if(admin){const allowed=(process.env.SGF_UNIVERSE_ADMIN_UIDS||'').split(',').map(x=>x.trim()).filter(Boolean);if(!allowed.length)fail(503,'قائمة حسابات الإدارة المصرّح لها بالنشر لسه مش متضبطة.');if(!allowed.includes(token.uid))fail(403,'ما عندك صلاحية الإدارة.');}
  else if(token.email_verified!==true)fail(403,'أكّد بريدك الإلكتروني.');
  return token.uid;
 }
@@ -32,10 +44,34 @@ async function target(q){
  try{const auth=configure().ownerAuth; const u=await (key==='uid'?auth.getUser(v):auth.getUserByEmail(v));if(u.disabled||!u.emailVerified)fail(409,'الحساب غير مفعّل أو بريده غير مؤكّد.');return u;}catch(err){if(err instanceof Problem)throw err;if(err.code==='auth/user-not-found')fail(404,'ما لقينا الحساب.');if(['auth/invalid-email','auth/invalid-uid'].includes(err.code))fail(400,'معرّف غير صالح.');throw err;}
 }
 const handler=fn=>async(req,res)=>{res.set('Cache-Control','private, no-store');try{await fn(req,res)}catch(err){const status=err instanceof Problem?err.status:503;res.status(status).json({success:false,message:err instanceof Problem?err.message:'الخدمة غير متوفرة الحين.'});}};
-const pub=db=>db.collection('publication').doc('approved');
-router.get('/public',handler(async(req,res)=>{if(process.env.SGF_UNIVERSE_ENABLED!=='1')return res.json({success:true,data:initial});const s=await pub(configure().db).get();const data=s.exists?publication(s.data()):initial;res.set('Cache-Control','public, max-age=0, s-maxage=30').json({success:true,data});}));
-router.get('/admin/publication',handler(async(req,res)=>{await identity(req,true);const s=await pub(configure().db).get();res.json({success:true,data:s.exists?publication(s.data()):initial});}));
-router.put('/admin/publication',handler(async(req,res)=>{const actor=await identity(req,true);const next=publication(req.body);const db=configure().db,ref=pub(db);const data=await db.runTransaction(async tx=>{const old=(await tx.get(ref)).data()||initial;if(old.revision!==next.revision)fail(409,'فيه نسخة أحدث.');const fresh={...next,revision:old.revision+1};tx.set(ref,fresh);tx.create(db.collection('publicationAudit').doc(String(fresh.revision)),{actor,at:new Date().toISOString(),snapshot:fresh});return fresh;});res.json({success:true,data});}));
+function published(snapshot,signingKey){
+ if(!snapshot.exists)return initial;
+ const stored=snapshot.data(),data=signingKey?open(stored,signingKey):stored;
+ if(!data)fail(503,'تعذّر التحقق من سلامة النسخة المنشورة.');
+ return publication(data);
+}
+const pub=(db,signingKey)=>db.collection(signingKey?'sgf_publication':'publication').doc('approved');
+router.get('/public',handler(async(req,res)=>{
+ const {db,signingKey}=publicDb(),data=published(await pub(db,signingKey).get(),signingKey);
+ res.set('Cache-Control','public, max-age=0, s-maxage=30').json({success:true,data});
+}));
+router.get('/admin/publication',handler(async(req,res)=>{
+ await identity(req,true);
+ const {db,signingKey}=publicDb();
+ res.json({success:true,data:published(await pub(db,signingKey).get(),signingKey)});
+}));
+router.put('/admin/publication',handler(async(req,res)=>{
+ const actor=await identity(req,true),next=publication(req.body),{db,signingKey}=publicDb(),ref=pub(db,signingKey);
+ const data=await db.runTransaction(async tx=>{
+  const old=published(await tx.get(ref),signingKey);
+  if(old.revision!==next.revision)fail(409,'فيه نسخة أحدث.');
+  const fresh={...next,revision:old.revision+1,...(next.content===undefined&&old.content!==undefined?{content:old.content}:{})};
+  const stored=signingKey?seal(fresh,signingKey):fresh;
+  tx.set(ref,stored);tx.create(db.collection(signingKey?'sgf_publicationAudit':'publicationAudit').doc(String(fresh.revision)),{actor,at:new Date().toISOString(),snapshot:stored});
+  return fresh;
+ });
+ res.json({success:true,data});
+}));
 router.get('/me',handler(async(req,res)=>{const uid=await identity(req,false);res.json(await statement(configure().db,uid));}));
 router.get('/admin/account',handler(async(req,res)=>{await identity(req,true);const u=await target(req.query);res.json({uid:u.uid,email:u.email,...await statement(configure().db,u.uid)});}));
 router.post('/admin/entries',handler(async(req,res)=>{const actor=await identity(req,true),e=entryInput(req.body);await target({uid:e.uid});const result=await post(configure().db,e,actor);res.status(result.duplicate?200:201).json({success:true,...result});}));

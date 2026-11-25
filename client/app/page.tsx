@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { guideUrl } from "./guide-content";
 import {AmbientHero} from "./ambient-hero";
 import { FundCatalog,TrustNumbers } from "./universe-public";
-import {site,telegramUrl} from "./universe-copy";
+import {site} from "./universe-copy";
+import {getPublication} from "./universe-data";
+import {ContactLinks} from "./universe-library";
 import { InvestorSignupLink,HomeAccount } from "./investor-actions";
 import {UHeader,UFooter,Heading} from "./universe-shell";
 import {Knowledge,Faq,Journey,Values,Contact} from "./universe-library";
@@ -50,16 +52,17 @@ function Disclosures() {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+ const {content}=await getPublication();
  return <div className="uv sgf-universe" id="top"><a href="#content" className="afq-skip">روح للمحتوى</a><UHeader/>
  <main id="content"><AmbientHero asset="hero" home><div className="u-herocopy">
- <span className="u-kicker">من الخليج إلى عالم الاستثمار</span><h1>{site.headline[0]}<br/><em>{site.headline[1]}</em></h1><p>{site.description}</p><div className="u-actions"><a className="u-btn gold" href="/plans">استكشف الصناديق</a><InvestorSignupLink className="u-btn"/></div>
- <div className="u-quick"><a href="#disclosures">مركز الإفصاحات</a>{telegramUrl&&<a href={telegramUrl} target="_blank" rel="noopener noreferrer">تليجرام المنصة</a>}</div>
+ <span className="u-kicker">من الخليج إلى عالم الاستثمار</span><h1>{content.home.headline||<>{site.headline[0]}<br/><em>{site.headline[1]}</em></>}</h1><p>{content.home.intro||site.description}</p><div className="u-actions"><a className="u-btn gold" href="/plans">استكشف الصناديق</a><InvestorSignupLink className="u-btn"/></div>
+ <div className="u-quick"><a href="#disclosures">مركز الإفصاحات</a><ContactLinks contact={content.contact} compact/></div>
  </div></AmbientHero>
  <div className="u-container"><nav className="u-ribbon" aria-label="وجهات سريعة">{[["◇","دليل الصناديق","/world"],["◎","مستكشف الاستثمار","/explorer"],["▤","الوثائق والإفصاحات","#disclosures"],["◈","رحلة المستثمر","/journey"]].map(([i,t,h])=><a key={h} href={h}><i aria-hidden="true">{i}</i>{t}</a>)}</nav>
  <TrustNumbers/>
  <FundCatalog compact/>
- <section id="explorer" className="u-promo"><div><span className="u-kicker">بوصلتك في الأسواق</span><h2>مستكشف الاستثمار الذكي</h2><p>ابحث باسم الصندوق أو مجال الاستثمار، أو جرّب البحث بالعائد الأسبوعي الافتراضي.</p><a className="u-btn gold" href="/explorer">افتح المستكشف</a></div><div className="u-promo-photo"><LuxuryPhoto asset="market"/></div></section>
+ <section id="explorer" className="u-promo"><div><span className="u-kicker">بوصلتك في الأسواق</span><h2>{content.explorer.title||"مستكشف الاستثمار الذكي"}</h2><p>{content.explorer.intro||(content.explorer.byRate?"ابحث باسم الصندوق أو بالعائد الأسبوعي المنشور.":"ابحث باسم الصندوق أو مجال الاستثمار.")}</p><a className="u-btn gold" href="/explorer">افتح المستكشف</a></div><div className="u-promo-photo"><LuxuryPhoto asset="market"/></div></section>
  <section id="why" className="u-block"><Heading over="منهج المنصة" title="ليش صناديق الخليج الذكية؟"/><Values/></section>
  </div>        <section id="about" className="afq-section afq-section-band">
           <div className="afq-wrap afq-about">

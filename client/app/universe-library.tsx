@@ -1,3 +1,5 @@
+import { getPublication } from "./universe-data";
+import type { PublishedContent } from "./published-content";
 import {articles,topics} from "./guide-content";
 import {articlePhoto} from "./luxury-photo";
 import {questions,site,telegramUrl} from "./universe-copy";
@@ -11,4 +13,11 @@ export function Knowledge({all=false}:{all?:boolean}){return <section id="knowle
 export function Faq(){return <section id="faq" className="u-block u-split"><Heading over="دليل الزائر" title="الأسئلة الشائعة" desc="كل اللي تحتاج تعرفه عن استخدام المنصة وحسابك."/><div className="u-faq">{questions(site.registrationUrl).map(([q,a])=><details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div></section>}
 export function Journey(){return <div className="u-steps">{[["تعرّف على المجالات","خذ فكرة عن طبيعة الأصل وش دوره في المحفظة.","/world"],["قارن الخيارات","اطّلع على الشروط والإفصاحات قبل أي قرار.","/opportunities"],["جهّز حسابك","إذا التسجيل متاح، أكّد بريدك واحفظ بيانات دخولك.",site.registrationUrl||"/contact"],["تابع حسابك","ارجع لبيانات حسابك أو تواصل مع إدارة المنصة.",site.registrationUrl||"/contact"]].map(([t,d,h],i)=><a key={t} href={h}><small>{["٠١","٠٢","٠٣","٠٤"][i]}</small><h3>{t}</h3><p>{d}</p></a>)}</div>}
 export function Values(){return <div className="u-values">{[["رؤيتنا","نسعى إلى تجربة استثمارية رقمية تجمع وضوح المعلومة وسهولة الوصول وتنوّع الخيارات."],["رسالتنا","نجمع تفاصيل الأصول ونرتّبها لك على أساس واحد: الهدف والمدّة والسيولة والتكاليف."],["قيمنا","كل معلومة لها سياق، وكل رقم منشور له مصدر وتاريخ. نفرّق بين العائد المستهدف والنتيجة اللي تحققت."]].map(([h,t])=><article key={h}><span className="u-diamond" aria-hidden="true">◇</span><h3>{h}</h3><p>{t}</p></article>)}</div>}
-export function Contact(){return <div className="u-contact" id="contact"><div><span className="u-kicker">إدارة صناديق الخليج الذكية</span><h2>خلّنا على تواصل</h2><p>لاستفسار عن المنصة أو حسابك، راسلنا على تليجرام. خلّ كلمة المرور ورمز التحقق عندك.</p></div>{telegramUrl&&<a className="u-btn gold" href={telegramUrl} target="_blank" rel="noopener noreferrer">راسلنا على تليجرام</a>}</div>}
+export function ContactLinks({contact,compact=false}:{contact:PublishedContent["contact"];compact?:boolean}){
+  const chat=contact.hideChat?"":contact.telegramChat||telegramUrl;
+  return <>{chat&&<a className={compact?undefined:"u-btn gold"} href={chat} target="_blank" rel="noopener noreferrer">راسلنا على تيليجرام</a>}{contact.telegramChannel&&<a className={compact?undefined:"u-btn"} href={contact.telegramChannel} target="_blank" rel="noopener noreferrer">قناة تيليجرام</a>}</>;
+}
+export async function Contact(){
+  const {content:{contact}}=await getPublication();
+  return <div className="u-contact" id="contact"><div><span className="u-kicker">إدارة صناديق الخليج الذكية</span><h2>{contact.title||"خلّنا على تواصل"}</h2><p>{contact.message||"للاستفسار عن المنصة أو حسابك، تواصل مع إدارة صناديق الخليج الذكية."}</p></div><div className="u-actions"><ContactLinks contact={contact}/></div></div>;
+}

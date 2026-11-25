@@ -3,9 +3,29 @@ import type { FormEvent, ReactNode } from 'react';
 const endpoint=(import.meta.env.VITE_SGF_UNIVERSE_API?.replace(/\/+$/,"") || "https://cr7-kappa.vercel.app")+"/api/universe/admin/publication";
 type Base={id:string;source:string;asOf:string;published:boolean;verified:boolean};
 type Indicator=Base&{label:string;value:string;unit:string};
-type Offer=Base&{name:string;sector:string;location:string;intro:string;strategy:string;liquidity:string;risks:string;featured:boolean};
+type Offer=Base&{name:string;sector:string;location:string;intro:string;strategy:string;liquidity:string;risks:string;featured:boolean;weeklyTarget:string;minimumUsd:string};
 type State={metrics:Indicator[];opportunities:Offer[]};
 const names:Record<string,string>={property:"العقارات",gold:"الذهب والمعادن",market:"الأسواق المالية",energy:"الطاقة والمشروعات",funds:"الصناديق",stocks:"الأسهم",income:"أدوات الدخل",portfolio:"المحافظ",compare:"فرص متنوعة"};
+const fundSectors=new Set(["property","gold","market","energy"]);
+const rateLine=/^العائد الأسبوعي المستهدف: ([0-9]{1,3}(?:\.[0-9]{1,2})?)%$/u;
+const minLine=/^الحد الأدنى للاشتراك: ([0-9]{1,10}(?:\.[0-9]{1,2})?) دولار أمريكي$/u;
+function splitPublished(value:string,pattern:RegExp):[string,string]{
+  const lines=value.split(/\r?\n/u), matches=lines.flatMap(line=>pattern.exec(line.trim())?.[1]??[]);
+  return matches.length===1?[lines.filter(line=>!pattern.test(line.trim())).join("\n").trim(),matches[0]]:[value,""];
+}
+function decimalValue(value:string,cap:number):number|null{
+  const normalized=value.trim().replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)&15)).replace(/٫/g,".");
+  if(!/^\d{1,10}(?:\.\d{1,2})?$/u.test(normalized))return null;
+  const n=Number(normalized);
+  return n<=cap?n:null;
+}
+function toPublication(o:Offer){
+  const {weeklyTarget,minimumUsd,...data}=o;
+  return {...data,
+    strategy:o.strategy.trim()+(weeklyTarget.trim()?'\nالعائد الأسبوعي المستهدف: '+decimalValue(weeklyTarget,100)+'%':''),
+    liquidity:o.liquidity.trim()+(minimumUsd.trim()?'\nالحد الأدنى للاشتراك: '+decimalValue(minimumUsd,1e9)+' دولار أمريكي':''),
+  };
+}
 const empty:State={metrics:[],opportunities:[]};
 const base=():Base=>({id:crypto.randomUUID(),source:"",asOf:"",published:false,verified:false});
 const today=()=>new Date().toISOString().slice(0,10);
@@ -15,7 +35,11 @@ function parse(data:any):State{
   if(!data || data.version!==1)return empty;
   const common=(v:any):Base=>({id:text(v.id),source:text(v.source),asOf:text(v.asOf),published:v.published===true,verified:v.verified===true});
   const list=(x:any):any[]=>Array.isArray(x)?x.filter(v=>v && typeof v==="object").slice(0,60):[];
-  return {metrics:list(data.metrics).map(v=>({...common(v),label:text(v.label),value:typeof v.value==="number"?String(v.value):"",unit:text(v.unit)})),opportunities:list(data.opportunities).map(v=>({...common(v),name:text(v.name),sector:text(v.sector),location:text(v.location),intro:text(v.intro),strategy:text(v.strategy),liquidity:text(v.liquidity),risks:text(v.risks),featured:v.featured===true}))};
+  return {metrics:list(data.metrics).map(v=>({...common(v),label:text(v.label),value:typeof v.value==="number"?String(v.value):"",unit:text(v.unit)})),opportunities:list(data.opportunities).map(v=>{
+    const [strategy,weeklyTarget]=splitPublished(text(v.strategy),rateLine);
+    const [liquidity,minimumUsd]=splitPublished(text(v.liquidity),minLine);
+    return {...common(v),name:text(v.name),sector:text(v.sector),location:text(v.location),intro:text(v.intro),strategy,liquidity,risks:text(v.risks),featured:v.featured===true,weeklyTarget,minimumUsd};
+  })};
 }
 function Field({label,children}:{label:string;children:ReactNode}){return <label className="un-field"><span>{label}</span>{children}</label>;}
 function Move({i,n,fn}:{i:number;n:number;fn:(to:number)=>void}){return <div className="un-move"><button type="button" disabled={!i} onClick={()=>fn(i-1)}>تقديم</button><button type="button" disabled={i===n-1} onClick={()=>fn(i+1)}>تأخير</button></div>;}
@@ -42,6 +66,17 @@ export default function UniverseEditor({getToken}:{getToken:()=>Promise<string|u
       setTab("metrics");note("كل مؤشر منشور يحتاج اسم، قيمة رقمية صالحة، مصدر علني، تاريخ صحيح وتأكيد المراجعة.");return;}
     if(opportunities.some(o=>!required(o)||!Object.hasOwn(names,o.sector)||![o.name,o.intro,o.strategy,o.risks,o.liquidity].every(s=>s.trim()))){
       setTab("opportunities");note("كمّل الاسم والملخّص والاستراتيجية والمخاطر والسيولة والمصدر والتاريخ وأكّد المراجعة لكل فرصة منشورة.");return;}
+    const withTerms=opportunities.filter(o=>o.weeklyTarget.trim()||o.minimumUsd.trim());
+    if(withTerms.some(o=>!fundSectors.has(o.sector)||(o.weeklyTarget.trim()&&decimalValue(o.weeklyTarget,100)===null)||(o.minimumUsd.trim()&&decimalValue(o.minimumUsd,1e9)===null))){
+      setTab("opportunities");note("العائد المستهدف بين ٠ و١٠٠٪، والحد الأدنى مبلغ بالدولار. هالحقول للصناديق الأربعة فقط.");return;
+    }
+    if(new Set(withTerms.map(o=>o.sector)).size!==withTerms.length){
+      setTab("opportunities");note("انشر العائد والحد الأدنى في سجل واحد فقط لكل صندوق.");return;
+    }
+    const publicOpportunities=opportunities.map(toPublication);
+    if(publicOpportunities.some(o=>o.strategy.length>2000||o.liquidity.length>1000)){
+      setTab("opportunities");note("اختصر وصف الاستراتيجية أو السيولة عشان يتّسع لبيانات الصندوق.");return;
+    }
     lock.current=true;setPhase("saving");note("");
     try{
       const token=await getToken();if(!token)throw Error("سجّل دخولك من جديد.");
@@ -49,7 +84,7 @@ export default function UniverseEditor({getToken}:{getToken:()=>Promise<string|u
       const existing=await check.json();if(!existing?.success || !existing?.data)throw Error("تعذّرت قراءة النسخة المنشورة.");
       const current=existing.data;if((current&&current.version!==1)||current?.revision!==revision.current)throw Error("فيه نسخة أحدث. حدّث الصفحة وراجع تعديلاتك قبل النشر.");
       const previous=revision.current;
-      const publication={version:1,revision:previous,metrics:metrics.map(m=>({...m,value:Number(m.value)})),opportunities};
+      const publication={version:1,revision:previous,metrics:metrics.map(m=>({...m,value:Number(m.value)})),opportunities:publicOpportunities};
       const r=await fetch(endpoint,{method:"PUT",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(publication)});
       if(r.status===409)throw Error("فيه نسخة أحدث. حدّث الصفحة وراجع تعديلاتك قبل النشر.");
       if(!r.ok)throw Error("ما تم النشر. تأكد من صلاحية الحساب.");
@@ -80,10 +115,14 @@ export default function UniverseEditor({getToken}:{getToken:()=>Promise<string|u
        <Field label="المجال"><select value={o.sector} onChange={e=>patch("opportunities",i,{sector:e.target.value})}>{Object.entries(names).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select></Field>
        <Field label="الموقع (اختياري)"><input maxLength={90} value={o.location} onChange={e=>patch("opportunities",i,{location:e.target.value})}/></Field>
        {([["intro","ملخّص الفرصة",380],["strategy","الاستراتيجية",2000],["risks","المخاطر",1500],["liquidity","شروط السيولة",1000]] as const).map(([k,title,length])=><Field key={k} label={title}><textarea maxLength={length} value={o[k]} onChange={e=>patch("opportunities",i,{[k]:e.target.value})}/></Field>)}
+       {(fundSectors.has(o.sector)||!!o.weeklyTarget||!!o.minimumUsd)&&<>
+         <Field label="العائد الأسبوعي المستهدف (٪، اختياري)"><input inputMode="decimal" dir="ltr" maxLength={12} value={o.weeklyTarget} onChange={e=>patch("opportunities",i,{weeklyTarget:e.target.value})}/></Field>
+         <Field label="الحد الأدنى بالدولار الأمريكي (اختياري)"><input inputMode="decimal" dir="ltr" maxLength={15} value={o.minimumUsd} onChange={e=>patch("opportunities",i,{minimumUsd:e.target.value})}/></Field>
+       </>}
        {common("opportunities",i,o)}<label className="un-check"><input type="checkbox" checked={o.featured} onChange={e=>patch("opportunities",i,{featured:e.target.checked})}/>ضمّها للفرص المختارة في الرئيسية</label></div>
        <button type="button" onClick={()=>change({...state,opportunities:state.opportunities.filter(x=>x.id!==o.id)})}>إزالة من القائمة</button></article>)}
        <aside className="un-preview" aria-label="معاينة قبل الحفظ"><small>معاينة قبل الحفظ</small><div>{tab==="metrics" ? state.metrics.filter(m=>m.published&&m.verified&&m.label&&m.value.trim()&&m.source&&validDate(m.asOf)).map(m=><article key={m.id}><span>{m.label}</span><strong>{Number(m.value).toLocaleString("ar")} {m.unit}</strong><small>{m.source} · {m.asOf}</small></article>):state.opportunities.filter(o=>o.published&&o.verified&&o.name&&o.source&&validDate(o.asOf)).map(o=><article key={o.id}><span>{names[o.sector]}</span><strong>{o.name}</strong><small>{o.intro}</small></article>)}</div><p>المعاينة تعرض اختياراتك للنشر. الحفظ يتأكد من اكتمال كل البيانات.</p></aside>
-       <div className="un-foot"><button type="button" disabled={tab==="metrics"?state.metrics.length>=4:state.opportunities.length>=60} onClick={()=>tab==="metrics"?change({...state,metrics:[...state.metrics,{...base(),label:"",value:"",unit:""}]}):change({...state,opportunities:[...state.opportunities,{...base(),name:"",sector:"property",location:"",intro:"",strategy:"",liquidity:"",risks:"",featured:false}]})}>{tab==="metrics"?"إضافة مؤشر":"إضافة فرصة"}</button><button type="submit" disabled={!dirty||phase==="saving"}>{phase==="saving"?"جاري الحفظ…":"حفظ المحتوى المنشور"}</button></div>
+       <div className="un-foot"><button type="button" disabled={tab==="metrics"?state.metrics.length>=4:state.opportunities.length>=60} onClick={()=>tab==="metrics"?change({...state,metrics:[...state.metrics,{...base(),label:"",value:"",unit:""}]}):change({...state,opportunities:[...state.opportunities,{...base(),name:"",sector:"property",location:"",intro:"",strategy:"",liquidity:"",risks:"",featured:false,weeklyTarget:"",minimumUsd:""}]})}>{tab==="metrics"?"إضافة مؤشر":"إضافة فرصة"}</button><button type="submit" disabled={!dirty||phase==="saving"}>{phase==="saving"?"جاري الحفظ…":"حفظ المحتوى المنشور"}</button></div>
     </fieldset>}{msg&&<p role="status" className="un-notice">{msg}</p>}
   </form>;
 }

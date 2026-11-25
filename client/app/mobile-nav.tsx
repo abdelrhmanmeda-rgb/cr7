@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { InvestorSignupLink } from "./investor-actions";
 
 type Props = { links: readonly (readonly [string, string])[]; brand: string; action: { href: string; text: string } };
 
@@ -8,7 +9,7 @@ export default function MobileNav({ links, brand, action }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 961px)");
+    const media = window.matchMedia("(min-width: 1081px)");
     const closeOnDesktop = () => { if (media.matches) ref.current?.close(); };
     media.addEventListener("change", closeOnDesktop);
     return () => media.removeEventListener("change", closeOnDesktop);
@@ -39,7 +40,7 @@ export default function MobileNav({ links, brand, action }: Props) {
           <nav aria-label="أقسام الموقع">
             {links.map(([id, label]) => <a key={id} href={id.startsWith("/") ? id : `#${id}`} onClick={close}>{label}</a>)}
           </nav>
-          <a className="afq-button afq-button-gold" href={action.href} onClick={close}>{action.text}</a>
+          <div className="u-drawer-accounts"><a className="u-btn" href={action.href} onClick={close}>{action.text}</a><InvestorSignupLink onClick={close}/></div>
         </div>
       </dialog>
     </div>

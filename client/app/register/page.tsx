@@ -3,12 +3,9 @@
 import { AccountScreen, type AccountView as View, type AccountPhase as Phase, type AccountProfile as Profile, type AccountNotice as Notice } from "./account-screen";
 import {parseLedger,type LedgerState} from "./account-ledger";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { getApps, initializeApp } from "firebase/app";
+import { authForSite,enabled,officialOrigin } from "../investor-auth";
 import {
-  browserSessionPersistence,
   createUserWithEmailAndPassword,
-  getAuth,
-  initializeAuth,
   onAuthStateChanged,
   reload,
   sendEmailVerification,
@@ -16,44 +13,16 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  type Auth,
   type User,
 } from "firebase/auth";
 
 const brand = "صناديق الخليج الذكية";
-const officialOrigin = "https://www.cr7botai.com";
-const name = "smart-gulf-funds-registration";
-const config = {
-  apiKey: process.env.NEXT_PUBLIC_SGF_FIREBASE_API_KEY?.trim() || "AIzaSyAjvTzEBmejj6AoOWx3qQAHQ2ITmdj1meU",
-  projectId: process.env.NEXT_PUBLIC_SGF_FIREBASE_PROJECT_ID?.trim() || "smart-gulf-funds",
-  appId: process.env.NEXT_PUBLIC_SGF_FIREBASE_APP_ID?.trim() || "1:677177948074:web:f4635a3e251ab4f7f8ddd3",
-};
 const operator = process.env.NEXT_PUBLIC_SGF_OPERATOR?.trim() || "إدارة صناديق الخليج الذكية";
 const telegramHandle = (process.env.NEXT_PUBLIC_SGF_PRIVACY_TELEGRAM?.trim() || "Khaled_AlAlya")
-  .replace(/^(?:https:\/\/)?t\.me\//i, "")
-  .replace(/^@|\/$/g, "");
+  .replace(/^(?:https:\/\/)?t\.me\//i, "").replace(/^@|\/$/g, "");
 const hasPrivacyContact = /^[a-zA-Z0-9_]{3,32}$/.test(telegramHandle);
 const emailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// The homepage link stays controlled by its separate visibility flag during testing.
-const enabled = (process.env.NEXT_PUBLIC_SGF_SIGNUP_ENABLED ?? "1") === "1" &&
-  /^AIza[A-Za-z0-9_-]{35}$/.test(config.apiKey) && /^1:\d+:web:[a-f0-9]+$/i.test(config.appId) &&
-  /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(config.projectId) &&
-  config.projectId !== "cr7bot-85133" && hasPrivacyContact;
 const actions = { url: officialOrigin + "/register", handleCodeInApp: false };
-let sharedAuth: Auth | undefined;
-
-function authForSite() {
-  if (!enabled || window.location.origin !== officialOrigin) throw Error("registration disabled");
-  if (!sharedAuth) {
-    const existing = getApps().find((app) => app.name === name);
-    sharedAuth = existing
-      ? getAuth(existing)
-      : initializeAuth(initializeApp({ ...config, authDomain: config.projectId + ".firebaseapp.com" }, name), {
-          persistence: browserSessionPersistence,
-        });
-  }
-  return sharedAuth;
-}
 
 function profileOf(user: User | null): Profile | null {
   return user ? { uid: user.uid, email: user.email ?? "", name: user.displayName?.trim() ?? "", verified: user.emailVerified } : null;
@@ -98,6 +67,8 @@ export default function AccountPage() {
     if (!enabled) return;
     let unsubscribe: (() => void) | undefined;
     const timer = window.setTimeout(() => {
+      const mode = new URLSearchParams(window.location.search).get("mode");
+      if (mode === "login" || mode === "create") setView(mode);
       if (window.location.origin !== officialOrigin) {
         setPhase("closed");
         return;

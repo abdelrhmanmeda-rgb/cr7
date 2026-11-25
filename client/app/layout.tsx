@@ -4,6 +4,8 @@ import { Cairo } from "next/font/google";
 import "./globals.css";
 import { isDesignPreview } from "./design-config";
 import "./universe.css";
+import "./fund-catalog.css";
+import { InvestorSession } from "./investor-actions";
 
 const name = "صناديق الخليج الذكية";
 const description = "تعرّف على الصناديق والأسواق، وافهم كيف تشتغل أدوات الاستثمار عشان تقارن الخيارات على بيّنة.";
@@ -20,6 +22,7 @@ export const metadata: Metadata = {
   title: { default: name, template: "%s · " + name },
   description,
   applicationName: name,
+  icons:{ icon:{url:"/brand/sgf-mark.svg",type:"image/svg+xml",sizes:"any"} },
   openGraph: {
     title: name,
     description,
@@ -67,7 +70,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }
         `}</style>
         {isDesignPreview && <div className="u-preview-banner">معاينة خاصة للتصميم · الموقع الحالي كما هو · الاشتراك هنا للتجربة</div>}
-        {children}
+        <InvestorSession>{children}</InvestorSession>
       </body>
     </html>
   );

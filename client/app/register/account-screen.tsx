@@ -37,7 +37,7 @@ function Icon({ name }: { name: keyof typeof symbols }) {
 }
 function BrandBar({ brand }: { brand: string }) {
   return <header className="sa-head"><div className="sa-shell">
-    <a className="sa-brand" href="/"><span className="sa-mark"><Icon name="orbit" /></span><span>{brand}<small dir="ltr">GULF INVESTMENT UNIVERSE</small></span></a>
+    <a className="sa-brand" href="/"><span className="sa-mark"><img src="/brand/sgf-mark.svg" width={26} height={25} alt=""/></span><span>{brand}<small dir="ltr">SMART GULF FUNDS</small></span></a>
     <nav aria-label="تنقّل الموقع"><a href="/#sectors">المجالات</a><a href="/#knowledge">مركز المعرفة</a><a className="sa-outline" href="/">الرئيسية</a></nav>
   </div></header>;
 }

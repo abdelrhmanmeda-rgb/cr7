@@ -1,6 +1,8 @@
 import {UHeader,UFooter} from "../../universe-shell";
 import {AmbientHero} from "../../ambient-hero";
 import { FundTerms } from "../../universe-public";
+import { FundDocuments } from "../../disclosure-views";
+import { CapitalFundProfile } from "../../capital-fund-profile";
 import { fieldOf } from "../../four-sectors";
 import { getPublication } from "../../universe-data";
 import type { Metadata } from "next";
@@ -41,6 +43,7 @@ async function lookup(slug:string){
   return config?{...entry,title:config.name||entry.title,intro:config.intro||entry.intro,art:config.photo||entry.art}:entry;
 }
 
+export const revalidate = 60;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -94,11 +97,14 @@ export default async function GuidePage({ params }: Props) {
             </dl>
           )}
 
+          {field && <CapitalFundProfile id={field.id}/>}
           <div className="sgf-guide-body">
             <aside className="sgf-guide-jump">
               <nav aria-label="محاور الصفحة">
                 <p className="sgf-guide-label">وش في الصفحة</p>
                 <ul>
+                  {field && <li><a href="#fund-profile">الهدف وطريقة التقييم</a></li>}
+                  {field && <li><a href="#fund-documents">مستندات الصندوق</a></li>}
                   {entry.sections.map((section, index) => <li key={section.title}><a href={`#${sectionId(index)}`}>{section.title}</a></li>)}
                   <li><a href="#guide-example">مثال توضيحي</a></li>
                 </ul>
@@ -118,6 +124,7 @@ export default async function GuidePage({ params }: Props) {
               </section>
             </div>
           </div>
+          {field && <FundDocuments id={field.id}/>}
         </article>
 
         <section className="sgf-guide-related" aria-labelledby="guide-related">

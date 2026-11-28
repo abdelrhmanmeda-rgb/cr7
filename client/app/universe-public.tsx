@@ -10,9 +10,9 @@ export async function TrustNumbers(_props?:{cinematic?:boolean}){
   return <HomeMetrics metrics={metrics} available={available}/>;
 }
 
-export async function FundCatalog({search,heading,compact}:{search?:boolean;heading?:string;compact?:boolean}){
+export async function FundCatalog({search,heading,compact,compare}:{search?:boolean;heading?:string;compact?:boolean;compare?:boolean}){
   const {opportunities,content}=await getPublication();
-  return <SectorCatalog search={search} heading={heading} compact={compact} settings={publishedFundSettings(content,opportunities)} content={content}/>;
+  return <SectorCatalog search={search} heading={heading} compact={compact} compare={compare} settings={publishedFundSettings(content,opportunities)} content={content}/>;
 }
 
 export async function FundTerms({id}:{id:FieldId}){

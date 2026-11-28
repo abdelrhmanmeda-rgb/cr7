@@ -1,3 +1,4 @@
+import {readDisclosure} from "./disclosure-data";
 import {fields,type FieldId,type FieldSettings} from "./four-sectors";
 import {readFundSettings} from "./fund-publication";
 
@@ -21,7 +22,7 @@ export function readContent(input:unknown){
     const show=x.publishTerms===true&&!!source&&!!asOf;
     return [id,{name:text(x.name,100),intro:text(x.intro,380),photo:images.includes(photo)?photo:"",keywords:text(x.keywords,250),inExplorer:x.inExplorer!==false,rate:show?count(x.rate,100):undefined,minimum:show?count(x.minimum,1e9):undefined,source,asOf}];
   })) as Partial<Record<FieldId,{name:string;intro:string;photo:string;keywords:string;inExplorer:boolean;rate?:number;minimum?:number;source:string;asOf:string}>>;
-  return {funds,home:{headline:text(h.headline,130),intro:text(h.intro,350)},
+  return {funds,disclosure:readDisclosure(c.disclosure),home:{headline:text(h.headline,130),intro:text(h.intro,350)},
     explorer:{title:text(e.title,100),intro:text(e.intro,280),placeholder:text(e.placeholder,120),quickSearch:text(e.quickSearch,160).split(/[,،]+/).map(s=>s.trim()).filter(Boolean).slice(0,8),byRate:e.byRate!==false},
     contact:{title:text(t.title,100),message:text(t.message,350),telegramChat:telegram(t.telegramChat),telegramChannel:telegram(t.telegramChannel,true),hideChat:t.hideChat===true}};
 }

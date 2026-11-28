@@ -1,4 +1,5 @@
 'use strict';
+const {disclosure}=require('./disclosures');
 
 const ids=['property','gold','market','energy'];
 const images=[...ids,'hero','portfolio','income','stocks','editorial'];
@@ -26,7 +27,7 @@ function content(input, {fail,textField,dateField}){
     funds[id]={name:optional(v.name,100),intro:optional(v.intro,380),photo, keywords:optional(v.keywords,250),
       inExplorer:v.inExplorer!==false, rate:publish?rate:null,minimum:publish?minimum:null,source,asOf,publishTerms:publish};
   }
-  return {funds,home:{headline:optional(h.headline,130),intro:optional(h.intro,350)},
+  return {funds,...(input.disclosure===undefined?{}:{disclosure:disclosure(input.disclosure,{fail,textField,dateField})}),home:{headline:optional(h.headline,130),intro:optional(h.intro,350)},
     explorer:{title:optional(e.title,100),intro:optional(e.intro,280),placeholder:optional(e.placeholder,120),quickSearch:optional(e.quickSearch,160),byRate:e.byRate!==false},
     contact:{title:optional(c.title,100),message:optional(c.message,350),telegramChat:telegram(optional(c.telegramChat,160),false,fail),telegramChannel:telegram(optional(c.telegramChannel,160),true,fail),hideChat:c.hideChat===true}};
 }

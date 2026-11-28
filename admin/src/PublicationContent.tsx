@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { DisclosureEditor,readDisclosureDraft,serializeDisclosure,type DisclosureDraft } from './DisclosureEditor';
 
 export const fundIds=['property','gold','market','energy'] as const;
 type FundId=typeof fundIds[number];
 const funds:Record<FundId,string>={property:'العقارات',gold:'الذهب والمعادن الثمينة',market:'الأسواق المالية والتداول',energy:'الطاقة والمشروعات'};
 const pictures={property:'العقارات',gold:'الذهب',market:'الأسواق',energy:'الطاقة',hero:'الرئيسية',portfolio:'المحافظ',income:'الدخل',stocks:'الأسهم',editorial:'مركز المعرفة'};
 export type FundDraft={name:string;intro:string;photo:string;keywords:string;inExplorer:boolean;rate:string;minimum:string;source:string;asOf:string;publishTerms:boolean};
-export type Draft={funds:Record<FundId,FundDraft>;home:{headline:string;intro:string};explorer:{title:string;intro:string;placeholder:string;quickSearch:string;byRate:boolean};contact:{title:string;message:string;telegramChat:string;telegramChannel:string;hideChat:boolean}};
-export type ContentTab='funds'|'explorer'|'contact'|'home';
+export type Draft={disclosure:DisclosureDraft;funds:Record<FundId,FundDraft>;home:{headline:string;intro:string};explorer:{title:string;intro:string;placeholder:string;quickSearch:string;byRate:boolean};contact:{title:string;message:string;telegramChat:string;telegramChannel:string;hideChat:boolean}};
+export type ContentTab='funds'|'explorer'|'contact'|'home'|'disclosure';
 const txt=(x:unknown)=>typeof x==='string'?x:'';
 const numeric=(x:unknown)=>typeof x==='number'&&Number.isFinite(x)?String(x):'';
 const record=(x:unknown):Record<string,unknown>=>x&&typeof x==='object'&&!Array.isArray(x)?x as Record<string,unknown>:{};
@@ -28,7 +29,7 @@ export function parseContent(content:unknown, legacy:unknown):Draft{
     const base={name:txt(v.name),intro:txt(v.intro),photo:txt(v.photo),keywords:txt(v.keywords),inExplorer:v.inExplorer!==false,rate:numeric(v.rate),minimum:numeric(v.minimum),source:txt(v.source),asOf:txt(v.asOf),publishTerms:v.publishTerms===true};
     return [id,{...base,...(!Object.hasOwn(f,id)&&old.length===1?old[0]:{})}];
   })) as Record<FundId,FundDraft>;
-  return {funds:parsed,home:{headline:txt(h.headline),intro:txt(h.intro)},explorer:{title:txt(e.title),intro:txt(e.intro),placeholder:txt(e.placeholder),quickSearch:txt(e.quickSearch),byRate:e.byRate!==false},contact:{title:txt(t.title),message:txt(t.message),telegramChat:txt(t.telegramChat),telegramChannel:txt(t.telegramChannel),hideChat:t.hideChat===true}};
+  return {disclosure:readDisclosureDraft(c.disclosure),funds:parsed,home:{headline:txt(h.headline),intro:txt(h.intro)},explorer:{title:txt(e.title),intro:txt(e.intro),placeholder:txt(e.placeholder),quickSearch:txt(e.quickSearch),byRate:e.byRate!==false},contact:{title:txt(t.title),message:txt(t.message),telegramChat:txt(t.telegramChat),telegramChannel:txt(t.telegramChannel),hideChat:t.hideChat===true}};
 }
 function amount(input:string,max:number){
   if(!input.trim())return null;
@@ -43,7 +44,7 @@ export function serializeContent(draft:Draft){
     if((rate!==null||minimum!==null)&&(!f.source.trim()||!f.asOf))throw Error('أضف المصدر وتاريخ المراجعة لصندوق '+fundsName(id)+'.');
     return [id,{...f,rate,minimum}];
   }));
-  return {...draft,funds};
+  return {...draft,funds,disclosure:serializeDisclosure(draft.disclosure,amount)};
 }
 function fundsName(id:FundId){return funds[id];}
 const today=()=>new Date().toISOString().slice(0,10);
@@ -55,6 +56,7 @@ export function PublicationContent({tab,draft,onChange}:{tab:ContentTab;draft:Dr
   const f=draft.funds[id];
   function updateFund(p:Partial<FundDraft>,key=id){onChange({...draft,funds:{...draft.funds,[key]:{...draft.funds[key],...p}}});}
   function update<K extends 'home'|'explorer'|'contact'>(key:K,p:Partial<Draft[K]>){onChange({...draft,[key]:{...draft[key],...p}});}
+  if(tab==='disclosure')return <DisclosureEditor value={draft.disclosure} onChange={disclosure=>onChange({...draft,disclosure})}/>;
   if(tab==='home')return <section className="un-row un-grid">
     <Input label="عنوان الرئيسية" max={130} value={draft.home.headline} set={headline=>update('home',{headline})} placeholder="اتركه فاضي للإبقاء على العنوان الحالي"/>
     <Input label="الوصف تحت العنوان" area max={350} value={draft.home.intro} set={intro=>update('home',{intro})}/>

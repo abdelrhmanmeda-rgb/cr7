@@ -42,6 +42,7 @@ test('content saves without the ledger and only a signed reviewed snapshot goes 
   home:{headline:'صناديق الخليج'},
   contact:{telegramChat:'@ExampleSupport',telegramChannel:'https://t.me/+ExampleGroup42',message:'تواصل معنا',privateEmail:'never publish'},
   explorer:{quickSearch:'ذهب،معادن',byRate:false},
+  disclosure:{entity:{name:'Fixture entity',jurisdiction:'Fixture jurisdiction',license:'REG-42',regulator:'Fixture regulator',published:true,source:'Fixture register',asOf:'2025-01-01'},offer:{status:'scheduled',start:'2040-01-01',end:'2040-01-28',unitPrice:22,published:true,source:'Fixture notice',asOf:'2025-01-01'},documents:{gold:{factsheet:{published:true,body:'Fixture factsheet',source:'Fixture copy',asOf:'2025-01-01'},terms:{published:false,body:'never publish'}},unrecognized:{factsheet:{published:true,body:'never publish'}}}},
  }};
  try{
   delete process.env.SGF_UNIVERSE_ADMIN_UIDS;assert.equal((await req('/admin/publication','admin')).status,503);
@@ -50,16 +51,33 @@ test('content saves without the ledger and only a signed reviewed snapshot goes 
   assert.equal((await req('/admin/publication','visitor',draft)).status,403);
   assert.equal((await req('/admin/publication','admin',{...draft,content:{...draft.content,contact:{telegramChat:'https://t.me.example.test/Support'}}})).status,400);
   assert.equal((await req('/admin/publication','admin',{...draft,content:{...draft.content,funds:{gold:{rate:8,publishTerms:true}}}})).status,400);
+  const updatedDisclosure=patch=>({...draft,content:{...draft.content,disclosure:{...draft.content.disclosure,...patch}}});
+  assert.equal((await req('/admin/publication','admin',updatedDisclosure({entity:{...draft.content.disclosure.entity,license:'DEMO-LIC-001'}}))).status,400);
+  assert.equal((await req('/admin/publication','admin',updatedDisclosure({offer:{...draft.content.disclosure.offer,start:'2040-02-31'}}))).status,400);
+  assert.equal((await req('/admin/publication','admin',updatedDisclosure({offer:{...draft.content.disclosure.offer,end:'2039-01-01'}}))).status,400);
+  assert.equal((await req('/admin/publication','admin',updatedDisclosure({documents:{gold:{terms:{published:true,body:'Draft'}}}}))).status,400);
   assert.equal((await req('/admin/publication','admin',draft)).status,200);
   assert.equal((await req('/admin/publication','admin',draft)).status,409);
   assert.equal((await req('/admin/publication','admin',{version:1,revision:1,metrics:[],opportunities:[]})).status,200);
+  const {disclosure,...oldDashboard}=draft.content;
+  assert.equal((await req('/admin/publication','admin',{...draft,revision:2,content:oldDashboard})).status,200);
   const {data}=await(await req('/public')).json();
+  assert.equal(data.content.disclosure.entity.license,'REG-42');
+  assert.equal(data.content.disclosure.offer.end,'2040-01-28');
+  assert.equal(data.content.disclosure.documents.gold.factsheet.body,'Fixture factsheet');
+  assert.equal(data.content.disclosure.documents.gold.terms,undefined);
+  assert.equal(data.content.disclosure.documents.unrecognized,undefined);
+
   assert.equal(data.content.funds.gold.rate,5.25);assert.equal(data.content.funds.gold.inExplorer,false);
   assert.equal(data.content.explorer.quickSearch,'ذهب،معادن');assert.equal(data.content.explorer.byRate,false);
   assert.equal(data.content.contact.telegramChat,'https://t.me/ExampleSupport');assert.equal(data.content.contact.telegramChannel,'https://t.me/+ExampleGroup42');
   assert(!JSON.stringify(data).includes('never publish'));
   const ref=db.collection('sgf_publication').doc('approved'), envelope=(await ref.get()).data();
   assert.deepEqual(open(envelope,signingKey),data);
+  assert.equal((await req('/admin/publication','admin',{...draft,revision:3,content:{...oldDashboard,disclosure:{}}})).status,200);
+  const {data:cleared}=await(await req('/public')).json();
+  assert.deepEqual(cleared.content.disclosure,{});
+
   await db.runTransaction(tx=>tx.set(ref,{...envelope,data:{...envelope.data,revision:100}}));
   assert.equal((await req('/public')).status,503);
   assert.equal((await req('/admin/publication','admin',{...draft,revision:100})).status,503);

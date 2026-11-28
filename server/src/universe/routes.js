@@ -74,7 +74,11 @@ router.put('/admin/publication',handler(async(req,res)=>{
  const data=await db.runTransaction(async tx=>{
   const old=published(await tx.get(ref),signingKey);
   if(old.revision!==next.revision)fail(409,'فيه نسخة أحدث.');
-  const fresh={...next,revision:old.revision+1,...(next.content===undefined&&old.content!==undefined?{content:old.content}:{})};
+  // An older dashboard doesn't send the disclosure field; keep the published version in that case.
+  const content=next.content===undefined?old.content:
+   next.content.disclosure===undefined&&old.content?.disclosure!==undefined?
+   {...next.content,disclosure:old.content.disclosure}:next.content;
+  const fresh=publication({...next,revision:old.revision+1,...(content===undefined?{}:{content})});
   const stored=signingKey?seal(fresh,signingKey):fresh;
   tx.set(ref,stored);tx.create(db.collection(signingKey?'sgf_publicationAudit':'publicationAudit').doc(String(fresh.revision)),{actor,at:new Date().toISOString(),snapshot:stored});
   return fresh;

@@ -4,7 +4,7 @@ const endpoint=(import.meta.env.VITE_SGF_UNIVERSE_API?.replace(/\/+$/,'')||'http
 type Indicator={id:string;label:string;value:string;unit:string;asOf:string;source:string;published:boolean;verified:boolean};
 type Feed={version:1;revision:number;metrics:Array<Omit<Indicator,'value'>&{value:number}>;opportunities:unknown[];content?:unknown};
 type Tab=ContentTab|'metrics';
-const tabs:ReadonlyArray<[Tab,string]>=[['funds','الصناديق'],['explorer','المستكشف'],['metrics','مؤشرات المنصة'],['contact','التواصل وتيليجرام'],['home','الصفحة الرئيسية']];
+const tabs:ReadonlyArray<[Tab,string]>=[['funds','الصناديق'],['explorer','المستكشف'],['metrics','مؤشرات المنصة'],['disclosure','الإفصاحات'],['contact','التواصل وتيليجرام'],['home','الصفحة الرئيسية']];
 const date=()=>new Date().toISOString().slice(0,10);
 const list=(f:Feed)=>f.metrics.map(m=>({...m,value:String(m.value)}));
 const numberInput=(input:string)=>input.trim().replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)&15)).replace(/٫/g,'.');

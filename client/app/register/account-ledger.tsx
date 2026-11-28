@@ -30,7 +30,7 @@ function Chart({data}:{data:Ledger}){
     <div className="sa-actions" aria-label="فترة الرسم">{windows.map(([n,label])=><button type="button" className="sa-outline" key={n} aria-pressed={days===n} onClick={()=>{selectDays(n);setCursor(null)}}>{label}</button>)}</div>
     {active?<><div className="sa-chart-drawing" dir="ltr"><svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`تطوّر الرصيد في ${rows.length} قيد`} preserveAspectRatio="none">
       {[.2,.5,.8].map(y=><line key={y} x1="0" x2={W} y1={y*H} y2={y*H} stroke="#6a8a993a" strokeDasharray="4 6"/>)}
-      <path d={path} fill="none" stroke="#76d8c8" strokeWidth="2.5" vectorEffect="non-scaling-stroke"/><circle cx={points[idx][0]} cy={points[idx][1]} r="4" fill="#f2ce8b"/></svg></div>
+      <path d={path} fill="none" stroke="#118796" strokeWidth="2.5" vectorEffect="non-scaling-stroke"/><circle cx={points[idx][0]} cy={points[idx][1]} r="4" fill="#f2ce8b"/></svg></div>
       <div role="status" className="sa-readout"><strong><bdi>{money(active.balanceMinor)}</bdi></strong><span>{labels[active.kind]} · {date.format(Date.parse(active.at))}</span></div>
       {rows.length>1&&<label className="sa-cursor">تنقّل بين القيود<input aria-label="اختيار نقطة الرصيد" dir="ltr" type="range" min={0} max={rows.length-1} value={idx} onChange={e=>setCursor(Number(e.currentTarget.value))}/></label>}
     </>:<p className="sa-note">ما فيه قيود مسجّلة في هالفترة.</p>}

@@ -37,7 +37,7 @@ const loadProjection = unstable_cache(async ():Promise<Catalog> => {
     if(body?.success!==true)throw Error("public information unavailable");
     return readPublication(body.data);
   } catch { return {available:false,metrics:[],opportunities:[],content:readContent(null)}; }
-},["smart-gulf-public-universe-presentation-v1",publicationOrigin],{revalidate:60});
+},["smart-gulf-public-universe-presentation-v2",publicationOrigin],{revalidate:60});
 export const getPublication=cache(loadProjection);
 
 // The explorer only needs an index; long descriptions and disclosures stay on the detail page.
